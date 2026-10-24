@@ -7,18 +7,78 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.ImageBitmapConfig
+import androidx.compose.ui.graphics.ImageShader
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.lerp
+
+private const val ProfileMeshDitherTileSize = 64
+
+internal fun profileMeshDitherLevel(x: Int, y: Int): Int {
+    var value = x * 0x1F123BB5 + y * 0x5F356495 + 0x68BC21EB
+    value = value xor (value ushr 15)
+    value *= 0x2C1B3C6D
+    value = value xor (value ushr 12)
+    return value ushr 31
+}
+
+private fun createProfileMeshDitherBrush(): ShaderBrush {
+    val bitmap = ImageBitmap(
+        width = ProfileMeshDitherTileSize,
+        height = ProfileMeshDitherTileSize,
+        config = ImageBitmapConfig.Argb8888,
+        hasAlpha = true,
+    )
+    val canvas = Canvas(bitmap)
+    val paint = Paint().apply { blendMode = BlendMode.Src }
+    for (y in 0 until ProfileMeshDitherTileSize) {
+        for (x in 0 until ProfileMeshDitherTileSize) {
+            paint.color = if (profileMeshDitherLevel(x, y) == 0) {
+                Color.Transparent
+            } else {
+                Color.White.copy(alpha = 1f / 255f)
+            }
+            canvas.drawRect(
+                Rect(
+                    left = x.toFloat(),
+                    top = y.toFloat(),
+                    right = x + 1f,
+                    bottom = y + 1f,
+                ),
+                paint,
+            )
+        }
+    }
+    bitmap.prepareToDraw()
+    return object : ShaderBrush() {
+        override fun createShader(size: Size): Shader = ImageShader(
+            image = bitmap,
+            tileModeX = TileMode.Repeated,
+            tileModeY = TileMode.Repeated,
+        )
+    }
+}
 
 @Composable
 fun ProfileMeshBackground(
     profileColor: Color,
     modifier: Modifier = Modifier,
 ) {
+    val ditherBrush = remember { createProfileMeshDitherBrush() }
     val animatedProfileColor by animateColorAsState(
         targetValue = profileColor,
         animationSpec = tween(durationMillis = 520),
@@ -85,6 +145,14 @@ fun ProfileMeshBackground(
                         radius = maxDimension * 0.28f,
                     ),
                     size = size,
+                )
+                // Skia's low-alpha radial ramps quantize visibly on an 8-bit desktop
+                // surface. Add one deterministic least-significant bit before the
+                // final blend so adjacent pixels can represent intermediate shades.
+                drawRect(
+                    brush = ditherBrush,
+                    size = size,
+                    blendMode = BlendMode.Plus,
                 )
             },
     )

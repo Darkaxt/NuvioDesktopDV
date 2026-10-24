@@ -76,6 +76,7 @@ import com.nuvio.app.features.home.components.HomeEmptyStateCard
 import com.nuvio.app.features.home.components.HomePosterHoverPreview
 import com.nuvio.app.features.home.components.HomePosterCard
 import com.nuvio.app.features.home.stableKey
+import com.nuvio.app.features.rpdb.rpdbPosterSelection
 import com.nuvio.app.features.watched.WatchedRepository
 import com.nuvio.app.features.watching.application.WatchingState
 import com.nuvio.app.navigation.LocalUseNativeNavigation
@@ -370,6 +371,9 @@ private fun CatalogPosterTile(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
+    val rpdbPoster = item.rpdbPosterSelection()
+    val posterUrl = rpdbPoster.primaryUrl
+    val fallbackUrl = rpdbPoster.fallbackUrl ?: item.rawPosterUrl
     HomePosterHoverPreview(
         item = item,
         isWatched = isWatched,
@@ -396,24 +400,24 @@ private fun CatalogPosterTile(
                     .posterCardClickable(
                         onClick = onClick,
                         onLongClick = onLongClick,
-                        zoomImageUrl = item.poster,
+                        zoomImageUrl = posterUrl,
                         zoomCornerRadius = cornerRadiusDp.dp,
                         hoverScaleEnabled = false,
                     ),
             ) {
-                if (item.poster != null) {
+                if (posterUrl != null) {
                     val platformContext = coil3.compose.LocalPlatformContext.current
-                    val hasFallback = !item.rawPosterUrl.isNullOrBlank() && item.rawPosterUrl != item.poster
-                    val imageModel = remember(item.poster, item.rawPosterUrl, platformContext) {
+                    val hasFallback = !fallbackUrl.isNullOrBlank() && fallbackUrl != posterUrl
+                    val imageModel = remember(posterUrl, fallbackUrl, platformContext) {
                         if (hasFallback) {
                             coil3.request.ImageRequest.Builder(platformContext)
-                                .data(item.poster)
+                                .data(posterUrl)
                                 .memoryCacheKeyExtras(
-                                    mapOf(com.nuvio.app.core.poster.CustomPosterFallbackInterceptor.FALLBACK_URL_KEY to item.rawPosterUrl!!)
+                                    mapOf(com.nuvio.app.core.poster.CustomPosterFallbackInterceptor.FALLBACK_URL_KEY to fallbackUrl!!)
                                 )
                                 .build()
                         } else {
-                            item.poster
+                            posterUrl
                         }
                     }
                     AsyncImage(

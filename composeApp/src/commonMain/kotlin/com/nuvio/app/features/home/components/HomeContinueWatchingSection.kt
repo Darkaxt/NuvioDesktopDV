@@ -71,6 +71,7 @@ import com.nuvio.app.features.watchprogress.WatchProgressCompletionPercentThresh
 import com.nuvio.app.features.watchprogress.continueWatchingItemKey
 import com.nuvio.app.features.watchprogress.CurrentDateProvider
 import com.nuvio.app.features.watchprogress.computeAirDateBadgeText
+import com.nuvio.app.features.rpdb.rpdbPortraitSelection
 import com.nuvio.app.isDesktop
 import io.ktor.http.Url
 import kotlin.math.roundToInt
@@ -925,6 +926,9 @@ private fun ContinueWatchingWideCard(
     onLongClick: (() -> Unit)?,
 ) {
     val cornerRadius = rememberPosterCardStyleUiState().cornerRadiusDp.dp
+    val sourceArtwork = item.continueWatchingWideArtworkUrl(useEpisodeThumbnails)
+    val rpdbPoster = item.rpdbPortraitSelection(sourceArtwork)
+    val artworkUrl = rpdbPoster.primaryUrl
     Row(
         modifier = Modifier
             .posterCardClickable(onClick = onClick, onLongClick = onLongClick)
@@ -938,7 +942,6 @@ private fun ContinueWatchingWideCard(
                 shape = RoundedCornerShape(cornerRadius),
             ),
     ) {
-        val artworkUrl = item.continueWatchingWideArtworkUrl(useEpisodeThumbnails)
         val shouldBlurArtwork = item.shouldBlurContinueWatchingArtwork(
             blurUnwatchedEpisodes = blurNextUp,
             useEpisodeThumbnails = useEpisodeThumbnails,
@@ -948,7 +951,7 @@ private fun ContinueWatchingWideCard(
             imageUrl = artworkUrl,
             width = layout.widePosterStripWidth,
             blurred = shouldBlurArtwork,
-            fallbackUrl = item.fallbackUrlForArtwork(artworkUrl),
+            fallbackUrl = rpdbPoster.fallbackUrl ?: item.fallbackUrlForArtwork(sourceArtwork),
             contentScale = if (item.isCloudLibraryItem()) ContentScale.Fit else ContentScale.Crop,
             modifier = Modifier.fillMaxHeight(),
         )
@@ -1054,7 +1057,9 @@ private fun ContinueWatchingPosterCard(
     onLongClick: (() -> Unit)?,
 ) {
     val cornerRadius = rememberPosterCardStyleUiState().cornerRadiusDp.dp
-    val imageUrl = item.continueWatchingPosterArtworkUrl(useEpisodeThumbnails)
+    val sourcePoster = item.continueWatchingPosterArtworkUrl(useEpisodeThumbnails)
+    val rpdbPoster = item.rpdbPortraitSelection(sourcePoster)
+    val imageUrl = rpdbPoster.primaryUrl
     Column(
         modifier = Modifier
             .desktopPosterHoverScale()
@@ -1085,7 +1090,7 @@ private fun ContinueWatchingPosterCard(
                 artworkUrl = imageUrl,
             )
             if (imageUrl != null) {
-                val cwFallbackUrl = item.fallbackUrlForArtwork(imageUrl)
+                val cwFallbackUrl = rpdbPoster.fallbackUrl ?: item.fallbackUrlForArtwork(sourcePoster)
                 val cwImageModel = continuewatchingImageModel(
                     imageUrl = cloudLibraryDisplayArtworkUrl(imageUrl),
                     fallbackUrl = cwFallbackUrl,

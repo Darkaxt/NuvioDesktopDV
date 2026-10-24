@@ -71,6 +71,7 @@ import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.PosterShape
 import com.nuvio.app.features.home.canOpenCatalog
 import com.nuvio.app.features.home.stableKey
+import com.nuvio.app.features.rpdb.rpdbPosterSelection
 import com.nuvio.app.features.home.components.HomeCatalogRowSection
 import com.nuvio.app.features.home.components.HomePosterHoverPreview
 import com.nuvio.app.features.home.components.homeCatalogPreviewLimitForWidth
@@ -432,6 +433,7 @@ private fun TabbedGridContent(
                                 key = { item -> item.lazyKey },
                             ) { keyedItem ->
                                 val item = keyedItem.value
+                                val rpdbPoster = item.rpdbPosterSelection()
                                 val isWatched = WatchingState.isPosterWatched(
                                     watchedKeys = watchedKeys,
                                     item = item,
@@ -444,10 +446,10 @@ private fun TabbedGridContent(
                                 ) { cardModifier ->
                                     NuvioPosterCard(
                                         title = item.name,
-                                        imageUrl = item.poster,
+                                        imageUrl = rpdbPoster.primaryUrl,
                                         modifier = cardModifier,
                                         basePosterWidthDp = if (isDesktop) basePosterWidthDp else null,
-                                        fallbackImageUrl = item.rawPosterUrl,
+                                        fallbackImageUrl = rpdbPoster.fallbackUrl ?: item.rawPosterUrl,
                                         shape = NuvioPosterShape.Poster,
                                         detailLine = item.releaseInfo,
                                         isWatched = isWatched,

@@ -21,6 +21,7 @@ import com.nuvio.app.core.ui.PosterCardStyleRepository
 import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.library.LibraryDisplaySettingsRepository
 import com.nuvio.app.features.mdblist.MdbListSettingsRepository
+import com.nuvio.app.features.rpdb.RpdbSettingsRepository
 import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepository
 import com.nuvio.app.features.p2p.P2pSettingsRepository
 import com.nuvio.app.features.player.PlayerSettingsRepository
@@ -197,6 +198,7 @@ object ProfileRepository {
         EpisodeReleaseNotificationsRepository.onProfileChanged()
         TmdbSettingsRepository.onProfileChanged()
         MdbListSettingsRepository.onProfileChanged()
+        RpdbSettingsRepository.onProfileChanged()
         SearchHistoryRepository.onProfileChanged()
         SearchRepository.reset()
         CollectionRepository.onProfileChanged()

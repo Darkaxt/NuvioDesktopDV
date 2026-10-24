@@ -6,6 +6,7 @@ internal const val PROFILE_PLAYER_SETTINGS_FEATURE = "player_settings"
 internal const val PROFILE_DEBRID_SETTINGS_FEATURE = "debrid_settings"
 internal const val PROFILE_TMDB_SETTINGS_FEATURE = "tmdb_settings"
 internal const val PROFILE_MDBLIST_SETTINGS_FEATURE = "mdblist_settings"
+internal const val PROFILE_RPDB_SETTINGS_FEATURE = "rpdb_settings"
 
 private val profileCredentialKeys = mapOf(
     PROFILE_PLAYER_SETTINGS_FEATURE to setOf(
@@ -19,6 +20,7 @@ private val profileCredentialKeys = mapOf(
     ),
     PROFILE_TMDB_SETTINGS_FEATURE to setOf("tmdb_api_key"),
     PROFILE_MDBLIST_SETTINGS_FEATURE to setOf("mdblist_api_key"),
+    PROFILE_RPDB_SETTINGS_FEATURE to setOf("rpdb_api_key"),
 )
 
 internal fun withoutProfileCredentials(feature: String, payload: JsonObject): JsonObject {

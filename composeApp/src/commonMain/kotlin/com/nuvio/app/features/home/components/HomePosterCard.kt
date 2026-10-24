@@ -9,6 +9,7 @@ import com.nuvio.app.core.ui.desktopCatalogShelfPosterBaseWidthDp
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.features.rpdb.rpdbPosterSelection
 
 @Composable
 fun HomePosterCard(
@@ -22,16 +23,16 @@ fun HomePosterCard(
 ) {
     val posterCardStyle = rememberPosterCardStyleUiState()
     val isLandscapeMode = useLandscapeBackdropMode || posterCardStyle.catalogLandscapeModeEnabled
+    val rpdbPoster = item.rpdbPosterSelection()
     val effectiveLandscapePoster = if (posterCardStyle.alwaysShowLandscapeClearlogo) null else item.landscapePoster
     val imageUrl = if (isLandscapeMode) {
         effectiveLandscapePoster ?: item.banner ?: item.poster
-    } else item.poster
+    } else rpdbPoster.primaryUrl
     val fallbackImageUrl = if (isLandscapeMode && !effectiveLandscapePoster.isNullOrBlank()) {
         // Landscape custom poster -> fall back to original backdrop, then portrait
         item.banner ?: item.rawPosterUrl
-    } else {
-        item.rawPosterUrl
-    }
+    } else if (isLandscapeMode) item.rawPosterUrl
+    else rpdbPoster.fallbackUrl ?: item.rawPosterUrl
 
     HomePosterHoverPreview(
         item = item,

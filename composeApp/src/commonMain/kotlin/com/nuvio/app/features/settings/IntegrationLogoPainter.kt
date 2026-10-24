@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.painter.Painter
 
 internal enum class IntegrationLogo {
     Tmdb,
+    Rpdb,
     Trakt,
     Simkl,
     MdbList,

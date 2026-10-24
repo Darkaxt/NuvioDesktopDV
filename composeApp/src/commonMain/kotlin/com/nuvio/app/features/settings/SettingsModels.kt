@@ -30,6 +30,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_playback
 import nuvio.composeapp.generated.resources.compose_settings_page_plugins
 import nuvio.composeapp.generated.resources.compose_settings_page_poster_customization
 import nuvio.composeapp.generated.resources.compose_settings_page_root
+import nuvio.composeapp.generated.resources.compose_settings_page_rpdb
 import nuvio.composeapp.generated.resources.compose_settings_page_streams
 import nuvio.composeapp.generated.resources.compose_settings_page_supporters_contributors
 import nuvio.composeapp.generated.resources.compose_settings_page_tmdb_enrichment
@@ -155,6 +156,11 @@ internal enum class SettingsPage(
     ),
     TmdbEnrichment(
         titleRes = Res.string.compose_settings_page_tmdb_enrichment,
+        category = SettingsCategory.General,
+        parentPage = Integrations,
+    ),
+    Rpdb(
+        titleRes = Res.string.compose_settings_page_rpdb,
         category = SettingsCategory.General,
         parentPage = Integrations,
     ),

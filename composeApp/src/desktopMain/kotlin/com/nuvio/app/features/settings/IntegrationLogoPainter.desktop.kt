@@ -8,6 +8,7 @@ import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.introdb_favicon
 import nuvio.composeapp.generated.resources.mdblist_logo
 import nuvio.composeapp.generated.resources.rating_tmdb
+import nuvio.composeapp.generated.resources.rpdb_logo
 import nuvio.composeapp.generated.resources.trakt_tv_favicon
 import org.jetbrains.compose.resources.painterResource
 
@@ -15,6 +16,7 @@ import org.jetbrains.compose.resources.painterResource
 internal actual fun integrationLogoPainter(logo: IntegrationLogo): Painter =
     when (logo) {
         IntegrationLogo.Tmdb -> painterResource(Res.drawable.rating_tmdb)
+        IntegrationLogo.Rpdb -> painterResource(Res.drawable.rpdb_logo)
         IntegrationLogo.Trakt -> painterResource(Res.drawable.trakt_tv_favicon)
         IntegrationLogo.Simkl -> simklBrandPainter(SimklBrandAsset.Glyph)
         IntegrationLogo.MdbList -> painterResource(Res.drawable.mdblist_logo)

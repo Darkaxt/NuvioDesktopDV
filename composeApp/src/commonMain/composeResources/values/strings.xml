@@ -2560,4 +2560,15 @@
     <string name="stream_info_player_engine">Player Engine</string>
     <string name="stream_info_server">Server</string>
     <string name="collections_trakt_account_not_connected">Connect a Trakt account in Settings to use this collection.</string>
+    <string name="compose_settings_page_rpdb">RatingPosterDB</string>
+    <string name="settings_integrations_rpdb_description">Show rating-enhanced RPDB artwork on movie and series portraits.</string>
+    <string name="settings_rpdb_section_title">RatingPosterDB portraits</string>
+    <string name="settings_rpdb_enable">Use RPDB portraits</string>
+    <string name="settings_rpdb_enable_description">Replace compatible movie and series portrait artwork with rating posters.</string>
+    <string name="settings_rpdb_public_key_active">Using the public Tier 0 key: %1$s</string>
+    <string name="settings_rpdb_custom_key_active">Using your custom RPDB API key.</string>
+    <string name="settings_rpdb_section_api_key">API key</string>
+    <string name="settings_rpdb_api_key_title">Custom RPDB API key</string>
+    <string name="settings_rpdb_api_key_description">Optional. Leave blank to use the public %1$s key.</string>
+    <string name="settings_rpdb_api_key_label">RPDB API key</string>
 </resources>

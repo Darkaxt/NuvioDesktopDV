@@ -397,6 +397,12 @@ jobs:
             echo "The bundled Windows libmpv runtime was not materialized from Git LFS." >&2
             exit 1
           fi
+          expected_runtime_sha256="04e4d27dc385dc18ddd93fbe69c75e635b864f3c6ec53a9122df54c2f7842f4a"
+          actual_runtime_sha256="$(sha256sum "${runtime_path}" | cut -d' ' -f1)"
+          if [[ "${actual_runtime_sha256}" != "${expected_runtime_sha256}" ]]; then
+            echo "The bundled Windows libmpv runtime does not match the pinned NuvioDV artifact." >&2
+            exit 1
+          fi
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -477,7 +483,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
         run: |
-          $msiRelativePath = "composeApp\build\compose\release-msis\Nuvio-Windows-x64-$env:RELEASE_VERSION.msi"
+          $msiRelativePath = "composeApp\build\compose\release-msis\NuvioDV-Windows-x64-$env:RELEASE_VERSION.msi"
           if (-not (Test-Path $msiRelativePath)) {
             throw "Expected MSI was not produced: $msiRelativePath"
           }
@@ -540,13 +546,13 @@ jobs:
             throw "The extracted MSI does not contain the bundled Java runtime."
           }
 
-          $manifestPath = "composeApp\build\compose\release-msis\Nuvio-Windows-x64-$env:RELEASE_VERSION-contents.txt"
+          $manifestPath = "composeApp\build\compose\release-msis\NuvioDV-Windows-x64-$env:RELEASE_VERSION-contents.txt"
           $extractedFiles = Get-ChildItem $extractDir -Recurse -File | Sort-Object FullName
           $nativeEntries = $jarEntries `
             | Where-Object { $_ -like "native/windows/*" } `
             | Sort-Object
           $manifest = [Collections.Generic.List[string]]::new()
-          $manifest.Add("MSI=Nuvio-Windows-x64-$env:RELEASE_VERSION.msi")
+          $manifest.Add("MSI=NuvioDV-Windows-x64-$env:RELEASE_VERSION.msi")
           $manifest.Add("MSI_SHA256=$((Get-FileHash $msiPath -Algorithm SHA256).Hash.ToLowerInvariant())")
           $manifest.Add("MSI_SIGNATURE_STATUS=$((Get-AuthenticodeSignature $msiPath).Status)")
           $manifest.Add("EXTRACTED_FILE_COUNT=$($extractedFiles.Count)")
@@ -573,8 +579,8 @@ jobs:
         with:
           name: nuvio-desktop-${{ needs.metadata.outputs.version }}-windows-x64
           path: |
-            composeApp/build/compose/release-msis/Nuvio-Windows-x64-${{ needs.metadata.outputs.version }}.msi
-            composeApp/build/compose/release-msis/Nuvio-Windows-x64-${{ needs.metadata.outputs.version }}-contents.txt
+            composeApp/build/compose/release-msis/NuvioDV-Windows-x64-${{ needs.metadata.outputs.version }}.msi
+            composeApp/build/compose/release-msis/NuvioDV-Windows-x64-${{ needs.metadata.outputs.version }}-contents.txt
           if-no-files-found: error
           retention-days: 14
 
@@ -1046,7 +1052,7 @@ jobs:
           release_assets=(
             "release/Nuvio-macOS-arm64-${RELEASE_VERSION}.dmg"
             "release/Nuvio-macOS-x86_64-${RELEASE_VERSION}.dmg"
-            "release/Nuvio-Windows-x64-${RELEASE_VERSION}.msi"
+            "release/NuvioDV-Windows-x64-${RELEASE_VERSION}.msi"
             "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.flatpak"
             "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.deb"
             "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.rpm"
@@ -1075,7 +1081,7 @@ jobs:
           release_assets=(
             "release/Nuvio-macOS-arm64-${RELEASE_VERSION}.dmg"
             "release/Nuvio-macOS-x86_64-${RELEASE_VERSION}.dmg"
-            "release/Nuvio-Windows-x64-${RELEASE_VERSION}.msi"
+            "release/NuvioDV-Windows-x64-${RELEASE_VERSION}.msi"
             "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.flatpak"
             "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.deb"
             "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.rpm"

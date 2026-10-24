@@ -119,6 +119,7 @@ import com.nuvio.app.features.library.LibrarySection
 import com.nuvio.app.features.library.rememberLibrarySectionTitleResolver
 import com.nuvio.app.features.library.LibrarySortOption
 import com.nuvio.app.features.library.LibrarySourceMode
+import com.nuvio.app.features.rpdb.rpdbPortraitSelection
 import com.nuvio.app.features.library.PendingTrackingMembershipRemoval
 import com.nuvio.app.features.library.TrackingMembershipRemovalConfirmationHost
 import com.nuvio.app.features.library.executeTrackingMembershipOperation
@@ -2142,9 +2143,19 @@ internal fun MainAppContent(
                 )
             }
 
+            val activeResumePromptItem = resumePromptItem
+            val resumePromptPoster = if (activeResumePromptItem != null) {
+                activeResumePromptItem.rpdbPortraitSelection(
+                    activeResumePromptItem.poster ?: activeResumePromptItem.imageUrl,
+                )
+            } else {
+                null
+            }
+
             NuvioFloatingPrompt(
                 visible = resumePromptItem != null,
-                imageUrl = resumePromptItem?.poster ?: resumePromptItem?.imageUrl,
+                imageUrl = resumePromptPoster?.primaryUrl,
+                fallbackImageUrl = resumePromptPoster?.fallbackUrl,
                 title = resumePromptItem?.title.orEmpty(),
                 subtitle = resumePromptItem?.let { localizedContinueWatchingSubtitle(it) }.orEmpty(),
                 progressFraction = resumePromptItem?.progressFraction ?: 0f,

@@ -56,4 +56,22 @@ class ProfileSettingsCredentialPolicyTest {
         assertFalse("tmdb_api_key" in sanitized)
         assertEquals(JsonPrimitive(true), merged["tmdb_enabled"])
     }
+
+    @Test
+    fun `RPDB custom key stays local while enabled state can sync`() {
+        val remote = buildJsonObject {
+            put("rpdb_enabled", JsonPrimitive(true))
+            put("rpdb_api_key", JsonPrimitive("remote"))
+        }
+        val local = buildJsonObject {
+            put("rpdb_api_key", JsonPrimitive("local"))
+        }
+
+        val sanitized = withoutProfileCredentials(PROFILE_RPDB_SETTINGS_FEATURE, remote)
+        val merged = preservingLocalProfileCredentials(PROFILE_RPDB_SETTINGS_FEATURE, remote, local)
+
+        assertFalse("rpdb_api_key" in sanitized)
+        assertEquals(JsonPrimitive("local"), merged["rpdb_api_key"])
+        assertEquals(JsonPrimitive(true), merged["rpdb_enabled"])
+    }
 }

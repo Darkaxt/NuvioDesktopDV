@@ -88,6 +88,8 @@ import com.nuvio.app.features.player.PlayerSettingsRepository
 import com.nuvio.app.features.player.AndroidLibmpvVideoOutput
 import com.nuvio.app.features.player.AndroidPlaybackEngine
 import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.features.rpdb.RpdbSettings
+import com.nuvio.app.features.rpdb.RpdbSettingsRepository
 import com.nuvio.app.features.simkl.SimklAuthRepository
 import com.nuvio.app.features.simkl.SimklAuthUiState
 import com.nuvio.app.features.trakt.TraktAuthUiState
@@ -197,6 +199,10 @@ fun SettingsScreen(
         val mdbListSettings by remember {
             MdbListSettingsRepository.ensureLoaded()
             MdbListSettingsRepository.uiState
+        }.collectAsStateWithLifecycle()
+        val rpdbSettings by remember {
+            RpdbSettingsRepository.ensureLoaded()
+            RpdbSettingsRepository.uiState
         }.collectAsStateWithLifecycle()
         val debridSettings by remember {
             DebridSettingsRepository.ensureLoaded()
@@ -403,6 +409,7 @@ fun SettingsScreen(
                 episodeReleaseNotificationsUiState = episodeReleaseNotificationsUiState,
                 tmdbSettings = tmdbSettings,
                 mdbListSettings = mdbListSettings,
+                rpdbSettings = rpdbSettings,
                 debridSettings = debridSettings,
                 traktAuthUiState = traktAuthUiState,
                 simklAuthUiState = simklAuthUiState,
@@ -473,6 +480,7 @@ fun SettingsScreen(
                 episodeReleaseNotificationsUiState = episodeReleaseNotificationsUiState,
                 tmdbSettings = tmdbSettings,
                 mdbListSettings = mdbListSettings,
+                rpdbSettings = rpdbSettings,
                 debridSettings = debridSettings,
                 traktAuthUiState = traktAuthUiState,
                 simklAuthUiState = simklAuthUiState,
@@ -555,6 +563,7 @@ private fun MobileSettingsScreen(
     episodeReleaseNotificationsUiState: EpisodeReleaseNotificationsUiState,
     tmdbSettings: TmdbSettings,
     mdbListSettings: MdbListSettings,
+    rpdbSettings: RpdbSettings,
     debridSettings: DebridSettings,
     traktAuthUiState: TraktAuthUiState,
     simklAuthUiState: SimklAuthUiState,
@@ -840,12 +849,17 @@ private fun MobileSettingsScreen(
                 SettingsPage.Integrations -> integrationsContent(
                     isTablet = false,
                     onTmdbClick = { onPageChange(SettingsPage.TmdbEnrichment) },
+                    onRpdbClick = { onPageChange(SettingsPage.Rpdb) },
                     onMdbListClick = { onPageChange(SettingsPage.MdbListRatings) },
                     onDebridClick = { onPageChange(SettingsPage.Debrid) },
                 )
                 SettingsPage.TmdbEnrichment -> tmdbSettingsContent(
                     isTablet = false,
                     settings = tmdbSettings,
+                )
+                SettingsPage.Rpdb -> rpdbSettingsContent(
+                    isTablet = false,
+                    settings = rpdbSettings,
                 )
                 SettingsPage.MdbListRatings -> mdbListSettingsContent(
                     isTablet = false,
@@ -957,6 +971,7 @@ private fun TabletSettingsScreen(
     episodeReleaseNotificationsUiState: EpisodeReleaseNotificationsUiState,
     tmdbSettings: TmdbSettings,
     mdbListSettings: MdbListSettings,
+    rpdbSettings: RpdbSettings,
     debridSettings: DebridSettings,
     traktAuthUiState: TraktAuthUiState,
     simklAuthUiState: SimklAuthUiState,
@@ -1317,12 +1332,17 @@ private fun TabletSettingsScreen(
                             SettingsPage.Integrations -> integrationsContent(
                                 isTablet = true,
                                 onTmdbClick = { onPageChange(SettingsPage.TmdbEnrichment) },
+                                onRpdbClick = { onPageChange(SettingsPage.Rpdb) },
                                 onMdbListClick = { onPageChange(SettingsPage.MdbListRatings) },
                                 onDebridClick = { onPageChange(SettingsPage.Debrid) },
                             )
                             SettingsPage.TmdbEnrichment -> tmdbSettingsContent(
                                 isTablet = true,
                                 settings = tmdbSettings,
+                            )
+                            SettingsPage.Rpdb -> rpdbSettingsContent(
+                                isTablet = true,
+                                settings = rpdbSettings,
                             )
                             SettingsPage.MdbListRatings -> mdbListSettingsContent(
                                 isTablet = true,
