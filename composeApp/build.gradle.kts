@@ -407,6 +407,25 @@ fun jpackageCompatibleVersion(version: String): String {
         numbers += 0
     }
     numbers[0] = numbers[0].coerceAtLeast(1)
+
+    val forkRevision = Regex("(?:^|-)nuviodv\\.(\\d+)(?:$|[+-])", RegexOption.IGNORE_CASE)
+        .find(version)
+        ?.groupValues
+        ?.get(1)
+        ?.toIntOrNull()
+    if (forkRevision != null) {
+        require(forkRevision in 1..99) {
+            "NuvioDV package revision must be between 1 and 99: $version"
+        }
+        // MSI compares only three numeric fields. Encode the fork revision in
+        // the build field so consecutive NuvioDV releases remain upgradable.
+        val encodedBuild = numbers[2] * 100 + forkRevision
+        require(encodedBuild <= 65535) {
+            "NuvioDV package version exceeds the Windows Installer build limit: $version"
+        }
+        numbers[2] = encodedBuild
+    }
+
     return numbers.joinToString(".")
 }
 
