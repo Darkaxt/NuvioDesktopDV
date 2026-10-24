@@ -26,6 +26,11 @@ import nuvio.composeapp.generated.resources.collections_editor_tmdb_person_title
 import nuvio.composeapp.generated.resources.collections_editor_tmdb_production_title_format
 import nuvio.composeapp.generated.resources.collections_editor_trakt_id_url_required
 import nuvio.composeapp.generated.resources.collections_editor_trakt_input_required
+import nuvio.composeapp.generated.resources.collections_editor_trakt_account_calendar
+import nuvio.composeapp.generated.resources.collections_editor_trakt_account_recommendations
+import nuvio.composeapp.generated.resources.collections_editor_trakt_account_recently_aired
+import nuvio.composeapp.generated.resources.collections_editor_trakt_account_up_next
+import nuvio.composeapp.generated.resources.collections_editor_trakt_account_watchlist
 import nuvio.composeapp.generated.resources.collections_editor_trakt_list_title_format
 import nuvio.composeapp.generated.resources.collections_editor_trakt_load_error
 import nuvio.composeapp.generated.resources.collections_editor_trakt_no_lists_found
@@ -63,6 +68,9 @@ data class CollectionEditorUiState(
     val tmdbSearchError: String? = null,
     val traktInput: String = "",
     val traktTitleInput: String = "",
+    val traktBuilderMode: TraktBuilderMode = TraktBuilderMode.ACCOUNT,
+    val traktAccountSourceType: TraktCollectionSourceType = TraktCollectionSourceType.RECOMMENDATIONS,
+    val traktCalendarDays: Int = 1,
     val traktMediaType: TmdbCollectionMediaType = TmdbCollectionMediaType.MOVIE,
     val traktMediaBoth: Boolean = true,
     val traktSortBy: String = TraktListSort.RANK.value,
@@ -84,6 +92,22 @@ enum class TmdbBuilderMode {
     DIRECTOR,
     DISCOVER,
 }
+
+enum class TraktBuilderMode {
+    ACCOUNT,
+    PUBLIC_LIST,
+}
+
+internal data class TraktEditorSelection(
+    val mode: TraktBuilderMode,
+    val sourceType: TraktCollectionSourceType,
+    val listId: Long?,
+    val mediaType: TmdbCollectionMediaType,
+    val mediaBoth: Boolean,
+    val sortBy: String,
+    val sortHow: String,
+    val calendarDays: Int,
+)
 
 object CollectionEditorRepository {
     private val log = Logger.withTag("CollectionEditorRepository")
@@ -343,6 +367,9 @@ object CollectionEditorRepository {
             genrePickerSourceIndex = null,
             traktInput = "",
             traktTitleInput = "",
+            traktBuilderMode = TraktBuilderMode.ACCOUNT,
+            traktAccountSourceType = TraktCollectionSourceType.RECOMMENDATIONS,
+            traktCalendarDays = 1,
             traktMediaType = TmdbCollectionMediaType.MOVIE,
             traktMediaBoth = true,
             traktSortBy = TraktListSort.RANK.value,
@@ -350,7 +377,6 @@ object CollectionEditorRepository {
             traktSearchResults = emptyList(),
             traktSearchError = null,
         )
-        loadTraktFeaturedLists()
     }
 
     fun hideTraktSourcePicker() {
@@ -365,6 +391,7 @@ object CollectionEditorRepository {
         val folder = _uiState.value.editingFolder ?: return
         val source = folder.resolvedSources.getOrNull(index) ?: return
         if (!source.isTrakt) return
+        val selection = source.toTraktEditorSelection()
         _uiState.value = _uiState.value.copy(
             showTraktSourcePicker = true,
             showCatalogPicker = false,
@@ -373,14 +400,42 @@ object CollectionEditorRepository {
             genrePickerSourceIndex = null,
             traktInput = source.traktListId?.toString().orEmpty(),
             traktTitleInput = source.title.orEmpty(),
-            traktMediaType = TmdbCollectionMediaType.fromString(source.mediaType),
-            traktMediaBoth = false,
-            traktSortBy = TraktListSort.normalize(source.sortBy),
-            traktSortHow = TraktSortHow.normalize(source.sortHow),
+            traktBuilderMode = selection.mode,
+            traktAccountSourceType = selection.sourceType,
+            traktCalendarDays = selection.calendarDays,
+            traktMediaType = selection.mediaType,
+            traktMediaBoth = selection.mediaBoth,
+            traktSortBy = selection.sortBy,
+            traktSortHow = selection.sortHow,
             traktSearchResults = emptyList(),
             traktSearchError = null,
         )
-        loadTraktFeaturedLists()
+        if (selection.mode == TraktBuilderMode.PUBLIC_LIST) loadTraktFeaturedLists()
+    }
+
+    fun setTraktBuilderMode(value: TraktBuilderMode) {
+        val state = _uiState.value
+        if (state.traktBuilderMode == value) return
+        _uiState.value = state.copy(
+            traktBuilderMode = value,
+            traktSearchError = null,
+            traktSearchResults = emptyList(),
+        )
+        if (value == TraktBuilderMode.PUBLIC_LIST) loadTraktFeaturedLists()
+    }
+
+    fun setTraktAccountSourceType(value: TraktCollectionSourceType) {
+        if (value == TraktCollectionSourceType.PUBLIC_LIST) return
+        val seriesOnly = value.isSeriesOnlyAccountSource()
+        _uiState.value = _uiState.value.copy(
+            traktAccountSourceType = value,
+            traktMediaType = if (seriesOnly) TmdbCollectionMediaType.TV else _uiState.value.traktMediaType,
+            traktMediaBoth = if (seriesOnly) false else _uiState.value.traktMediaBoth,
+        )
+    }
+
+    fun setTraktCalendarDays(value: Int) {
+        _uiState.value = _uiState.value.copy(traktCalendarDays = value.coerceIn(1, 7))
     }
 
     fun setTraktInput(value: String) {
@@ -773,6 +828,38 @@ object CollectionEditorRepository {
         }
     }
 
+    fun addTraktAccountSource() {
+        val state = _uiState.value
+        val sourceType = state.traktAccountSourceType
+        if (sourceType == TraktCollectionSourceType.PUBLIC_LIST) return
+        scope.launch {
+            val defaultTitle = when (sourceType) {
+                TraktCollectionSourceType.RECOMMENDATIONS ->
+                    getString(Res.string.collections_editor_trakt_account_recommendations)
+                TraktCollectionSourceType.WATCHLIST ->
+                    getString(Res.string.collections_editor_trakt_account_watchlist)
+                TraktCollectionSourceType.UP_NEXT ->
+                    getString(Res.string.collections_editor_trakt_account_up_next)
+                TraktCollectionSourceType.UNWATCHED ->
+                    getString(Res.string.collections_editor_trakt_account_recently_aired)
+                TraktCollectionSourceType.CALENDAR ->
+                    getString(Res.string.collections_editor_trakt_account_calendar)
+                TraktCollectionSourceType.PUBLIC_LIST -> return@launch
+            }
+            addTraktSourcesToFolder(
+                sources = buildTraktAccountSources(
+                    sourceType = sourceType,
+                    mediaType = state.traktMediaType,
+                    mediaBoth = state.traktMediaBoth,
+                    title = state.traktTitleInput.ifBlank { defaultTitle },
+                    calendarDays = state.traktCalendarDays,
+                    moviesSuffix = getString(Res.string.collections_editor_media_movies_suffix),
+                    seriesSuffix = getString(Res.string.collections_editor_media_series_suffix),
+                ),
+            )
+        }
+    }
+
     fun addTraktSourceFromResult(result: TraktPublicListSearchResult) {
         val state = _uiState.value
         val title = state.traktTitleInput.ifBlank { result.title }
@@ -929,6 +1016,67 @@ private fun selectedTraktMediaTypes(state: CollectionEditorUiState): List<TmdbCo
     } else {
         listOf(state.traktMediaType)
     }
+
+internal fun CollectionSource.toTraktEditorSelection(): TraktEditorSelection {
+    val sourceType = resolvedTraktSourceType
+    return TraktEditorSelection(
+        mode = if (sourceType == TraktCollectionSourceType.PUBLIC_LIST) {
+            TraktBuilderMode.PUBLIC_LIST
+        } else {
+            TraktBuilderMode.ACCOUNT
+        },
+        sourceType = sourceType,
+        listId = traktListId,
+        mediaType = TmdbCollectionMediaType.fromString(mediaType),
+        mediaBoth = false,
+        sortBy = TraktListSort.normalize(sortBy),
+        sortHow = TraktSortHow.normalize(sortHow),
+        calendarDays = calendarDays?.coerceIn(1, 7) ?: 1,
+    )
+}
+
+internal fun buildTraktAccountSources(
+    sourceType: TraktCollectionSourceType,
+    mediaType: TmdbCollectionMediaType,
+    mediaBoth: Boolean,
+    title: String,
+    calendarDays: Int,
+    moviesSuffix: String,
+    seriesSuffix: String,
+): List<CollectionSource> {
+    require(sourceType != TraktCollectionSourceType.PUBLIC_LIST)
+    val mediaTypes = if (sourceType.isSeriesOnlyAccountSource()) {
+        listOf(TmdbCollectionMediaType.TV)
+    } else if (mediaBoth) {
+        listOf(TmdbCollectionMediaType.MOVIE, TmdbCollectionMediaType.TV)
+    } else {
+        listOf(mediaType)
+    }
+    return mediaTypes.map { selectedMediaType ->
+        CollectionSource(
+            provider = "trakt",
+            title = titleForMedia(
+                title = title,
+                mediaType = selectedMediaType,
+                addSuffix = mediaTypes.size > 1,
+                moviesSuffix = moviesSuffix,
+                seriesSuffix = seriesSuffix,
+            ),
+            traktSourceType = sourceType.value,
+            mediaType = selectedMediaType.value,
+            calendarDays = if (sourceType == TraktCollectionSourceType.CALENDAR) {
+                calendarDays.coerceIn(1, 7)
+            } else {
+                null
+            },
+        )
+    }
+}
+
+internal fun TraktCollectionSourceType.isSeriesOnlyAccountSource(): Boolean =
+    this == TraktCollectionSourceType.UP_NEXT ||
+        this == TraktCollectionSourceType.UNWATCHED ||
+        this == TraktCollectionSourceType.CALENDAR
 
 private fun CollectionSource.tmdbType(): TmdbCollectionSourceType =
     tmdbSourceType

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,6 +60,7 @@ import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioSurfaceCard
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
+import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableCollectionItemScope
@@ -78,6 +80,7 @@ fun CollectionManagementScreen(
     var importError by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
     var showCopyError by remember { mutableStateOf(false) }
+    var showRebuildSuccess by remember { mutableStateOf(false) }
 
     NuvioScreen {
         stickyHeader {
@@ -101,6 +104,16 @@ fun CollectionManagementScreen(
                     Icon(
                         imageVector = Icons.Rounded.ContentPaste,
                         contentDescription = stringResource(Res.string.collections_import),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IconButton(onClick = {
+                    HomeCatalogSettingsRepository.rebuildCollectionLayout(collections)
+                    showRebuildSuccess = true
+                }) {
+                    Icon(
+                        imageVector = Icons.Rounded.Refresh,
+                        contentDescription = stringResource(Res.string.collections_rebuild_layout),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -202,6 +215,14 @@ fun CollectionManagementScreen(
         isVisible = showCopyError,
         onConfirm = { showCopyError = false },
         onDismiss = { showCopyError = false },
+    )
+
+    NuvioStatusModal(
+        title = stringResource(Res.string.collections_rebuild_success_title),
+        message = stringResource(Res.string.collections_rebuild_success_message),
+        isVisible = showRebuildSuccess,
+        onConfirm = { showRebuildSuccess = false },
+        onDismiss = { showRebuildSuccess = false },
     )
 
     val deleteId = showDeleteConfirm

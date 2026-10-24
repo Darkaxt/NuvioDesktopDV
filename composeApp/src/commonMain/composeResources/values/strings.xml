@@ -241,6 +241,17 @@
     <string name="collections_editor_edit_trakt_source">Edit Trakt List</string>
     <string name="collections_editor_trakt_sources">Trakt Lists</string>
     <string name="collections_editor_trakt_list">Trakt list</string>
+    <string name="collections_editor_trakt_source_mode">Source</string>
+    <string name="collections_editor_trakt_account_catalogues">Account catalogues</string>
+    <string name="collections_editor_trakt_account_catalogue">Account catalogue</string>
+    <string name="collections_editor_trakt_public_lists">Public lists</string>
+    <string name="collections_editor_trakt_account_recommendations">Recommendations</string>
+    <string name="collections_editor_trakt_account_watchlist">Watchlist</string>
+    <string name="collections_editor_trakt_account_up_next">Up Next</string>
+    <string name="collections_editor_trakt_account_recently_aired">Recently Aired</string>
+    <string name="collections_editor_trakt_account_calendar">Calendar</string>
+    <string name="collections_editor_trakt_calendar_days">Calendar days</string>
+    <string name="collections_editor_trakt_calendar_window">%1$d-day window</string>
     <string name="collections_editor_trakt_input_placeholder">Search title, Trakt URL, or list ID</string>
     <string name="collections_editor_trakt_input_helper">Use a public Trakt list URL or numeric list ID, or search by name.</string>
     <string name="collections_editor_trakt_title_placeholder">Weekend Watch, Award Winners</string>
@@ -336,6 +347,9 @@
     <string name="collections_import">Import</string>
     <string name="collections_new">New Collection</string>
     <string name="collections_pinned">Pinned</string>
+    <string name="collections_rebuild_layout">Rebuild Home Layout</string>
+    <string name="collections_rebuild_success_message">The Home Layout collection rows now match your current Collections order.</string>
+    <string name="collections_rebuild_success_title">Home Layout Refreshed</string>
     <string name="collections_tab_all">All</string>
     <string name="collections_your_collections">Your Collections</string>
     <string name="compose_about_based_on_version_format">Based on Nuvio %1$s</string>
@@ -1125,6 +1139,8 @@
     <string name="settings_playback_decoder_prefer_app">Prefer app decoders (FFmpeg)</string>
     <string name="settings_playback_decoder_prefer_device">Prefer device decoders</string>
     <string name="settings_playback_decoder_priority">Decoder Priority</string>
+    <string name="settings_playback_show_details">Show playback details</string>
+    <string name="settings_playback_show_details_description">Show resolution, codec, dynamic range, and frame rate in the player.</string>
     <string name="settings_playback_dialog_close">Tap outside to close</string>
     <string name="settings_playback_dialog_save_close">Tap outside to save &amp; close</string>
     <string name="settings_playback_duration_day_one">%1$d day</string>
@@ -2543,4 +2559,5 @@
     <string name="stream_info_subtitle_source_embedded">Embedded</string>
     <string name="stream_info_player_engine">Player Engine</string>
     <string name="stream_info_server">Server</string>
+    <string name="collections_trakt_account_not_connected">Connect a Trakt account in Settings to use this collection.</string>
 </resources>

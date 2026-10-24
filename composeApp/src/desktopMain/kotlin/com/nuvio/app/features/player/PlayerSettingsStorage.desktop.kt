@@ -35,6 +35,7 @@ internal actual object PlayerSettingsStorage {
     private const val targetBufferSizeMbKey = "target_buffer_size_mb"
     private const val autoSkipPostCreditsKey = "auto_skip_post_credits"
     private const val showLoadingOverlayKey = "show_loading_overlay"
+    private const val showPlaybackDetailsKey = "show_playback_details"
     private const val showPlayerLoadingStatusKey = "show_player_loading_status"
     private const val pauseOverlayEnabledKey = "pause_overlay_enabled"
     private const val showParentalGuideKey = "show_parental_guide"
@@ -111,6 +112,7 @@ internal actual object PlayerSettingsStorage {
     private const val nvidiaRtxSuperResolutionEnabledKey = "nvidia_rtx_super_resolution_enabled"
     private val syncKeys = listOf(
         showLoadingOverlayKey,
+        showPlaybackDetailsKey,
         showPlayerLoadingStatusKey,
         pauseOverlayEnabledKey,
         showParentalGuideKey,
@@ -236,6 +238,8 @@ internal actual object PlayerSettingsStorage {
     actual fun saveAutoSkipPostCredits(enabled: Boolean) = saveBoolean(autoSkipPostCreditsKey, enabled)
     actual fun loadShowLoadingOverlay(): Boolean? = loadBoolean(showLoadingOverlayKey)
     actual fun saveShowLoadingOverlay(enabled: Boolean) = saveBoolean(showLoadingOverlayKey, enabled)
+    actual fun loadShowPlaybackDetails(): Boolean? = loadBoolean(showPlaybackDetailsKey)
+    actual fun saveShowPlaybackDetails(enabled: Boolean) = saveBoolean(showPlaybackDetailsKey, enabled)
     actual fun loadShowPlayerLoadingStatus(): Boolean? = loadBoolean(showPlayerLoadingStatusKey)
     actual fun saveShowPlayerLoadingStatus(enabled: Boolean) = saveBoolean(showPlayerLoadingStatusKey, enabled)
     actual fun loadPauseOverlayEnabled(): Boolean? = loadBoolean(pauseOverlayEnabledKey)
@@ -405,6 +409,7 @@ internal actual object PlayerSettingsStorage {
 
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
         loadShowLoadingOverlay()?.let { put(showLoadingOverlayKey, encodeSyncBoolean(it)) }
+        loadShowPlaybackDetails()?.let { put(showPlaybackDetailsKey, encodeSyncBoolean(it)) }
         loadShowPlayerLoadingStatus()?.let { put(showPlayerLoadingStatusKey, encodeSyncBoolean(it)) }
         loadPauseOverlayEnabled()?.let { put(pauseOverlayEnabledKey, encodeSyncBoolean(it)) }
         loadShowParentalGuide()?.let { put(showParentalGuideKey, encodeSyncBoolean(it)) }
@@ -489,6 +494,7 @@ internal actual object PlayerSettingsStorage {
     actual fun replaceFromSyncPayload(payload: JsonObject) {
         store.removeAll(syncKeys.map(::scoped))
         payload.decodeSyncBoolean(showLoadingOverlayKey)?.let(::saveShowLoadingOverlay)
+        payload.decodeSyncBoolean(showPlaybackDetailsKey)?.let(::saveShowPlaybackDetails)
         payload.decodeSyncBoolean(showPlayerLoadingStatusKey)?.let(::saveShowPlayerLoadingStatus)
         payload.decodeSyncBoolean(pauseOverlayEnabledKey)?.let(::savePauseOverlayEnabled)
         payload.decodeSyncBoolean(showParentalGuideKey)?.let(::saveShowParentalGuide)

@@ -285,6 +285,40 @@ object HomeCatalogSettingsRepository {
         HomeCatalogSettingsSyncService.triggerPush()
     }
 
+    fun rebuildCollectionLayout(collections: List<Collection>) {
+        ensureLoaded()
+        collectionDefinitions = buildCollectionDefinitions(collections)
+        val localeTag = Locale.current.toLanguageTag()
+        lastCollectionSync = collections to localeTag
+        lastCatalogSync = lastCatalogSync?.takeIf {
+            it.collections == collections && it.locale == localeTag
+        }
+
+        val currentCollectionKeys = collectionDefinitions.map { it.key }
+        val currentCollectionKeySet = currentCollectionKeys.toSet()
+        preferences = preferences.filterKeys { key ->
+            !key.startsWith("collection_") || key in currentCollectionKeySet
+        }
+        normalizePreferences()
+
+        val desiredCollectionKeys = currentCollectionKeys.iterator()
+        val rebuiltKeys = allOrderedKeys().map { key ->
+            if (key in currentCollectionKeySet) desiredCollectionKeys.next() else key
+        }
+        val updatedPreferences = preferences.toMutableMap()
+        rebuiltKeys.forEachIndexed { index, key ->
+            val current = updatedPreferences[key] ?: return@forEachIndexed
+            updatedPreferences[key] = current.copy(order = index)
+        }
+        preferences = updatedPreferences
+        enforcePinnedCollectionsAtTop()
+
+        publish()
+        persist()
+        HomeRepository.applyCurrentSettings()
+        HomeCatalogSettingsSyncService.triggerPush()
+    }
+
     fun moveUp(key: String) {
         move(key = key, direction = -1)
     }

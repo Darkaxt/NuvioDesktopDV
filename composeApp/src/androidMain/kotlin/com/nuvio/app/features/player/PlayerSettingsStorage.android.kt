@@ -23,6 +23,7 @@ actual object PlayerSettingsStorage {
     private const val playbackBrightnessKey = "playback_brightness"
     private const val useLegacyPlayerLayoutKey = "use_legacy_player_layout"
     private const val showLoadingOverlayKey = "show_loading_overlay"
+    private const val showPlaybackDetailsKey = "show_playback_details"
     private const val showPlayerLoadingStatusKey = "show_player_loading_status"
     private const val pauseOverlayEnabledKey = "pause_overlay_enabled"
     private const val showParentalGuideKey = "show_parental_guide"
@@ -112,6 +113,7 @@ actual object PlayerSettingsStorage {
     private const val nvidiaRtxSuperResolutionEnabledKey = "nvidia_rtx_super_resolution_enabled"
     private val syncKeys = listOf(
         showLoadingOverlayKey,
+        showPlaybackDetailsKey,
         showPlayerLoadingStatusKey,
         pauseOverlayEnabledKey,
         showParentalGuideKey,
@@ -228,6 +230,19 @@ actual object PlayerSettingsStorage {
         preferences
             ?.edit()
             ?.putBoolean(ProfileScopedKey.of(showLoadingOverlayKey), enabled)
+            ?.apply()
+    }
+
+    actual fun loadShowPlaybackDetails(): Boolean? =
+        preferences?.let { sharedPreferences ->
+            val key = ProfileScopedKey.of(showPlaybackDetailsKey)
+            if (sharedPreferences.contains(key)) sharedPreferences.getBoolean(key, true) else null
+        }
+
+    actual fun saveShowPlaybackDetails(enabled: Boolean) {
+        preferences
+            ?.edit()
+            ?.putBoolean(ProfileScopedKey.of(showPlaybackDetailsKey), enabled)
             ?.apply()
     }
 
@@ -1361,6 +1376,7 @@ actual object PlayerSettingsStorage {
 
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
         loadShowLoadingOverlay()?.let { put(showLoadingOverlayKey, encodeSyncBoolean(it)) }
+        loadShowPlaybackDetails()?.let { put(showPlaybackDetailsKey, encodeSyncBoolean(it)) }
         loadShowPlayerLoadingStatus()?.let { put(showPlayerLoadingStatusKey, encodeSyncBoolean(it)) }
         loadPauseOverlayEnabled()?.let { put(pauseOverlayEnabledKey, encodeSyncBoolean(it)) }
         loadShowParentalGuide()?.let { put(showParentalGuideKey, encodeSyncBoolean(it)) }
@@ -1444,6 +1460,7 @@ actual object PlayerSettingsStorage {
         }?.apply()
 
         payload.decodeSyncBoolean(showLoadingOverlayKey)?.let(::saveShowLoadingOverlay)
+        payload.decodeSyncBoolean(showPlaybackDetailsKey)?.let(::saveShowPlaybackDetails)
         payload.decodeSyncBoolean(showPlayerLoadingStatusKey)?.let(::saveShowPlayerLoadingStatus)
         payload.decodeSyncBoolean(pauseOverlayEnabledKey)?.let(::savePauseOverlayEnabled)
         payload.decodeSyncBoolean(showParentalGuideKey)?.let(::saveShowParentalGuide)

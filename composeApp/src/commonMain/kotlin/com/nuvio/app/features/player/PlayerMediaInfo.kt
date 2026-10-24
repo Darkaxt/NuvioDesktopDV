@@ -14,6 +14,14 @@ data class PlayerMediaInfo(
     val bitDepth: Int? = null,
 )
 
+internal fun PlayerMediaInfo.videoDynamicRange(): VideoDynamicRange? = when {
+    hdr.any { it.equals("DV", ignoreCase = true) } -> VideoDynamicRange.DolbyVision
+    hdr.any { it.equals("HLG", ignoreCase = true) } -> VideoDynamicRange.Hlg
+    hdr.isNotEmpty() -> VideoDynamicRange.Hdr
+    videoCodec != null -> VideoDynamicRange.Sdr
+    else -> null
+}
+
 internal fun mpvMediaInfo(property: (String) -> String?): PlayerMediaInfo =
     PlayerMediaInfo(
         videoCodec = property("current-tracks/video/codec")?.let(::mpvCodecLabel),

@@ -54,6 +54,7 @@ internal fun PlayerTimelineDetails(
     episodeNumber: Int?,
     episodeTitle: String?,
     releaseInfo: String?,
+    technicalDetails: String?,
     metrics: PlayerLayoutMetrics,
     badges: List<StreamBadge> = emptyList(),
 ) {
@@ -89,6 +90,15 @@ internal fun PlayerTimelineDetails(
                 text = releaseInfo,
                 style = typeScale.labelSm.copy(fontSize = metrics.metadataSize),
                 color = Color.White.copy(alpha = 0.68f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (!technicalDetails.isNullOrBlank()) {
+            Text(
+                text = technicalDetails,
+                style = typeScale.labelSm.copy(fontSize = metrics.metadataSize),
+                color = Color.White.copy(alpha = 0.8f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

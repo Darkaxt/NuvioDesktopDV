@@ -42,10 +42,12 @@ data class CollectionSource(
     val tmdbSourceType: String? = null,
     val title: String? = null,
     val tmdbId: Int? = null,
+    val traktSourceType: String? = null,
     val traktListId: Long? = null,
     val mediaType: String? = null,
     val sortBy: String? = null,
     val sortHow: String? = null,
+    val calendarDays: Int? = null,
     val filters: TmdbCollectionFilters? = null,
 ) {
     val isTmdb: Boolean
@@ -53,6 +55,9 @@ data class CollectionSource(
 
     val isTrakt: Boolean
         get() = provider.equals("trakt", ignoreCase = true)
+
+    val resolvedTraktSourceType: TraktCollectionSourceType
+        get() = TraktCollectionSourceType.fromString(traktSourceType)
 
     fun addonCatalogSource(): CollectionCatalogSource? {
         if (isTmdb || isTrakt) return null
@@ -75,7 +80,16 @@ internal fun CollectionSource.catalogRouteKey(): String =
         }
 
         isTrakt -> {
-            "trakt_${traktListId}_${mediaType}_${TraktListSort.normalize(sortBy)}_${TraktSortHow.normalize(sortHow)}"
+            when (resolvedTraktSourceType) {
+                TraktCollectionSourceType.PUBLIC_LIST ->
+                    "trakt_public_list_${traktListId}_${TmdbCollectionMediaType.fromString(mediaType).value}_${TraktListSort.normalize(sortBy)}_${TraktSortHow.normalize(sortHow)}"
+
+                TraktCollectionSourceType.CALENDAR ->
+                    "trakt_calendar_${TmdbCollectionMediaType.fromString(mediaType).value}_${calendarDays?.coerceIn(1, 7) ?: 1}"
+
+                else ->
+                    "trakt_${resolvedTraktSourceType.value}_${TmdbCollectionMediaType.fromString(mediaType).value}"
+            }
         }
 
         else -> {
@@ -84,7 +98,25 @@ internal fun CollectionSource.catalogRouteKey(): String =
     }
 
 internal fun CollectionSource.hasInvalidTraktListId(): Boolean =
-    isTrakt && (traktListId == null || traktListId <= 0L)
+    isTrakt &&
+        resolvedTraktSourceType == TraktCollectionSourceType.PUBLIC_LIST &&
+        (traktListId == null || traktListId <= 0L)
+
+enum class TraktCollectionSourceType(val value: String) {
+    PUBLIC_LIST("public_list"),
+    RECOMMENDATIONS("recommendations"),
+    WATCHLIST("watchlist"),
+    UP_NEXT("up_next"),
+    UNWATCHED("unwatched"),
+    CALENDAR("calendar");
+
+    companion object {
+        fun fromString(value: String?): TraktCollectionSourceType {
+            val normalized = value?.trim()?.lowercase().orEmpty()
+            return entries.firstOrNull { it.value == normalized } ?: PUBLIC_LIST
+        }
+    }
+}
 
 @Serializable
 enum class TmdbCollectionSourceType {

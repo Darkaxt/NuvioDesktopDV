@@ -1639,6 +1639,8 @@ private fun TraktSourcePickerScreen(
     onBack: () -> Unit,
 ) {
     val bottomInset = nuvioSafeBottomPadding()
+    val isPublicList = state.traktBuilderMode == TraktBuilderMode.PUBLIC_LIST
+    val seriesOnly = state.traktAccountSourceType.isSeriesOnlyAccountSource()
     val searchResultsTitle = stringResource(Res.string.collections_editor_trakt_search_results)
     val trendingTitle = stringResource(Res.string.collections_editor_trakt_trending)
     val popularTitle = stringResource(Res.string.collections_editor_trakt_popular)
@@ -1661,15 +1663,96 @@ private fun TraktSourcePickerScreen(
             }
 
             item {
-                NuvioSurfaceCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TmdbLabeledField(
-                            label = stringResource(Res.string.collections_editor_trakt_list),
-                            value = state.traktInput,
-                            onValueChange = { CollectionEditorRepository.setTraktInput(it) },
-                            placeholder = stringResource(Res.string.collections_editor_trakt_input_placeholder),
-                            helper = stringResource(Res.string.collections_editor_trakt_input_helper),
+                PickerPanel(title = stringResource(Res.string.collections_editor_trakt_source_mode)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilterChip(
+                            selected = !isPublicList,
+                            onClick = { CollectionEditorRepository.setTraktBuilderMode(TraktBuilderMode.ACCOUNT) },
+                            label = { Text(stringResource(Res.string.collections_editor_trakt_account_catalogues)) },
                         )
+                        FilterChip(
+                            selected = isPublicList,
+                            onClick = { CollectionEditorRepository.setTraktBuilderMode(TraktBuilderMode.PUBLIC_LIST) },
+                            label = { Text(stringResource(Res.string.collections_editor_trakt_public_lists)) },
+                        )
+                    }
+                }
+            }
+
+            if (isPublicList) {
+                item {
+                    NuvioSurfaceCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            TmdbLabeledField(
+                                label = stringResource(Res.string.collections_editor_trakt_list),
+                                value = state.traktInput,
+                                onValueChange = { CollectionEditorRepository.setTraktInput(it) },
+                                placeholder = stringResource(Res.string.collections_editor_trakt_input_placeholder),
+                                helper = stringResource(Res.string.collections_editor_trakt_input_helper),
+                            )
+                            TmdbLabeledField(
+                                label = stringResource(Res.string.collections_editor_tmdb_display_title),
+                                value = state.traktTitleInput,
+                                onValueChange = { CollectionEditorRepository.setTraktTitleInput(it) },
+                                placeholder = stringResource(Res.string.collections_editor_trakt_title_placeholder),
+                                helper = stringResource(Res.string.collections_editor_tmdb_title_helper),
+                            )
+                            if (state.traktSearchError != null) {
+                                Text(
+                                    text = state.traktSearchError,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                item {
+                    PickerPanel(title = stringResource(Res.string.collections_editor_trakt_account_catalogue)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            listOf(
+                                TraktCollectionSourceType.RECOMMENDATIONS to stringResource(Res.string.collections_editor_trakt_account_recommendations),
+                                TraktCollectionSourceType.WATCHLIST to stringResource(Res.string.collections_editor_trakt_account_watchlist),
+                                TraktCollectionSourceType.UP_NEXT to stringResource(Res.string.collections_editor_trakt_account_up_next),
+                                TraktCollectionSourceType.UNWATCHED to stringResource(Res.string.collections_editor_trakt_account_recently_aired),
+                                TraktCollectionSourceType.CALENDAR to stringResource(Res.string.collections_editor_trakt_account_calendar),
+                            ).forEach { (sourceType, label) ->
+                                FilterChip(
+                                    selected = state.traktAccountSourceType == sourceType,
+                                    onClick = { CollectionEditorRepository.setTraktAccountSourceType(sourceType) },
+                                    label = { Text(label) },
+                                )
+                            }
+                        }
+                        if (state.traktAccountSourceType == TraktCollectionSourceType.CALENDAR) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = stringResource(Res.string.collections_editor_trakt_calendar_days),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    (1..7).forEach { days ->
+                                        FilterChip(
+                                            selected = state.traktCalendarDays == days,
+                                            onClick = { CollectionEditorRepository.setTraktCalendarDays(days) },
+                                            label = { Text(days.toString()) },
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         TmdbLabeledField(
                             label = stringResource(Res.string.collections_editor_tmdb_display_title),
                             value = state.traktTitleInput,
@@ -1677,13 +1760,6 @@ private fun TraktSourcePickerScreen(
                             placeholder = stringResource(Res.string.collections_editor_trakt_title_placeholder),
                             helper = stringResource(Res.string.collections_editor_tmdb_title_helper),
                         )
-                        if (state.traktSearchError != null) {
-                            Text(
-                                text = state.traktSearchError,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
                     }
                 }
             }
@@ -1694,14 +1770,16 @@ private fun TraktSourcePickerScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        FilterChip(
-                            selected = state.traktMediaType == TmdbCollectionMediaType.MOVIE && !state.traktMediaBoth,
-                            onClick = {
-                                CollectionEditorRepository.setTraktMediaBoth(false)
-                                CollectionEditorRepository.setTraktMediaType(TmdbCollectionMediaType.MOVIE)
-                            },
-                            label = { Text(stringResource(Res.string.collections_editor_tmdb_movies)) },
-                        )
+                        if (!seriesOnly || isPublicList) {
+                            FilterChip(
+                                selected = state.traktMediaType == TmdbCollectionMediaType.MOVIE && !state.traktMediaBoth,
+                                onClick = {
+                                    CollectionEditorRepository.setTraktMediaBoth(false)
+                                    CollectionEditorRepository.setTraktMediaType(TmdbCollectionMediaType.MOVIE)
+                                },
+                                label = { Text(stringResource(Res.string.collections_editor_tmdb_movies)) },
+                            )
+                        }
                         FilterChip(
                             selected = state.traktMediaType == TmdbCollectionMediaType.TV && !state.traktMediaBoth,
                             onClick = {
@@ -1710,17 +1788,20 @@ private fun TraktSourcePickerScreen(
                             },
                             label = { Text(stringResource(Res.string.collections_editor_tmdb_series)) },
                         )
-                        FilterChip(
-                            selected = state.traktMediaBoth,
-                            onClick = { CollectionEditorRepository.setTraktMediaBoth(true) },
-                            label = { Text(stringResource(Res.string.collections_editor_tmdb_both)) },
-                        )
+                        if (!seriesOnly || isPublicList) {
+                            FilterChip(
+                                selected = state.traktMediaBoth,
+                                onClick = { CollectionEditorRepository.setTraktMediaBoth(true) },
+                                label = { Text(stringResource(Res.string.collections_editor_tmdb_both)) },
+                            )
+                        }
                     }
                 }
             }
 
-            item {
-                PickerPanel(title = stringResource(Res.string.collections_editor_tmdb_sort)) {
+            if (isPublicList) {
+                item {
+                    PickerPanel(title = stringResource(Res.string.collections_editor_tmdb_sort)) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -1757,21 +1838,22 @@ private fun TraktSourcePickerScreen(
                             )
                         }
                     }
+                    }
                 }
-            }
 
-            TraktResultSection(
-                title = searchResultsTitle,
-                results = state.traktSearchResults,
-            )
-            TraktResultSection(
-                title = trendingTitle,
-                results = state.traktTrendingResults,
-            )
-            TraktResultSection(
-                title = popularTitle,
-                results = state.traktPopularResults,
-            )
+                TraktResultSection(
+                    title = searchResultsTitle,
+                    results = state.traktSearchResults,
+                )
+                TraktResultSection(
+                    title = trendingTitle,
+                    results = state.traktTrendingResults,
+                )
+                TraktResultSection(
+                    title = popularTitle,
+                    results = state.traktPopularResults,
+                )
+            }
 
             item {
                 Spacer(modifier = Modifier.height(96.dp + bottomInset))
@@ -1792,14 +1874,16 @@ private fun TraktSourcePickerScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .padding(bottom = bottomInset),
             ) {
-                TextButton(onClick = { CollectionEditorRepository.searchTraktLists() }) {
-                    Icon(
-                        imageVector = Icons.Rounded.Search,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(Res.string.collections_editor_tmdb_search))
+                if (isPublicList) {
+                    TextButton(onClick = { CollectionEditorRepository.searchTraktLists() }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(Res.string.collections_editor_tmdb_search))
+                    }
                 }
                 NuvioPrimaryButton(
                     text = if (state.editingTraktSourceIndex != null) {
@@ -1808,8 +1892,14 @@ private fun TraktSourcePickerScreen(
                         stringResource(Res.string.collections_editor_add_source)
                     },
                     modifier = Modifier.weight(1f),
-                    enabled = state.traktInput.isNotBlank(),
-                    onClick = { CollectionEditorRepository.addTraktSourceFromInput() },
+                    enabled = !isPublicList || state.traktInput.isNotBlank(),
+                    onClick = {
+                        if (isPublicList) {
+                            CollectionEditorRepository.addTraktSourceFromInput()
+                        } else {
+                            CollectionEditorRepository.addTraktAccountSource()
+                        }
+                    },
                 )
             }
         }
@@ -2502,6 +2592,30 @@ private fun traktSourceSubtitle(source: CollectionSource): String {
     val media = when (TmdbCollectionMediaType.fromString(source.mediaType)) {
         TmdbCollectionMediaType.MOVIE -> stringResource(Res.string.collections_editor_tmdb_movies)
         TmdbCollectionMediaType.TV -> stringResource(Res.string.collections_editor_tmdb_series)
+    }
+    if (source.resolvedTraktSourceType != TraktCollectionSourceType.PUBLIC_LIST) {
+        val sourceType = when (source.resolvedTraktSourceType) {
+            TraktCollectionSourceType.RECOMMENDATIONS ->
+                stringResource(Res.string.collections_editor_trakt_account_recommendations)
+            TraktCollectionSourceType.WATCHLIST ->
+                stringResource(Res.string.collections_editor_trakt_account_watchlist)
+            TraktCollectionSourceType.UP_NEXT ->
+                stringResource(Res.string.collections_editor_trakt_account_up_next)
+            TraktCollectionSourceType.UNWATCHED ->
+                stringResource(Res.string.collections_editor_trakt_account_recently_aired)
+            TraktCollectionSourceType.CALENDAR ->
+                stringResource(Res.string.collections_editor_trakt_account_calendar)
+            TraktCollectionSourceType.PUBLIC_LIST -> error("Handled above")
+        }
+        val calendarWindow = if (source.resolvedTraktSourceType == TraktCollectionSourceType.CALENDAR) {
+            stringResource(
+                Res.string.collections_editor_trakt_calendar_window,
+                source.calendarDays?.coerceIn(1, 7) ?: 1,
+            )
+        } else {
+            null
+        }
+        return listOfNotNull(sourceType, media, calendarWindow).joinToString(" • ")
     }
     return listOf(
         media,

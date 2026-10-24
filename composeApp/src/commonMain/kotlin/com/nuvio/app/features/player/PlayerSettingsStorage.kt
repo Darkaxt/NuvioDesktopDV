@@ -11,6 +11,8 @@ internal expect object PlayerSettingsStorage {
     fun saveUseLegacyPlayerLayout(enabled: Boolean)
     fun loadShowLoadingOverlay(): Boolean?
     fun saveShowLoadingOverlay(enabled: Boolean)
+    fun loadShowPlaybackDetails(): Boolean?
+    fun saveShowPlaybackDetails(enabled: Boolean)
     fun loadShowPlayerLoadingStatus(): Boolean?
     fun saveShowPlayerLoadingStatus(enabled: Boolean)
     fun loadPauseOverlayEnabled(): Boolean?

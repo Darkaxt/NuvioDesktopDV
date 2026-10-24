@@ -7,6 +7,7 @@ import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -55,6 +56,157 @@ class CollectionSourceSerializationTest {
         assertEquals(TmdbCollectionMediaType.MOVIE.name, source.mediaType)
         assertEquals(TraktListSort.ADDED.value, source.sortBy)
         assertEquals(TraktSortHow.DESC.value, source.sortHow)
+        assertEquals(TraktCollectionSourceType.PUBLIC_LIST, source.resolvedTraktSourceType)
+    }
+
+    @Test
+    fun authenticatedTraktSourceTypesRoundTripWithoutListIds() {
+        val sources = listOf(
+            CollectionSource(
+                provider = "trakt",
+                title = "Recommended Movies",
+                traktSourceType = TraktCollectionSourceType.RECOMMENDATIONS.value,
+                mediaType = TmdbCollectionMediaType.MOVIE.value,
+            ),
+            CollectionSource(
+                provider = "trakt",
+                title = "Movie Watchlist",
+                traktSourceType = TraktCollectionSourceType.WATCHLIST.value,
+                mediaType = TmdbCollectionMediaType.MOVIE.value,
+            ),
+            CollectionSource(
+                provider = "trakt",
+                title = "Recommended Shows",
+                traktSourceType = TraktCollectionSourceType.RECOMMENDATIONS.value,
+                mediaType = TmdbCollectionMediaType.TV.value,
+            ),
+            CollectionSource(
+                provider = "trakt",
+                title = "Up Next",
+                traktSourceType = TraktCollectionSourceType.UP_NEXT.value,
+                mediaType = TmdbCollectionMediaType.TV.value,
+            ),
+            CollectionSource(
+                provider = "trakt",
+                title = "Recently Aired",
+                traktSourceType = TraktCollectionSourceType.UNWATCHED.value,
+                mediaType = TmdbCollectionMediaType.TV.value,
+            ),
+            CollectionSource(
+                provider = "trakt",
+                title = "Calendar",
+                traktSourceType = TraktCollectionSourceType.CALENDAR.value,
+                mediaType = TmdbCollectionMediaType.TV.value,
+                calendarDays = 1,
+            ),
+            CollectionSource(
+                provider = "trakt",
+                title = "Show Watchlist",
+                traktSourceType = TraktCollectionSourceType.WATCHLIST.value,
+                mediaType = TmdbCollectionMediaType.TV.value,
+            ),
+        )
+        val collection = Collection(
+            id = "collection-1",
+            title = "For You",
+            folders = listOf(CollectionFolder(id = "folder-1", title = "Trakt", sources = sources)),
+        )
+
+        val decoded = json.decodeFromString<List<Collection>>(json.encodeToString(listOf(collection)))
+            .single()
+            .folders
+            .single()
+            .resolvedSources
+
+        assertEquals(sources, decoded)
+        assertTrue(decoded.none(CollectionSource::hasInvalidTraktListId))
+        assertEquals(
+            sources.map { it.traktSourceType },
+            decoded.map { it.resolvedTraktSourceType.value },
+        )
+    }
+
+    @Test
+    fun authenticatedTraktSourcesExportWithWebsiteCompatibilityListId() {
+        val collection = Collection(
+            id = "collection-1",
+            title = "Discover",
+            folders = listOf(
+                CollectionFolder(
+                    id = "folder-1",
+                    title = "For You",
+                    sources = listOf(
+                        CollectionSource(
+                            provider = "trakt",
+                            title = "Recommended Movies",
+                            traktSourceType = TraktCollectionSourceType.RECOMMENDATIONS.value,
+                            mediaType = TmdbCollectionMediaType.MOVIE.value,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val merged = CollectionJsonPreserver.merge(
+            json = json,
+            rawCollectionsJson = json.parseToJsonElement("[]"),
+            collections = listOf(collection),
+        )
+        val sourceObject = merged.single()
+            .jsonObject["folders"]!!
+            .jsonArray.single()
+            .jsonObject["sources"]!!
+            .jsonArray.single()
+            .jsonObject
+
+        assertEquals(2_147_483_647L, sourceObject["traktListId"]!!.jsonPrimitive.long)
+        assertEquals(
+            TraktCollectionSourceType.RECOMMENDATIONS.value,
+            sourceObject["traktSourceType"]!!.jsonPrimitive.content,
+        )
+        val decoded = json.decodeFromJsonElement(CollectionSource.serializer(), sourceObject)
+        assertEquals(TraktCollectionSourceType.RECOMMENDATIONS, decoded.resolvedTraktSourceType)
+        assertFalse(decoded.hasInvalidTraktListId())
+    }
+
+    @Test
+    fun legacyTraktPublicListInfersTypeAndStillRequiresListId() {
+        val validLegacy = CollectionSource(
+            provider = "trakt",
+            traktListId = 42L,
+            mediaType = "MOVIE",
+        )
+        val invalidExplicit = CollectionSource(
+            provider = "trakt",
+            traktSourceType = TraktCollectionSourceType.PUBLIC_LIST.value,
+            mediaType = "MOVIE",
+        )
+
+        assertEquals(TraktCollectionSourceType.PUBLIC_LIST, validLegacy.resolvedTraktSourceType)
+        assertFalse(validLegacy.hasInvalidTraktListId())
+        assertTrue(invalidExplicit.hasInvalidTraktListId())
+    }
+
+    @Test
+    fun traktRouteKeysDistinguishAccountSourceTypeAndMedia() {
+        fun source(type: TraktCollectionSourceType, mediaType: String) = CollectionSource(
+            provider = "trakt",
+            traktSourceType = type.value,
+            mediaType = mediaType,
+        )
+
+        val keys = listOf(
+            source(TraktCollectionSourceType.RECOMMENDATIONS, "movie"),
+            source(TraktCollectionSourceType.RECOMMENDATIONS, "series"),
+            source(TraktCollectionSourceType.WATCHLIST, "movie"),
+            source(TraktCollectionSourceType.WATCHLIST, "series"),
+            source(TraktCollectionSourceType.UP_NEXT, "series"),
+            source(TraktCollectionSourceType.UNWATCHED, "series"),
+            source(TraktCollectionSourceType.CALENDAR, "series").copy(calendarDays = 1),
+        ).map(CollectionSource::catalogRouteKey)
+
+        assertEquals(keys.size, keys.toSet().size)
+        assertTrue(keys.all { it.startsWith("trakt_") })
     }
 
     @Test
@@ -270,6 +422,68 @@ class CollectionSourceSerializationTest {
         val merged = CollectionJsonPreserver.merge(json, raw, listOf(collection)).toString()
         assertTrue(merged.contains(""""customField":"keep-me""""))
         assertTrue(merged.contains(""""traktListId":123456"""))
+    }
+
+    @Test
+    fun accountSourcePreservationKeysDoNotCollide() {
+        val raw = json.parseToJsonElement(
+            """
+                [
+                  {
+                    "id": "collection-1",
+                    "title": "Discover",
+                    "folders": [
+                      {
+                        "id": "folder-1",
+                        "title": "For You",
+                        "sources": [
+                          {
+                            "provider": "trakt",
+                            "traktSourceType": "recommendations",
+                            "traktListId": 0,
+                            "mediaType": "movie",
+                            "customField": "recommendations-marker"
+                          },
+                          {
+                            "provider": "trakt",
+                            "traktSourceType": "watchlist",
+                            "traktListId": 0,
+                            "mediaType": "movie",
+                            "customField": "watchlist-marker"
+                          },
+                          {
+                            "provider": "trakt",
+                            "traktSourceType": "calendar",
+                            "traktListId": 0,
+                            "mediaType": "tv",
+                            "calendarDays": 1,
+                            "customField": "calendar-marker"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+            """.trimIndent(),
+        )
+        val collection = json.decodeFromString<List<Collection>>(raw.toString()).single()
+
+        val mergedSources = CollectionJsonPreserver.merge(json, raw, listOf(collection))
+            .single()
+            .jsonObject["folders"]!!
+            .jsonArray.single()
+            .jsonObject["sources"]!!
+            .jsonArray
+
+        assertEquals(
+            listOf("recommendations-marker", "watchlist-marker", "calendar-marker"),
+            mergedSources.map { it.jsonObject["customField"]!!.jsonPrimitive.content },
+        )
+        assertTrue(
+            mergedSources.all {
+                it.jsonObject["traktListId"]!!.jsonPrimitive.long == 2_147_483_647L
+            },
+        )
     }
 
     @Test

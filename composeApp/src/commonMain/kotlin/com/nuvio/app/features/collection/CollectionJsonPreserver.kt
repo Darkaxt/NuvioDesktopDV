@@ -11,6 +11,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 internal object CollectionJsonPreserver {
+    private const val TRAKT_ACCOUNT_WEBSITE_COMPATIBILITY_LIST_ID = 2_147_483_647L
+
     fun merge(
         json: Json,
         rawCollectionsJson: JsonElement,
@@ -60,7 +62,7 @@ internal object CollectionJsonPreserver {
         val rawUnifiedSourcesByKey = raw?.get("sources").asObjectArrayByKey(::unifiedSourceKey)
         val mergedUnifiedSources = buildJsonArray {
             folder.resolvedSources.forEach { source ->
-                val sourceElement = json.encodeToJsonElement(CollectionSource.serializer(), source)
+                val sourceElement = encodeUnifiedSource(json, source)
                 add(
                     mergeUnifiedSource(
                         json = json,
@@ -99,8 +101,20 @@ internal object CollectionJsonPreserver {
         raw: JsonObject?,
         source: CollectionSource,
     ): JsonObject {
-        val encoded = json.encodeToJsonElement(CollectionSource.serializer(), source).jsonObject
+        val encoded = encodeUnifiedSource(json, source).jsonObject
         return mergeObjects(raw, encoded)
+    }
+
+    private fun encodeUnifiedSource(json: Json, source: CollectionSource): JsonElement {
+        val exportSource = if (
+            source.isTrakt &&
+            source.resolvedTraktSourceType != TraktCollectionSourceType.PUBLIC_LIST
+        ) {
+            source.copy(traktListId = TRAKT_ACCOUNT_WEBSITE_COMPATIBILITY_LIST_ID)
+        } else {
+            source
+        }
+        return json.encodeToJsonElement(CollectionSource.serializer(), exportSource)
     }
 
     private fun mergeSource(
@@ -143,21 +157,35 @@ internal object CollectionJsonPreserver {
 
     private fun unifiedSourceKey(element: JsonElement): String? {
         val obj = element as? JsonObject ?: return null
-        val provider = obj["provider"]?.jsonPrimitive?.contentOrNull ?: "addon"
+        val provider = obj["provider"]?.jsonPrimitive?.contentOrNull?.lowercase() ?: "addon"
         return when {
-            provider.equals("tmdb", ignoreCase = true) -> {
+            provider == "tmdb" -> {
                 val sourceType = obj["tmdbSourceType"]?.jsonPrimitive?.contentOrNull ?: return null
                 val tmdbId = obj["tmdbId"]?.jsonPrimitive?.contentOrNull.orEmpty()
                 val mediaType = obj["mediaType"]?.jsonPrimitive?.contentOrNull.orEmpty()
                 val sortBy = obj["sortBy"]?.jsonPrimitive?.contentOrNull.orEmpty()
                 "$provider|$sourceType|$tmdbId|$mediaType|$sortBy"
             }
-            provider.equals("trakt", ignoreCase = true) -> {
-                val listId = obj["traktListId"]?.jsonPrimitive?.contentOrNull ?: return null
+            provider == "trakt" -> {
+                val sourceType = obj["traktSourceType"]
+                    ?.jsonPrimitive
+                    ?.contentOrNull
+                    ?.trim()
+                    ?.lowercase()
                 val mediaType = obj["mediaType"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                if (!sourceType.isNullOrEmpty() && sourceType != TraktCollectionSourceType.PUBLIC_LIST.value) {
+                    val calendarDays = if (sourceType == TraktCollectionSourceType.CALENDAR.value) {
+                        obj["calendarDays"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                    } else {
+                        ""
+                    }
+                    return "$provider|account|$sourceType|$mediaType|$calendarDays"
+                }
+
+                val listId = obj["traktListId"]?.jsonPrimitive?.contentOrNull ?: return null
                 val sortBy = obj["sortBy"]?.jsonPrimitive?.contentOrNull.orEmpty()
                 val sortHow = obj["sortHow"]?.jsonPrimitive?.contentOrNull.orEmpty()
-                "$provider|$listId|$mediaType|$sortBy|$sortHow"
+                "$provider|public_list|$listId|$mediaType|$sortBy|$sortHow"
             }
             else -> {
                 val addonId = obj["addonId"]?.jsonPrimitive?.contentOrNull ?: return null

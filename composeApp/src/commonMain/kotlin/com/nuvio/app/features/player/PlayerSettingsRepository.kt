@@ -35,6 +35,7 @@ fun snapToAllowedTimeout(value: Int): Int {
 data class PlayerSettingsUiState(
     val useLegacyPlayerLayout: Boolean = false,
     val showLoadingOverlay: Boolean = true,
+    val showPlaybackDetails: Boolean = true,
     val showPlayerLoadingStatus: Boolean = true,
     val pauseOverlayEnabled: Boolean = true,
     val showParentalGuide: Boolean = true,
@@ -119,6 +120,7 @@ object PlayerSettingsRepository {
     private var hasLoaded = false
     private var useLegacyPlayerLayout = false
     private var showLoadingOverlay = true
+    private var showPlaybackDetails = true
     private var showPlayerLoadingStatus = true
     private var pauseOverlayEnabled = true
     private var showParentalGuide = true
@@ -208,6 +210,7 @@ object PlayerSettingsRepository {
         hasLoaded = false
         useLegacyPlayerLayout = false
         showLoadingOverlay = true
+        showPlaybackDetails = true
         showPlayerLoadingStatus = true
         pauseOverlayEnabled = true
         showParentalGuide = true
@@ -291,6 +294,7 @@ object PlayerSettingsRepository {
         hasLoaded = true
         useLegacyPlayerLayout = PlayerSettingsStorage.loadUseLegacyPlayerLayout() ?: false
         showLoadingOverlay = PlayerSettingsStorage.loadShowLoadingOverlay() ?: true
+        showPlaybackDetails = PlayerSettingsStorage.loadShowPlaybackDetails() ?: true
         showPlayerLoadingStatus = PlayerSettingsStorage.loadShowPlayerLoadingStatus() ?: true
         pauseOverlayEnabled = PlayerSettingsStorage.loadPauseOverlayEnabled() ?: true
         showParentalGuide = PlayerSettingsStorage.loadShowParentalGuide() ?: true
@@ -475,6 +479,14 @@ object PlayerSettingsRepository {
         showLoadingOverlay = enabled
         publish()
         PlayerSettingsStorage.saveShowLoadingOverlay(enabled)
+    }
+
+    fun setShowPlaybackDetails(enabled: Boolean) {
+        ensureLoaded()
+        if (showPlaybackDetails == enabled) return
+        showPlaybackDetails = enabled
+        publish()
+        PlayerSettingsStorage.saveShowPlaybackDetails(enabled)
     }
 
     fun setShowPlayerLoadingStatus(enabled: Boolean) {
@@ -1195,6 +1207,7 @@ object PlayerSettingsRepository {
         _uiState.value = PlayerSettingsUiState(
             useLegacyPlayerLayout = useLegacyPlayerLayout,
             showLoadingOverlay = showLoadingOverlay,
+            showPlaybackDetails = showPlaybackDetails,
             showPlayerLoadingStatus = showPlayerLoadingStatus,
             pauseOverlayEnabled = pauseOverlayEnabled,
             showParentalGuide = showParentalGuide,

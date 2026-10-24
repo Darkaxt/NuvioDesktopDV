@@ -84,6 +84,7 @@ internal fun PlayerControlsShell(
     title: String,
     streamTitle: String,
     providerName: String,
+    showTechnicalDetails: Boolean,
     seasonNumber: Int?,
     episodeNumber: Int?,
     episodeTitle: String?,
@@ -175,6 +176,7 @@ internal fun PlayerControlsShell(
                     title = title,
                     streamTitle = streamTitle,
                     providerName = providerName,
+                    technicalDetails = if (showTechnicalDetails) playbackSnapshot.technicalDetailsLine() else null,
                     seasonNumber = seasonNumber,
                     episodeNumber = episodeNumber,
                     episodeTitle = episodeTitle,
@@ -288,6 +290,7 @@ internal fun PlayerControlsShell(
                             episodeNumber = episodeNumber,
                             episodeTitle = episodeTitle,
                             releaseInfo = releaseInfo,
+                            technicalDetails = if (showTechnicalDetails) playbackSnapshot.technicalDetailsLine() else null,
                             metrics = metrics,
                             badges = badges,
                         )
@@ -332,6 +335,7 @@ private fun PlayerHeader(
     title: String,
     streamTitle: String,
     providerName: String,
+    technicalDetails: String?,
     seasonNumber: Int?,
     episodeNumber: Int?,
     episodeTitle: String?,
@@ -420,6 +424,18 @@ private fun PlayerHeader(
                                 fontStyle = FontStyle.Italic,
                             ),
                             color = Color.White.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (technicalDetails != null) {
+                        Text(
+                            text = technicalDetails,
+                            style = typeScale.labelSm.copy(
+                                fontSize = metrics.metadataSize,
+                                lineHeight = metrics.metadataSize * 1.25f,
+                            ),
+                            color = Color.White.copy(alpha = 0.8f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )

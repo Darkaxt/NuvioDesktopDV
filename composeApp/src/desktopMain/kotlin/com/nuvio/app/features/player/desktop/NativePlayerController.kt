@@ -29,6 +29,7 @@ import com.nuvio.app.features.player.SubtitleStyleState
 import com.nuvio.app.features.player.SubtitleTrack
 import com.nuvio.app.features.player.inferForcedSubtitleTrack
 import com.nuvio.app.features.player.toStorageHexString
+import com.nuvio.app.features.player.videoDynamicRange
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -696,6 +697,9 @@ internal class NativePlayerController(
         return runCatching {
             val isLoading = NativePlayerBridge.isLoading(current)
             val isEnded = NativePlayerBridge.isEnded(current)
+            val mediaInfo = mpvMediaInfo { name ->
+                NativePlayerBridge.stringProperty(current, name).takeIf { it.isNotBlank() }
+            }
             PlayerPlaybackSnapshot(
                 isLoading = isLoading,
                 isPlaying = !NativePlayerBridge.isPaused(current) && !isLoading && !isEnded,
@@ -704,6 +708,11 @@ internal class NativePlayerController(
                 positionMs = NativePlayerBridge.positionMs(current),
                 bufferedPositionMs = NativePlayerBridge.bufferedPositionMs(current),
                 playbackSpeed = NativePlayerBridge.speed(current),
+                videoWidth = mediaInfo.videoWidth ?: 0,
+                videoHeight = mediaInfo.videoHeight ?: 0,
+                videoCodec = mediaInfo.videoCodec,
+                videoDynamicRange = mediaInfo.videoDynamicRange(),
+                videoFrameRate = mediaInfo.videoFrameRate,
             )
         }.getOrDefault(PlayerPlaybackSnapshot(isLoading = true))
     }

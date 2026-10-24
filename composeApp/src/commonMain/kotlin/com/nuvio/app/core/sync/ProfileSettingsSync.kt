@@ -194,7 +194,6 @@ object ProfileSettingsSync {
             ThemeSettingsRepository.navBarGlowEnabled.map { "nav_bar_glow_enabled" },
             ThemeSettingsRepository.navBarStyle.map { "nav_bar_style" },
             PosterCardStyleRepository.uiState.map { "poster_card_style" },
-            CustomPosterUrlRepository.pattern.map { "custom_poster_url" },
             CustomPosterUrlRepository.enabledScreens.map { "custom_poster_screens" },
             CardDepthStyleRepository.uiState.map { "card_depth_style" },
             PlayerSettingsRepository.uiState.map { "player" },
@@ -246,7 +245,6 @@ object ProfileSettingsSync {
             features = MobileProfileSettingsFeatures(
                 themeSettings = ThemeSettingsStorage.exportToSyncPayload(),
                 posterCardStyleSettingsPayload = PosterCardStyleStorage.loadPayload().orEmpty().trim(),
-                customPosterUrlPattern = CustomPosterUrlStorage.loadPattern().orEmpty().trim(),
                 customPosterEnabledScreens = CustomPosterUrlStorage.loadEnabledScreens()
                     ?.joinToString(",").orEmpty(),
                 cardDepthStyleSettingsPayload = CardDepthStyleStorage.loadPayload().orEmpty().trim(),
@@ -286,7 +284,6 @@ object ProfileSettingsSync {
         PosterCardStyleStorage.savePayload(blob.features.posterCardStyleSettingsPayload)
         PosterCardStyleRepository.onProfileChanged()
 
-        CustomPosterUrlStorage.savePattern(blob.features.customPosterUrlPattern.ifBlank { null })
         val remoteScreenKeys = blob.features.customPosterEnabledScreens
             .takeIf { it.isNotBlank() }
             ?.split(",")
@@ -389,7 +386,6 @@ object ProfileSettingsSync {
         "nav_bar_glow_enabled=${ThemeSettingsRepository.navBarGlowEnabled.value}",
         "nav_bar_style=${ThemeSettingsRepository.navBarStyle.value.key}",
         "poster_card_style=${PosterCardStyleRepository.uiState.value}",
-        "custom_poster_url=${CustomPosterUrlRepository.pattern.value}",
         "card_depth_style=${CardDepthStyleRepository.uiState.value}",
         "player=${PlayerSettingsRepository.uiState.value}",
         "stream_badges=${StreamBadgeSettingsRepository.uiState.value}",
@@ -416,7 +412,6 @@ private data class MobileProfileSettingsBlob(
 private data class MobileProfileSettingsFeatures(
     @SerialName("theme_settings") val themeSettings: JsonObject = JsonObject(emptyMap()),
     @SerialName("poster_card_style_settings_payload") val posterCardStyleSettingsPayload: String = "",
-    @SerialName("custom_poster_url_pattern") val customPosterUrlPattern: String = "",
     @SerialName("custom_poster_enabled_screens") val customPosterEnabledScreens: String = "",
     @SerialName("card_depth_style_settings_payload") val cardDepthStyleSettingsPayload: String = "",
     @SerialName("player_settings") val playerSettings: JsonObject = JsonObject(emptyMap()),

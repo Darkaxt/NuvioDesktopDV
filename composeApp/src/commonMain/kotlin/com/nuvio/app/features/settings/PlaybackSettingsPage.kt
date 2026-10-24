@@ -973,6 +973,15 @@ private fun PlaybackSettingsSection(
                 isTablet = isTablet,
             ) {
                 SettingsGroup(isTablet = isTablet) {
+                    SettingsSwitchRow(
+                        title = stringResource(Res.string.settings_playback_show_details),
+                        description = stringResource(Res.string.settings_playback_show_details_description),
+                        checked = autoPlayPlayerSettings.showPlaybackDetails,
+                        enabled = decoderEnabled,
+                        isTablet = isTablet,
+                        onCheckedChange = PlayerSettingsRepository::setShowPlaybackDetails,
+                    )
+                    SettingsGroupDivider(isTablet = isTablet)
                     if (!isDesktop) {
                         SettingsNavigationRow(
                             title = stringResource(Res.string.settings_playback_engine),
