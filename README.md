@@ -16,7 +16,7 @@
 
 This is a personal fork of [Nuvio Desktop](https://github.com/NuvioMedia/NuvioDesktop). It carries the desktop equivalents of the focused NuvioDV Android fixes: stream-derived playback details, reliable Continue Watching artwork resolution, bounded metadata requests, Trakt collection sources, collection-layout repair, and profile-local custom poster credentials.
 
-The Windows package uses the separate **NuvioDV** product, storage, shortcut, and updater identity so it can coexist with standard Nuvio. Download this fork from [Darkaxt/NuvioDesktop releases](https://github.com/Darkaxt/NuvioDesktop/releases/latest). Fork-only patches may be retired when upstream provides equivalent fixes. Broader player expansion is outside the current scope.
+The Windows package uses the separate **NuvioDV** product, storage, shortcut, and updater identity so it can coexist with standard Nuvio. Download this fork from [Darkaxt/NuvioDesktopDV releases](https://github.com/Darkaxt/NuvioDesktopDV/releases/latest). Fork-only patches may be retired when upstream provides equivalent fixes. Broader player expansion is outside the current scope.
 
 ## ⚠️ Alpha Software - Slow Development - Testers Only
 
@@ -26,7 +26,7 @@ Expect breaking changes with every update. Features, settings, stored data, and 
 
 ## Get Nuvio Desktop
 
-Download the latest NuvioDV build from [the fork's GitHub Releases](https://github.com/Darkaxt/NuvioDesktop/releases/latest).
+Download the latest NuvioDV build from [the fork's GitHub Releases](https://github.com/Darkaxt/NuvioDesktopDV/releases/latest).
 
 - Windows: MSI installer
 - macOS: DMG installer
@@ -35,7 +35,7 @@ Download the latest NuvioDV build from [the fork's GitHub Releases](https://gith
 ## Build from source
 
 ```bash
-git clone https://github.com/Darkaxt/NuvioDesktop.git
+git clone https://github.com/Darkaxt/NuvioDesktopDV.git
 cd NuvioDesktop
 ```
 

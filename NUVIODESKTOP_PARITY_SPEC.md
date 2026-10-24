@@ -6,8 +6,8 @@ The user authorized an end-to-end personal fork of `NuvioMedia/NuvioDesktop`, a 
 
 The comparison baseline is:
 
-- Android fork: `Darkaxt/NuvioMobile:cmp-rewrite` at `65c6a10c03e16d6198e67fd43edd899e80c5ffca`.
-- Desktop upstream/fork baseline: `NuvioMedia/NuvioDesktop:Dev` / `Darkaxt/NuvioDesktop:Dev` at `897efe93`.
+- Android fork: `Darkaxt/NuvioMobileDV:cmp-rewrite` at `65c6a10c03e16d6198e67fd43edd899e80c5ffca`.
+- Desktop upstream/fork baseline: `NuvioMedia/NuvioDesktop:Dev` / `Darkaxt/NuvioDesktopDV:Dev` at `897efe93`.
 
 ## Requirements
 
@@ -41,7 +41,7 @@ The completed inventory established these required Windows gaps:
 4. Coalesce same-key metadata requests and rate-limit the shared metadata network boundary to two starts per second so Continue Watching enrichment cannot overwhelm the provider path.
 5. Add the Android fork's native authenticated Trakt collection catalogue sources and website-compatible serialization.
 6. Add the collection-management action that rebuilds collection-backed Home rows in current collection order, removes stale collection rows, preserves unrelated row state, persists/synchronizes once, and requires confirmation.
-7. Route desktop updates to `Darkaxt/NuvioDesktop` and give the Windows package a distinct NuvioDV product name and MSI upgrade identity so it cannot replace the upstream Nuvio installation.
+7. Route desktop updates to `Darkaxt/NuvioDesktopDV` and give the Windows package a distinct NuvioDV product name and MSI upgrade identity so it cannot replace the upstream Nuvio installation.
 
 The Android ARM64 AAR, Android FDSAN handling, Android decoder settings and MediaCodec-specific patches are not directly portable to Windows. The bundled Windows player contains libmpv, libplacebo and Dolby Vision/RPU code, but binary strings alone do not establish its libplacebo revision, libdovi integration, or inclusion of the fork's required pink-output fix. The Windows runtime must therefore receive a reproducible provenance check and be replaced when that check cannot prove the required behavior.
 
@@ -55,7 +55,7 @@ Run focused automated checks for the changed behavior and the repository's appli
 
 ### R5. Delivery
 
-Commit and push the verified implementation to `Darkaxt/NuvioDesktop:Dev`. Publish one normal, non-draft, non-prerelease Windows release from the exact verified commit, independently inspect the downloaded installer, install it locally, and launch only to the login boundary. Do not enter credentials or claim authenticated behavior.
+Commit and push the verified implementation to `Darkaxt/NuvioDesktopDV:Dev`. Publish one normal, non-draft, non-prerelease Windows release from the exact verified commit, independently inspect the downloaded installer, install it locally, and launch only to the login boundary. Do not enter credentials or claim authenticated behavior.
 
 ### R6. Launch-background gradient quality
 
