@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.lerp
 
 private const val ProfileMeshDitherTileSize = 64
+private const val ProfileMeshDitherAlpha = 6f / 255f
 
 internal fun profileMeshDitherLevel(x: Int, y: Int): Int {
     var value = x * 0x1F123BB5 + y * 0x5F356495 + 0x68BC21EB
@@ -48,9 +49,9 @@ private fun createProfileMeshDitherBrush(): ShaderBrush {
     for (y in 0 until ProfileMeshDitherTileSize) {
         for (x in 0 until ProfileMeshDitherTileSize) {
             paint.color = if (profileMeshDitherLevel(x, y) == 0) {
-                Color.Transparent
+                Color.Black.copy(alpha = ProfileMeshDitherAlpha)
             } else {
-                Color.White.copy(alpha = 1f / 255f)
+                Color.White.copy(alpha = ProfileMeshDitherAlpha)
             }
             canvas.drawRect(
                 Rect(
@@ -147,12 +148,12 @@ fun ProfileMeshBackground(
                     size = size,
                 )
                 // Skia's low-alpha radial ramps quantize visibly on an 8-bit desktop
-                // surface. Add one deterministic least-significant bit before the
-                // final blend so adjacent pixels can represent intermediate shades.
+                // surface. Apply balanced, deterministic two-sided overlay noise so
+                // adjacent pixels can represent intermediate shades without a bright bias.
                 drawRect(
                     brush = ditherBrush,
                     size = size,
-                    blendMode = BlendMode.Plus,
+                    blendMode = BlendMode.Overlay,
                 )
             },
     )
