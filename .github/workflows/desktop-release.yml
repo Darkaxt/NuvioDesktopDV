@@ -14,7 +14,7 @@ on:
           - publish
         default: dry-run
       target:
-        description: Platforms to build in build-only mode
+        description: Platform set to build and publish
         required: true
         type: choice
         options:
@@ -22,7 +22,7 @@ on:
           - windows
           - macos
           - linux
-        default: all
+        default: windows
       exclude_commits:
         description: Optional comma-separated commit hashes to omit from the notes
         required: false
