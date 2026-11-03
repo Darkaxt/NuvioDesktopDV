@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.build.AppVersionConfig
+import com.nuvio.app.core.build.AppVersionPolicy
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.about_licenses_attributions_subtitle
 import nuvio.composeapp.generated.resources.about_supporters_contributors_subtitle
@@ -125,8 +125,8 @@ internal fun LazyListScope.settingsFooterContent(isTablet: Boolean) {
             Text(
                 text = stringResource(
                     Res.string.compose_about_version_format,
-                    AppVersionConfig.VERSION_NAME,
-                    AppVersionConfig.VERSION_CODE,
+                    AppVersionPolicy.displayVersionName,
+                    AppVersionPolicy.displayVersionCode,
                 ),
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.bodySmall,
