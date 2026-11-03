@@ -2,6 +2,7 @@ package com.nuvio.app.features.servers
 
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.tracking.TrackingExternalIds
+import com.nuvio.app.features.tracking.WatchProgressSource
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -9,7 +10,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class ServerUserStateProjectionTest {
-    private val id = ServerItemRef("cfake", "7").encode()
+    private val itemId = "server-user-state-projection-test"
+    private val id = ServerItemRef("cfake", itemId).encode()
 
     @AfterTest
     fun tearDown() {
@@ -21,8 +23,10 @@ class ServerUserStateProjectionTest {
     @Test
     fun importsServerProgressOnlyWhenEnabled() {
         val connection = installFakeServer()
+        WatchProgressRepository.activateSource(WatchProgressSource.NUVIO_SYNC)
+        WatchProgressRepository.clearProgress(id)
         val details = ServerItemDetails(
-            meta = MetaDetails(id = id, type = "movie", name = "Item 7"),
+            meta = MetaDetails(id = id, type = "movie", name = "Projection test item"),
             externalIds = TrackingExternalIds(),
             userStates = listOf(
                 ServerUserState(id, positionMs = 30_000L, durationMs = 60_000L, played = false, lastPlayedEpochMs = 5_000L),

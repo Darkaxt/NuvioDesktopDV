@@ -1180,6 +1180,7 @@ kotlin {
                 implementation(libs.androidx.media3.extractor)
                 implementation("com.google.guava:guava:33.3.1-android")
                 implementation("androidx.media3:media3-database:1.8.0")
+                implementation("androidx.media3:media3-effect:1.8.0")
                 implementation("androidx.annotation:annotation-experimental:1.3.1")
                 implementation(libs.mpv.android.lib)
                 implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("lib-*.aar"))))
@@ -1377,6 +1378,12 @@ compose.desktop {
         }
     }
 }
+
+tasks.withType<AbstractJPackageTask>()
+    .matching { it.name.endsWith("Msi") || it.name.endsWith("Exe") }
+    .configureEach {
+        freeArgs.add("--win-shortcut-prompt")
+    }
 
 fun renameMacosDmgOutput(release: Boolean) {
     if (!isMacHost) return

@@ -54,7 +54,7 @@ actual object AppUpdaterPlatform {
 
     actual val releaseSource: AppUpdateReleaseSource = AppUpdateReleaseSource(
         owner = "Darkaxt",
-        repo = "NuvioDesktop",
+        repo = "NuvioDesktopDV",
         channelBranch = null,
         includePrereleases = false,
         userAgent = "NuvioDVDesktop",
@@ -167,7 +167,7 @@ actual object AppUpdaterPlatform {
             DesktopUpdaterOs.MACOS -> listOf("open", updateFile.absolutePath)
             DesktopUpdaterOs.LINUX -> linuxInstallerCommand(
                 method = linuxInstallMethod,
-                updateFile = updateFile,
+                updatePath = updateFile.absolutePath,
                 appImagePath = System.getenv(appImageEnvName),
                 currentPid = ProcessHandle.current().pid(),
             )
@@ -334,15 +334,15 @@ private fun packageQuerySucceeds(command: List<String>): Boolean = runCatching {
 
 internal fun linuxInstallerCommand(
     method: LinuxInstallMethod,
-    updateFile: File,
+    updatePath: String,
     appImagePath: String?,
     currentPid: Long,
 ): List<String> {
     if (method == LinuxInstallMethod.APP_IMAGE && !appImagePath.isNullOrBlank()) {
-        return listOf("sh", "-c", appImageReplaceScript(updateFile.absolutePath, appImagePath, currentPid))
+        return listOf("sh", "-c", appImageReplaceScript(updatePath, appImagePath, currentPid))
     }
 
-    return listOf("xdg-open", updateFile.absolutePath)
+    return listOf("xdg-open", updatePath)
 }
 
 // An AppImage has no installer: updating one means replacing the file that is

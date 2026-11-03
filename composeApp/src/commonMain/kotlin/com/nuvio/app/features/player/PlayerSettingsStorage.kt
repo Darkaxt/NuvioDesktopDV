@@ -13,6 +13,8 @@ internal expect object PlayerSettingsStorage {
     fun saveShowLoadingOverlay(enabled: Boolean)
     fun loadShowPlaybackDetails(): Boolean?
     fun saveShowPlaybackDetails(enabled: Boolean)
+    fun loadAutoSwitchPlaybackEngineOnError(): Boolean?
+    fun saveAutoSwitchPlaybackEngineOnError(enabled: Boolean)
     fun loadShowPlayerLoadingStatus(): Boolean?
     fun saveShowPlayerLoadingStatus(enabled: Boolean)
     fun loadPauseOverlayEnabled(): Boolean?
@@ -47,6 +49,8 @@ internal expect object PlayerSettingsStorage {
     fun saveSubtitleTextColor(colorHex: String)
     fun loadSubtitleBackgroundColor(): String?
     fun saveSubtitleBackgroundColor(colorHex: String)
+    fun loadSubtitleAppearance(): String?
+    fun saveSubtitleAppearance(value: String)
     fun loadSubtitleOutlineColor(): String?
     fun saveSubtitleOutlineColor(colorHex: String)
     fun loadSubtitleOutlineEnabled(): Boolean?
@@ -76,7 +80,9 @@ internal expect object PlayerSettingsStorage {
     fun loadAndroidLibmpvHardwareDecodingEnabled(): Boolean?
     fun saveAndroidLibmpvHardwareDecodingEnabled(enabled: Boolean)
     fun loadAndroidLibmpvYuv420pEnabled(): Boolean?
+    fun loadAndroidExoChaptersEnabled(): Boolean?
     fun saveAndroidLibmpvYuv420pEnabled(enabled: Boolean)
+    fun saveAndroidExoChaptersEnabled(enabled: Boolean)
     fun loadDecoderPriority(): Int?
     fun saveDecoderPriority(priority: Int)
     fun loadMapDV7ToHevc(): Boolean?
@@ -156,6 +162,8 @@ internal expect object PlayerSettingsStorage {
     fun saveLibassRenderType(renderType: String)
     fun loadLibassRenderScale(): String?
     fun saveLibassRenderScale(scale: String)
+    fun loadLibassRenderMode(): String?
+    fun saveLibassRenderMode(mode: String)
     fun loadIosVideoOutputPreset(): String?
     fun saveIosVideoOutputPreset(preset: String)
     fun loadIosToneMappingMode(): String?

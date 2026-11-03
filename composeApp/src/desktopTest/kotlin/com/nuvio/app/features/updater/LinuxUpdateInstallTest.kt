@@ -1,6 +1,5 @@
 package com.nuvio.app.features.updater
 
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -174,7 +173,7 @@ class LinuxUpdateInstallTest {
     fun `a package install is handed to the desktop package handler`() {
         val command = linuxInstallerCommand(
             method = LinuxInstallMethod.RPM,
-            updateFile = File("/tmp/updates/Nuvio.rpm"),
+            updatePath = "/tmp/updates/Nuvio.rpm",
             appImagePath = null,
             currentPid = 4242L,
         )
@@ -186,7 +185,7 @@ class LinuxUpdateInstallTest {
     fun `an app image replaces itself once this process is gone`() {
         val command = linuxInstallerCommand(
             method = LinuxInstallMethod.APP_IMAGE,
-            updateFile = File("/tmp/updates/Nuvio.AppImage"),
+            updatePath = "/tmp/updates/Nuvio.AppImage",
             appImagePath = "/home/user/Apps/Nuvio.AppImage",
             currentPid = 4242L,
         )
@@ -204,7 +203,7 @@ class LinuxUpdateInstallTest {
     fun `an app image with no known path falls back to the desktop handler`() {
         val command = linuxInstallerCommand(
             method = LinuxInstallMethod.APP_IMAGE,
-            updateFile = File("/tmp/updates/Nuvio.AppImage"),
+            updatePath = "/tmp/updates/Nuvio.AppImage",
             appImagePath = null,
             currentPid = 4242L,
         )

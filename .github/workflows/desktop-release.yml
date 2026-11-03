@@ -225,6 +225,7 @@ jobs:
             TRAKT_CLIENT_ID
             TRAKT_CLIENT_SECRET
             MDBLIST_CLIENT_ID
+            SIMKL_CLIENT_ID
           )
           for property_name in "${required_properties[@]}"; do
             if ! grep -Eq "^${property_name}=.+" local.properties; then
@@ -438,6 +439,7 @@ jobs:
             TRAKT_CLIENT_ID
             TRAKT_CLIENT_SECRET
             MDBLIST_CLIENT_ID
+            SIMKL_CLIENT_ID
           )
           for property_name in "${required_properties[@]}"; do
             if ! grep -Eq "^${property_name}=.+" local.properties; then
