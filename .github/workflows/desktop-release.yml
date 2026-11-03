@@ -94,7 +94,7 @@ jobs:
 
             unexpected_changes="$(
               git diff --name-only "${CURRENT_BUMP}..${RELEASE_COMMIT}" \
-                | grep -Ev '^(\.github/workflows/desktop-release\.yml|scripts/(generate-release-notes|release-metadata)\.sh)$' \
+                | grep -Ev '^(\.github/workflows/desktop-release\.yml|scripts/(generate-release-notes|release-metadata)\.sh|scripts/linux/configure-desktop-runtime\.sh)$' \
                 || true
             )"
             if [[ -n "${unexpected_changes}" ]]; then
@@ -190,8 +190,6 @@ jobs:
         run: |
           required_values=(
             LOCAL_PROPERTIES_BASE64
-            SENTRY_AUTH_TOKEN
-            SENTRY_DESKTOP_DSN
           )
           if [[ "${MACOS_NOTARIZATION_ENABLED}" == "true" ]]; then
             required_values+=(
@@ -295,9 +293,11 @@ jobs:
         env:
           MACOS_ARCH: ${{ matrix.arch }}
         run: |
-          ./gradlew \
-            :composeApp:notarizeReleaseDmgWithKeychain \
-            :desktopSentry:sentryUploadSourceBundleJava \
+          release_tasks=(:composeApp:notarizeReleaseDmgWithKeychain)
+          if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
+            release_tasks+=(:desktopSentry:sentryUploadSourceBundleJava)
+          fi
+          ./gradlew "${release_tasks[@]}" \
             "-Pnuvio.macos.arch=${MACOS_ARCH}" \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
@@ -311,9 +311,11 @@ jobs:
           NUVIO_MACOS_NOTARY_KEYCHAIN_PROFILE: ''
           NUVIO_MACOS_SIGNING_IDENTITY: ''
         run: |
-          ./gradlew \
-            :composeApp:packageReleaseDmg \
-            :desktopSentry:sentryUploadSourceBundleJava \
+          release_tasks=(:composeApp:packageReleaseDmg)
+          if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
+            release_tasks+=(:desktopSentry:sentryUploadSourceBundleJava)
+          fi
+          ./gradlew "${release_tasks[@]}" \
             "-Pnuvio.macos.arch=${MACOS_ARCH}" \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
@@ -625,9 +627,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew \
-            :composeApp:createReleaseDistributable \
-            :desktopSentry:sentryUploadSourceBundleJava \
+          release_tasks=(:composeApp:createReleaseDistributable)
+          if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
+            release_tasks+=(:desktopSentry:sentryUploadSourceBundleJava)
+          fi
+          ./gradlew "${release_tasks[@]}" \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
             --no-daemon \
@@ -759,9 +763,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew \
-            :composeApp:packageReleaseDeb \
-            :desktopSentry:sentryUploadSourceBundleJava \
+          release_tasks=(:composeApp:packageReleaseDeb)
+          if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
+            release_tasks+=(:desktopSentry:sentryUploadSourceBundleJava)
+          fi
+          ./gradlew "${release_tasks[@]}" \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
             --no-daemon \
@@ -842,9 +848,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew \
-            :composeApp:packageReleaseRpm \
-            :desktopSentry:sentryUploadSourceBundleJava \
+          release_tasks=(:composeApp:packageReleaseRpm)
+          if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
+            release_tasks+=(:desktopSentry:sentryUploadSourceBundleJava)
+          fi
+          ./gradlew "${release_tasks[@]}" \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
             --no-daemon \
@@ -954,9 +962,11 @@ jobs:
             export APPIMAGE_UPDATE_INFORMATION="${update_information}"
           fi
 
-          ./gradlew \
-            :composeApp:packageReleaseAppImage \
-            :desktopSentry:sentryUploadSourceBundleJava \
+          release_tasks=(:composeApp:packageReleaseAppImage)
+          if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
+            release_tasks+=(:desktopSentry:sentryUploadSourceBundleJava)
+          fi
+          ./gradlew "${release_tasks[@]}" \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
             --no-daemon \

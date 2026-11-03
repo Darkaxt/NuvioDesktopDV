@@ -4,8 +4,6 @@ set -euo pipefail
 
 required_values=(
     LOCAL_PROPERTIES_BASE64
-    SENTRY_AUTH_TOKEN
-    SENTRY_DESKTOP_DSN
 )
 missing=()
 for value_name in "${required_values[@]}"; do
@@ -26,6 +24,8 @@ required_properties=(
     NUVIO_SUPABASE_ANON_KEY
     TRAKT_CLIENT_ID
     TRAKT_CLIENT_SECRET
+    MDBLIST_CLIENT_ID
+    SIMKL_CLIENT_ID
 )
 for property_name in "${required_properties[@]}"; do
     if ! grep -Eq "^${property_name}=.+" local.properties; then
