@@ -205,7 +205,6 @@ if [[ "$repository_history" == true ]]; then
             continue
         fi
 
-        [[ "$parents" != *" "* ]] || continue
         username="$(resolve_username "$commit" "$author_name" "$author_email")"
         emit_release_note "$short_hash" "$subject" "$username"
     done < <(
