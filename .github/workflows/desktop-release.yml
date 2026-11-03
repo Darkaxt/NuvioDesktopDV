@@ -77,8 +77,8 @@ jobs:
             exit 1
           fi
 
-          if [[ "${RELEASE_MODE}" != "build-only" && "${RELEASE_TARGET}" != "all" ]]; then
-            echo "Release validation, draft, and publish modes require target=all." >&2
+          if [[ "${RELEASE_MODE}" != "build-only" && "${RELEASE_TARGET}" != "all" && "${RELEASE_TARGET}" != "windows" ]]; then
+            echo "Release validation, draft, and publish modes require target=windows or target=all." >&2
             exit 1
           fi
 
@@ -1035,7 +1035,23 @@ jobs:
 
   release:
     name: Create ${{ inputs.mode }} release
-    if: inputs.mode != 'build-only' && inputs.mode != 'dry-run' && inputs.target == 'all'
+    if: >-
+      always() &&
+      inputs.mode != 'build-only' &&
+      inputs.mode != 'dry-run' &&
+      needs.metadata.result == 'success' &&
+      needs.windows.result == 'success' &&
+      (
+        inputs.target == 'windows' ||
+        (
+          inputs.target == 'all' &&
+          needs.macos.result == 'success' &&
+          needs.linux_flatpak.result == 'success' &&
+          needs.linux_deb.result == 'success' &&
+          needs.linux_rpm.result == 'success' &&
+          needs.linux_appimage.result == 'success'
+        )
+      )
     needs:
       - metadata
       - macos
@@ -1051,6 +1067,7 @@ jobs:
       RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
       RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
       RELEASE_COMMIT: ${{ needs.metadata.outputs.release_commit }}
+      RELEASE_TARGET: ${{ inputs.target }}
 
     steps:
       - name: Download release artifacts
@@ -1063,15 +1080,19 @@ jobs:
       - name: Create checksums
         run: |
           release_assets=(
-            "release/Nuvio-macOS-arm64-${RELEASE_VERSION}.dmg"
-            "release/Nuvio-macOS-x86_64-${RELEASE_VERSION}.dmg"
             "release/NuvioDV-Windows-x64-${RELEASE_VERSION}.msi"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.flatpak"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.deb"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.rpm"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.AppImage"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.AppImage.zsync"
           )
+          if [[ "${RELEASE_TARGET}" == "all" ]]; then
+            release_assets+=(
+              "release/Nuvio-macOS-arm64-${RELEASE_VERSION}.dmg"
+              "release/Nuvio-macOS-x86_64-${RELEASE_VERSION}.dmg"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.flatpak"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.deb"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.rpm"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.AppImage"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.AppImage.zsync"
+            )
+          fi
           if [[ ! -s release/release-notes.md ]]; then
             echo "Release notes are missing." >&2
             exit 1
@@ -1092,16 +1113,20 @@ jobs:
       - name: Create GitHub release
         run: |
           release_assets=(
-            "release/Nuvio-macOS-arm64-${RELEASE_VERSION}.dmg"
-            "release/Nuvio-macOS-x86_64-${RELEASE_VERSION}.dmg"
             "release/NuvioDV-Windows-x64-${RELEASE_VERSION}.msi"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.flatpak"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.deb"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.rpm"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.AppImage"
-            "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.AppImage.zsync"
-            "release/SHA256SUMS.txt"
           )
+          if [[ "${RELEASE_TARGET}" == "all" ]]; then
+            release_assets+=(
+              "release/Nuvio-macOS-arm64-${RELEASE_VERSION}.dmg"
+              "release/Nuvio-macOS-x86_64-${RELEASE_VERSION}.dmg"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.flatpak"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.deb"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.rpm"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.AppImage"
+              "release/Nuvio-Linux-x86_64-${RELEASE_VERSION}.AppImage.zsync"
+            )
+          fi
+          release_assets+=("release/SHA256SUMS.txt")
           release_args=(
             "${RELEASE_TAG}"
             --target "${RELEASE_COMMIT}"
