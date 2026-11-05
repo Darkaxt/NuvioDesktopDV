@@ -24,7 +24,7 @@ class NuvioDvReleaseContractTest(unittest.TestCase):
 
     def test_version_preserves_upstream_base_and_fork_revision(self):
         properties = VERSION.read_text(encoding="utf-8")
-        self.assertRegex(properties, r"(?m)^VERSION_NAME=0\.1\.34-nuviodv\.\d+$")
+        self.assertRegex(properties, r"(?m)^VERSION_NAME=0\.1\.35-nuviodv\.\d+$")
         self.assertRegex(properties, r"(?m)^VERSION_CODE=\d+$")
 
     def test_updater_targets_renamed_fork_and_normal_releases(self):
