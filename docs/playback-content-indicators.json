@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "ruleSetVersion": 1,
+  "schemaVersion": 2,
+  "ruleSetVersion": 2,
   "status": "specification-only-not-loaded-by-app",
   "normalization": {
     "strings": "trim-casefold-collapse-whitespace-exact-match",
@@ -20,7 +20,7 @@
   },
   "precedence": [
     "explicit-profile-title-animation-boolean-is-final",
-    "automatic-anime4k-exclusions-affect-suggestion-only",
+    "automatic-animejanai-exclusions-affect-suggestion-only",
     "positive-animation-indicators",
     "unknown-does-not-automatically-enable-either-enhancement"
   ],
@@ -53,7 +53,7 @@
       "animation": true
     }
   ],
-  "automaticAnime4kExclusions": [
+  "automaticAnimeJaNaiExclusions": [
     {
       "id": "disney-produced-animated-movie",
       "enabled": true,
