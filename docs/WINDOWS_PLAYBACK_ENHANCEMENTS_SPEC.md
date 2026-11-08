@@ -16,6 +16,11 @@ upscaler requirement. This changes the upscaling engine and its packaging,
 preparation and verification requirements; content rules, final user overrides,
 the JSONL decision ledger and the separate SVP scope remain unchanged.
 
+The user also assigned ownership of upstream mpv synchronization and carrying
+AnimeJaNai support in an owned native source fork on 2026-11-08. P7 defines that
+ongoing responsibility. This specification update does not create repositories,
+change the running maintenance automation or activate a new native build today.
+
 ## P1. Content indicators and initial suggestion
 
 `playback-content-indicators.json` is the versioned, editable rule artifact.
@@ -120,15 +125,17 @@ skips cropped 3840-wide content. Treat this boundary as an initial documented
 policy that can be revised from playback evidence.
 
 Integrate AnimeJaNai's native mpv upscaling filter directly through Nuvio's Windows
-player bridge and the public libmpv API. Use a compatible AnimeJaNai-capable libmpv
-build, its inference library, pinned ONNX models and the selected inference runtime
+player bridge and the public libmpv API. Use the owned AnimeJaNai-capable libmpv
+build maintained under P7, its inference library, pinned ONNX models and the selected inference runtime
 (TensorRT on the current NVIDIA machine). Do not introduce a configuration-call
 interception DLL or replace the integrated player with an external player.
 
 Pin and record source revisions, artifact hashes, dependency versions and licenses
 for the complete runtime/model set. Establish that its FFmpeg/libplacebo revisions
-preserve the existing Dolby Vision behavior and the known sync-object leak fix;
-if a prebuilt artifact cannot prove this, build the required revisions together.
+preserve the existing Dolby Vision behavior and the known sync-object leak fix.
+Build the required revisions together through the owned, reproducible P7 release
+path; a third-party prebuilt may provide comparison evidence but does not replace
+ownership of the source integration and build recipe.
 The selected libmpv must also retain the VapourSynth support required by P5. A
 working upscaler alone is not acceptance of a replacement player runtime.
 
@@ -243,19 +250,94 @@ Complete the whole authorized playback scope before its final Windows-only norma
 release, verify the exact public package, and install/verify through the elevation
 broker when delivery is authorized. No release is required for these documents.
 
+## P7. Owned mpv source fork and ongoing upstream maintenance
+
+### Repository boundaries and patch ownership
+
+Maintain a personal mpv SOURCE fork under the owner's GitHub account, preserving
+the history of `mpv-player/mpv`. Record its actual repository URL, maintained branch,
+upstream tracking branch and baseline commits when the implementation starts;
+do not document a proposed repository as already created. The existing
+`Darkaxt/mpv-android-libdovi:libdovi` is an Android application/library build fork
+of `FortunasXP/mpv-android-libdovi`, not the current Windows source fork. Desktop
+currently pins the external build documented in `WINDOWS_LIBMPV_RUNTIME.md`.
+
+Carry AnimeJaNai's required native filter/GPU integration in the owned mpv fork.
+Trace it to exact commits from `the-database/mpv`, retain attribution and licenses,
+and keep the fork-specific delta limited to required player support. Record the
+matching `animejanai-inference` ABI, runtime/model pins and build recipe. Prefer
+reviewable upstream history/merges and a small documented patch delta over opaque
+binary replacement or repeated wholesale copying of another distribution.
+
+Track the Windows build recipe in version control with exact toolchain, mpv,
+FFmpeg, libplacebo, VapourSynth, inference-library and dependency revisions. Preserve
+the demonstrated Dolby Vision pipeline and libplacebo sync-object leak correction.
+Changes to model/inference dependencies are part of native compatibility review,
+not independent floating downloads. Build Windows x64 libmpv and required runtime
+artifacts only for this Desktop scope; this requirement does not add macOS/Linux
+releases or automatically replace the Android AAR.
+
+### Recurring synchronization and controlled promotion
+
+As part of implementation, extend the existing three-day fork-maintenance check
+to inspect the owned mpv fork against `mpv-player/mpv`, plus relevant AnimeJaNai
+source/inference changes and native build results. Record actual upstream tips,
+divergence, carried patch revisions, last verified runtime and unresolved conflicts.
+An inactive Nuvio application upstream must not cause native maintenance to be
+skipped. Preserve quiet healthy/no-change behavior and notify on actionable failures.
+
+Merge upstream history into the owned integration branch, resolve conflicts while
+preserving required fork behavior, and verify before publishing a candidate native
+artifact. Never force-push, discard user changes or interpret an upstream merge as
+proof of playback compatibility. Dependency updates need an evidenced reason and
+their affected checks; do not advance every dependency blindly with each merge.
+
+Keep source synchronization, native artifact qualification and application runtime
+promotion distinct. NuvioDV continues to use its last verified exact artifact pin
+until a candidate passes P4/P5/P6 and its application integration checks. A paused
+app fork must not consume a newer DLL through a floating URL or an independent
+AnimeJaNai updater. If the candidate is incompatible, retain the working pin,
+record the exact regression/conflict and repair it without claiming maintenance
+complete. Do not silently leave a known failed promotion marked healthy.
+
+Publish qualified native artifacts through the owned project's normal release
+channel with exact source/dependency manifest, build evidence, hashes and licenses.
+Verify independently retrieved artifacts. Promote an exact digest through the
+Desktop fork's normal verified Windows release process; native publication alone
+does not update the installed app. Retain the previous verified source/artifact
+pin and an explicit rollback procedure. Update runtime provenance and artifact
+verification scripts together, replacing the present external-only hash contract
+only when the owned artifact is qualified.
+
+### Acceptance
+
+Demonstrate one genuine upstream merge retaining AnimeJaNai support, the required
+libplacebo fix and a compatible public libmpv API. Produce the Windows artifact from
+the recorded recipe and verify actual Nuvio playback for ordinary SDR, Dolby Vision,
+AnimeJaNai upscaling and the licensed SVP path, including seek/episode teardown and
+long playback. Verify that the three-day monitor covers the native fork and that
+a failed candidate leaves the installed application's runtime unchanged. Document
+and inspect the exact native release and its later application promotion separately.
+These are future acceptance checks; no such merge/build/release is claimed here.
+
 ## Future stages and reconciliation
 
 All stages are NOT STARTED. No runtime feature is implemented by this specification.
 
 | Stage | Requirements | Required end-to-end evidence |
 | --- | --- | --- |
-| Animation decisions and adaptive AnimeJaNai | P1-P4, relevant P6 | Qualified libmpv/dependencies/models -> prepared compatible engine -> real metadata -> suggested toggle -> durable final override -> measured model/profile/status across episodes |
+| Owned native runtime integration and qualification | P7, runtime portions of P4-P6 | Owned mpv history/build recipe -> upstream merge with AnimeJaNai -> real Nuvio SDR/DV/upscaling/SVP compatibility -> verified native artifact and maintenance coverage |
+| Animation decisions and adaptive AnimeJaNai | P1-P4, relevant P6 | Qualified owned runtime -> prepared compatible engine -> real metadata -> suggested toggle -> durable final override -> measured model/profile/status across episodes |
 | Licensed adaptive SVP | P5, relevant P1-P3/P6 | Updated licensed runtime -> eligible live-action stream -> measured interpolation -> clean transitions |
-| Integrated Windows delivery | P6, all prior requirements | Reconciled behavior, normal Windows release, package/install/runtime verification |
+| Integrated Windows delivery | P6-P7, all prior requirements | Exact owned runtime pin, reconciled behavior, normal Windows release, package/install/runtime verification |
 
 Resolve metadata field mappings, canonical aliases, ledger filesystem semantics,
 benchmark metric availability, AnimeJaNai/SVP runtime compatibility, model quality,
 inference-engine preparation and replacement libmpv provenance in their owning stages.
+The native-runtime stage qualifies the actual player paths with controlled
+configuration; it does not implement or claim completion of the later automatic
+classification, settings, ledger or adaptive-profile features. It must establish
+both AnimeJaNai and SVP compatibility before either dependent feature stage starts.
 These are unverified implementation requirements, not completed feasibility proofs.
 
 ## Sources
@@ -263,6 +345,8 @@ These are unverified implementation requirements, not completed feasibility proo
 - https://github.com/allecsc/Stremio-Kai/blob/main/portable_config/scripts/profile-manager.lua
 - https://github.com/allecsc/Stremio-Kai/blob/main/portable_config/svp_anime.vpy
 - https://github.com/the-database/mpv-AnimeJaNai
+- https://github.com/mpv-player/mpv
+- https://github.com/the-database/mpv
 - https://github.com/the-database/animejanai-inference
 - https://github.com/anh-chu/nuvio-animejanai (integration precedent only; direct bridge integration is required here)
 - https://www.svp-team.com/wiki/SVP:mpv

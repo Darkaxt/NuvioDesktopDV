@@ -34,3 +34,11 @@ After independently downloading and extracting the exact pinned asset, run:
 ```
 
 The script rejects any DLL whose SHA-256 does not match the pinned artifact.
+
+## Planned successor (not yet implemented)
+
+`WINDOWS_PLAYBACK_ENHANCEMENTS_SPEC.md`, requirement P7, assigns ownership of an
+mpv source fork carrying AnimeJaNai support and ongoing upstream synchronization.
+Its qualified Windows artifacts will replace this external pin only after the
+specified Dolby Vision, libplacebo, AnimeJaNai and SVP checks pass. Until that
+promotion, the artifact and exact-hash installation contract above remain current.
