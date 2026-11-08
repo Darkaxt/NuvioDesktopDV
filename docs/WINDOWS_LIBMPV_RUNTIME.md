@@ -45,6 +45,13 @@ It does not copy the Android JNI wrapper or add a redundant Windows libdovi.
 Current mpv requires libplacebo API 387, so the owned candidate uses a newer
 immutable revision containing the correction rather than the API 377 DLL above.
 
+The first normal [owned native release](https://github.com/Darkaxt/mpv/releases/tag/nuviodv-windows-dv.1)
+targets source `b473072ac2e9a36d595dda9a3d071e8fccb74448` and passed Windows
+GPU-next SDR and Dolby Vision Profile 5/8.1 qualification. The public ZIP was
+independently verified with SHA-256
+`a4ed90b0f7a890b2f8be642c00b4a34ba1b4ec8d9e1a013b836c0b368691a8e8`;
+its DLL SHA-256 is `ee27b3ca2b621a23a5d16c074767ee13fd81bc2cc215bf695cc085981e4591db`.
+
 Native artifact publication does not promote it into this app. The external DLL
 pin and exact-hash installation contract above remain authoritative here.
 
