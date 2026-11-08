@@ -18,8 +18,9 @@ the JSONL decision ledger and the separate SVP scope remain unchanged.
 
 The user also assigned ownership of upstream mpv synchronization and carrying
 AnimeJaNai support in an owned native source fork on 2026-11-08. P7 defines that
-ongoing responsibility. This specification update does not create repositories,
-change the running maintenance automation or activate a new native build today.
+ongoing responsibility. The initial specification update created no repositories
+or native builds. The subsequent source-sync authorization below supersedes its
+documentation-only boundary for the narrowly stated maintenance setup.
 
 ## P1. Content indicators and initial suggestion
 
@@ -262,6 +263,17 @@ do not document a proposed repository as already created. The existing
 of `FortunasXP/mpv-android-libdovi`, not the current Windows source fork. Desktop
 currently pins the external build documented in `WINDOWS_LIBMPV_RUNTIME.md`.
 
+Source-maintenance baseline established on 2026-11-08: owned source repository
+`https://github.com/Darkaxt/mpv`, maintained branch `master`, upstream
+`https://github.com/mpv-player/mpv:master`, persistent checkout `D:\Projects\mpv`.
+Both remote branches and the clean checkout resolve to
+`8bc468896ec711cc5a3ac33dae9cbc0e266bcfa4` at qualification (zero ahead/behind).
+No AnimeJaNai patch or new binary is present in that baseline. The existing
+Android library fork remains at `d7c00b242551d28a814928606a19a7e36684d892`,
+seven commits ahead and zero behind its `upstream/libdovi` tip
+`fee434bfcfdd7f4226ba21a4f4cb8ce260621c53`; its last AAR build run `34656988140`
+is successful. This source check does not revalidate or replace its old artifact.
+
 Carry AnimeJaNai's required native filter/GPU integration in the owned mpv fork.
 Trace it to exact commits from `the-database/mpv`, retain attribution and licenses,
 and keep the fork-specific delta limited to required player support. Record the
@@ -319,6 +331,25 @@ long playback. Verify that the three-day monitor covers the native fork and that
 a failed candidate leaves the installed application's runtime unchanged. Document
 and inspect the exact native release and its later application promotion separately.
 These are future acceptance checks; no such merge/build/release is claimed here.
+
+## Current bounded execution: source baseline and recurring maintenance
+
+On 2026-11-08 the user authorized starting with upstream mpv source synchronization
+and extending the existing schedule alongside Nuvio Android/Windows maintenance.
+This step establishes the owned source fork and its maintained checkout, checks
+the existing Android library fork, and activates recurring source maintenance.
+It does not implement AnimeJaNai/SVP, update native dependency pins, build/publish
+new binaries, or replace installed/packaged AAR/DLL artifacts merely to mirror
+unchanged upstream source. Native artifact delivery remains subject to P4-P7.
+
+| Stage | Status | Acceptance criteria | Evidence / remaining work |
+| --- | --- | --- | --- |
+| mpv source baseline and recurring maintenance | COMPLETE | Owned source fork preserves mpv history and is zero behind upstream; existing Android library divergence inspected; existing three-day automation includes both native repositories and retains Android/Windows delivery, resource gates and quiet healthy behavior; remote state and saved schedule verified | Created `Darkaxt/mpv:master` from `mpv-player/mpv`, fetched and verified exact shared tip `8bc468896e` and clean persistent checkout. Android library is zero behind. Updated existing automation `maintain-nuviodv-upstream-fork`, now named `Maintain NuvioDV apps and native mpv`; read back the saved prompt, ACTIVE status, unchanged three-day recurrence and original target chat. Both native repository paths, existing app release workflows, managed execution gates, quiet healthy behavior and unchanged AAR/DLL promotion safeguards are present. No native/application code or binary pin changed; no build/release was required for this source-only step. |
+
+Blockers: none for this bounded step. Tracked deferrals: none for this bounded
+step. Closure review found no new execution infrastructure or duplicate schedule;
+the existing heartbeat owns the added source checks. The future feature stages below remain separate and
+must not be reported complete from a source-only synchronization.
 
 ## Future stages and reconciliation
 
