@@ -2,6 +2,7 @@ package com.nuvio.app.features.player.desktop
 
 import java.awt.Frame
 import java.awt.GraphicsConfiguration
+import java.awt.Insets
 import java.awt.Rectangle
 import java.awt.Toolkit
 import java.awt.Window
@@ -24,15 +25,22 @@ internal fun Window.trackMaximizedBoundsForCurrentScreen(): () -> Unit {
     val frame = this as? Frame ?: return {}
     if (DesktopHostOs.current != DesktopHostOs.WINDOWS) return {}
 
-    var lastConfiguration: GraphicsConfiguration? = null
+    var lastBounds: Rectangle? = null
 
     fun apply() {
         val configuration = frame.graphicsConfiguration ?: return
+        val frameInsets = frame.insets
+        // A decorated Windows frame exposes its resize margin through the side
+        // and bottom insets. Wait for those peer-owned values rather than
+        // temporarily installing the clipped work-area rectangle.
+        if (frameInsets.left <= 0 || frameInsets.right <= 0 || frameInsets.bottom <= 0) return
+
+        val bounds = maximizedOuterBounds(configuration.workArea(), frameInsets)
         // Writing maximized bounds mid-maximize can disturb the frame, so only
-        // a real change of screen triggers a recompute.
-        if (configuration === lastConfiguration) return
-        lastConfiguration = configuration
-        frame.maximizedBounds = configuration.workArea()
+        // a real geometry change triggers a recompute.
+        if (bounds == lastBounds) return
+        lastBounds = bounds
+        frame.maximizedBounds = bounds
     }
 
     apply()
@@ -42,6 +50,24 @@ internal fun Window.trackMaximizedBoundsForCurrentScreen(): () -> Unit {
     }
     frame.addComponentListener(listener)
     return { frame.removeComponentListener(listener) }
+}
+
+/**
+ * AWT passes these as the outer Win32 window bounds. Windows normally places
+ * the invisible resize frame outside the monitor work area when maximizing;
+ * constraining the outer frame to the work area instead clips visible chrome
+ * inward by that margin. The top AWT inset also contains the caption, so the
+ * resize margin is derived from the decorated frame's non-caption edges.
+ */
+internal fun maximizedOuterBounds(workArea: Rectangle, frameInsets: Insets): Rectangle {
+    val resizeMargin = minOf(frameInsets.left, frameInsets.right, frameInsets.bottom).coerceAtLeast(0)
+    if (resizeMargin == 0) return Rectangle(workArea)
+    return Rectangle(
+        workArea.x - resizeMargin,
+        workArea.y - resizeMargin,
+        workArea.width + (resizeMargin * 2),
+        workArea.height + (resizeMargin * 2),
+    )
 }
 
 /**
