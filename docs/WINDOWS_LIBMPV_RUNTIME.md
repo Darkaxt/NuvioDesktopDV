@@ -35,7 +35,18 @@ After independently downloading and extracting the exact pinned asset, run:
 
 The script rejects any DLL whose SHA-256 does not match the pinned artifact.
 
-## Planned successor (not yet implemented)
+## Owned Windows successor
+
+The separate [Darkaxt/mpv](https://github.com/Darkaxt/mpv) fork now owns the
+Windows build recipe. Its bounded Dolby Vision baseline is specified in
+`DOCS/NUVIODV_WINDOWS_RUNTIME_SPEC.md` there. That native work preserves FFmpeg
+RPU handling, libplacebo reshaping/GPU-next and the sync-object leak correction.
+It does not copy the Android JNI wrapper or add a redundant Windows libdovi.
+Current mpv requires libplacebo API 387, so the owned candidate uses a newer
+immutable revision containing the correction rather than the API 377 DLL above.
+
+Native artifact publication does not promote it into this app. The external DLL
+pin and exact-hash installation contract above remain authoritative here.
 
 `WINDOWS_PLAYBACK_ENHANCEMENTS_SPEC.md`, requirement P7, assigns ownership of an
 mpv source fork carrying AnimeJaNai support and ongoing upstream synchronization.

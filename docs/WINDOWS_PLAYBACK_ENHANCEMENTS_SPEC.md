@@ -353,6 +353,14 @@ must not be reported complete from a source-only synchronization.
 
 ## Future stages and reconciliation
 
+Before these feature stages, the user's subsequent 2026-11-08 instruction
+authorizes the owned Windows Dolby Vision baseline and README update in
+`Darkaxt/mpv`. Its authoritative bounded specification is
+`D:\Projects\mpv\DOCS\NUVIODV_WINDOWS_RUNTIME_SPEC.md`. It builds and verifies
+the existing DV pipeline with pinned dependencies and publishes a native artifact;
+it does not implement AnimeJaNai/SVP or replace this application's runtime pin.
+The required later feature/application checks below remain in force.
+
 All stages are NOT STARTED. No runtime feature is implemented by this specification.
 
 | Stage | Requirements | Required end-to-end evidence |
