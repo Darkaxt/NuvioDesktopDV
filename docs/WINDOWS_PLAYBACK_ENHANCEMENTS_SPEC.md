@@ -216,4 +216,3 @@ These are unverified implementation requirements, not completed feasibility proo
 - https://www.svp-team.com/docs/hdr/
 - https://mpv.io/manual/master/
 - Existing runtime provenance: `WINDOWS_LIBMPV_RUNTIME.md`.
-

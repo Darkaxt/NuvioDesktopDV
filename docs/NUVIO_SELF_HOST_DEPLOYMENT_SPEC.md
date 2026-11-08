@@ -158,4 +158,3 @@ assigned stage before deployment acceptance. They are not completed work.
 - https://github.com/NuvioMedia/self-host/blob/main/docs/external-proxy.md
 - https://github.com/NuvioMedia/self-host/blob/main/docs/client-configuration.md
 - https://github.com/NuvioMedia/self-host/blob/main/SECURITY.md
-
