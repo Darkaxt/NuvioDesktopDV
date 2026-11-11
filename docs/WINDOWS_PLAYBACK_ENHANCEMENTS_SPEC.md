@@ -353,6 +353,23 @@ must not be reported complete from a source-only synchronization.
 
 ## Future stages and reconciliation
 
+### 2026-11-11 native maintenance evidence
+
+`Darkaxt/mpv:master` normally merged upstream through `bcde6b93cc` (27 commits).
+Native source `6b4a48dfff89306a091f6d16e23c5aa888e2727f` passed pinned build/contracts
+and real Windows GPU-next SDR/Profile 5/Profile 8.1 qualification in run
+`43101201701`. Normal public release `nuviodv-windows-dv.2` was independently
+downloaded: ZIP SHA-256
+`c7d406eacf434bfd07f81c9e5c73710aa12099548c4db0f4e03f5f00553d9148`,
+DLL SHA-256 `df30ec9b4c458c778640e0aee93e46a8f0636abb981fb6d442e5aeef8149562d`,
+loaded API 2.6, matching immutable source/dependency manifest, required licenses
+and build/runtime evidence. Profile 5/8.1 frames were inspected. No image or
+dependency commit floated. This completes this native maintenance delivery,
+not P7 feature/runtime integration or any AnimeJaNai/SVP stage below.
+Desktop's packaged DLL remains
+`04e4d27dc385dc18ddd93fbe69c75e635b864f3c6ec53a9122df54c2f7842f4a`.
+Application promotion still requires the stated real application gates.
+
 Before these feature stages, the user's subsequent 2026-11-08 instruction
 authorizes the owned Windows Dolby Vision baseline and README update in
 `Darkaxt/mpv`. Its authoritative bounded specification is
