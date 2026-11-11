@@ -79,6 +79,43 @@ When maximized on Windows, NuvioDV must fill the current monitor's work area wit
 
 ## Staged plan and reconciliation ledger
 
+### 2026-11-11 scheduled Desktop maintenance
+
+The current stage is the Desktop stage in the cross-repository ledger at
+`D:\Projects\mpv\DOCS\NUVIODV_WINDOWS_RUNTIME_SPEC.md`; no separate concurrent
+implementation stage is opened here. Integrate inspected upstream `37ce07d35`
+(62 commits), preserve R3/R7-R10 and all delivered fork behavior, publish a normal
+Windows-only release, independently verify its MSI/configuration and upgrade the
+local installation through the elevation broker with profiles preserved.
+
+Source reconciliation: the single Bulgarian resource conflict resolves to
+upstream only after XML key comparison proves every fork key remains (34 added).
+Upstream's AutoSync/auth/player changes are integrated. The Trakt catalogue test
+recorder receives the same Mutex correction established by Android's Linux suite.
+Desktop already retains correct post-credits targets and realistic legacy-progress
+fixtures. Updater, RPDB, About version, banding and maximized-window sources remain
+connected; the DLL remains SHA-256 `04e4d27dc385dc18ddd93fbe69c75e635b864f3c6ec53a9122df54c2f7842f4a`.
+The upstream base stays 0.1.35; advance to `0.1.35-nuviodv.5` / code `41`.
+All required source paths are present with no unresolved merge or known source gap.
+Source is ready for validation, not verified or delivered. Run the fork contracts,
+full desktop tests and Windows release MSI package under the managed Gradle gate.
+Use existing local toolchain bindings, two workers/no parallel projects, initial
+3 GiB Gradle/Kotlin heaps and one test fork. Final delivery uses the exact verified
+public Windows MSI; native Windows mpv promotion and AnimeJaNai/SVP remain separate.
+
+Local validation passed: readiness receipt `c226ceb54996f66cdbdad30ea40057b9`,
+workflow `57e876d77864bd2beb852e4bc2a68e06` completed full desktop tests and
+`:composeApp:packageReleaseMsi` with native exit zero and verified whole-tree exit.
+The shared Gradle gate retains two workers/no parallel projects, initial 3 GiB
+Gradle/Kotlin heaps and one test fork; no memory failure occurred. The existing
+WebView2 SDK `1.0.4258.31` was used locally; final CI retains pinned `1.0.4078.44`.
+Read-only MSI table/cabinet inspection verifies product `NuvioDV`, MSI `1.1.3505`,
+upgrade identity `9710d835-a9d6-5e42-a15f-6ff37d179456`, actual desktop version/code,
+unchanged provider-client hashes, updater/RPDB and exact libmpv pin. Local candidate
+SHA-256 is `97e0d7dfead0466a8f047505e917f83cff82f275b0b7e56b7926af4d0c7d4aa0`.
+Normal CI publication, independent public MSI verification and supported local
+upgrade remain required; this local candidate is not the installation source.
+
 | Stage | Status | Requirements | Acceptance evidence | Blockers | Tracked deferrals |
 |---|---|---|---|---|---|
 | 1. Corrected parity inventory | COMPLETE | R1, inventory portion of R2, R8 provenance decision | Exact-commit source comparison established that Desktop's generic poster editor is not the Android fork's RPDB integration; binary inspection established only unproven DV/RPU capability and therefore requires source/build provenance before acceptance | None | None |
