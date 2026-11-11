@@ -116,6 +116,29 @@ SHA-256 is `97e0d7dfead0466a8f047505e917f83cff82f275b0b7e56b7926af4d0c7d4aa0`.
 Normal CI publication, independent public MSI verification and supported local
 upgrade remain required; this local candidate is not the installation source.
 
+External delivery blocker: original Windows-only publish run `43096139223`
+targets verified source `868730fb1736b184768a02952667a6514ad93701`. It failed
+internally before any job around GitHub incident `dvy0t3mvh1lg`; the supported
+rerun was accepted at 20:39 UTC. After GitHub reported full backlog recovery at
+21:21 UTC, its run API still says queued / attempt 1 / no jobs, while its attempt
+API says completed / startup_failure. Cancellation was refused because GitHub
+considers the run completed. No build was interrupted and no duplicate dispatched.
+There is no `.5` public release or MSI to verify/install, so delivery is BLOCKED,
+not complete. Local installation stays `0.1.35-nuviodv.4` / code 40 / MSI 1.1.3504.
+Readiness and successful local verification remain valid for unchanged application
+code; documentation-only evidence commits after the dispatched source do not alter
+the pending build. Resume by inspecting the same run/attempt until consistent,
+use supported rerun only when terminal, then wait for actual workflow completion,
+verify normal `.5` public release/tag/source and download its exact MSI/checksum.
+Independently inspect the package/configuration, install through the elevation
+broker and verify installed/public JAR equality, version and preserved profiles.
+Exact pending recovery inputs are retained at
+`E:\Temp\nuviodv-maintenance-20261111-recovery`: the verified installed-baseline
+hash report and read-only MSI/JAR, installer and installed-package helpers.
+They contain no secret values. Remove this exact recovery folder transactionally
+after the original Desktop delivery consumer finishes. All bulk downloads and
+local preflight MSI copies from the completed checks are expendable.
+
 | Stage | Status | Requirements | Acceptance evidence | Blockers | Tracked deferrals |
 |---|---|---|---|---|---|
 | 1. Corrected parity inventory | COMPLETE | R1, inventory portion of R2, R8 provenance decision | Exact-commit source comparison established that Desktop's generic poster editor is not the Android fork's RPDB integration; binary inspection established only unproven DV/RPU capability and therefore requires source/build provenance before acceptance | None | None |
