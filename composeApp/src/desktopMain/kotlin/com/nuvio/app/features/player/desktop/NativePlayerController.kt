@@ -363,6 +363,7 @@ internal class NativePlayerController(
                         if (!releaseRequested && terminalReleaseFailure == null && pendingSource === pending) {
                             handle = created
                             animeJaNai.attachHandle(created)
+                            NativePlayerDebugHooks.activeControlsEvent = ::handlePlayerEvent
                             true
                         } else {
                             false
@@ -817,6 +818,7 @@ internal class NativePlayerController(
                     val current = if (failureMessage == null) detachPlayerHandle() else 0L
                     if (current != 0L) {
                         log.d { "pre-navigation dispose started handle=$current" }
+                        detachEnhancements(current)
                         runCatching { nativeDispose(current) }
                             .onSuccess { log.d { "pre-navigation dispose completed handle=$current" } }
                             .onFailure { error ->
@@ -973,6 +975,16 @@ internal class NativePlayerController(
         current
     }
 
+    /**
+     * Every teardown of an attached handle goes through here before the native dispose: waits for
+     * in-flight AnimeJaNai calls, offers the engine the stream needed for preparation and ends the
+     * AnimeJaNai playback registration.
+     */
+    private fun detachEnhancements(current: Long) {
+        animeJaNai.detachHandle(current)
+        NativePlayerDebugHooks.activeControlsEvent = null
+    }
+
     private fun recordTerminalDisposeFailure(error: Throwable, operation: String, nativeHandle: Long) {
         synchronized(lifecycleLock) {
             terminalReleaseFailure = "Native player shutdown failed. Quit Nuvio before removing the player."
@@ -987,7 +999,7 @@ internal class NativePlayerController(
             {
                 awaitThreadCompletion(prior, "prior native teardown")
                 // Waits for any in-flight AnimeJaNai native call before the handle is freed.
-                animeJaNai.detachHandle(current)
+                detachEnhancements(current)
                 runCatching { nativeDispose(current) }
                     .onFailure { error -> recordTerminalDisposeFailure(error, "native", current) }
             },
@@ -1813,6 +1825,27 @@ private fun PlayerControlsState.toControlsJson(isFullscreen: Boolean, onImageRea
             }
             append("]}")
         }
+        append(",\"enhancement\":{")
+        appendJsonField("visible", enhancement.visible)
+        append(',')
+        appendJsonField("panelTitle", enhancement.panelTitle)
+        append(',')
+        appendJsonField("statusHeadline", enhancement.statusHeadline)
+        append(',')
+        appendJsonField("statusReason", enhancement.statusReason)
+        append(',')
+        appendJsonField("statusNote", enhancement.statusNote)
+        append(',')
+        appendJsonField("animationAvailable", enhancement.animationAvailable)
+        append(',')
+        appendJsonField("animationLabel", enhancement.animationLabel)
+        append(',')
+        appendJsonField("animationDescription", enhancement.animationDescription)
+        append(',')
+        appendJsonField("animationChecked", enhancement.animationChecked)
+        append(',')
+        appendJsonField("animationError", enhancement.animationError)
+        append('}')
         append(",\"party\":")
         append(partyJson.encodeToString(PlayerControlPartyState.serializer(), party.withWebviewImages(onImageReady)))
         append('}')
@@ -2090,3 +2123,12 @@ private fun String.toJsonString(): String =
         }
         append('"')
     }
+
+/**
+ * Entry point of the active player's controls-page events (the same function the WebView2
+ * controls page message reaches), exposed only for the opt-in debug control bridge.
+ */
+internal object NativePlayerDebugHooks {
+    @Volatile
+    var activeControlsEvent: ((type: String, value: Double) -> Unit)? = null
+}

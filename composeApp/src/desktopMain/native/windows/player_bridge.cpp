@@ -1056,11 +1056,6 @@ public:
             );
         }
 
-        sendUiTask([self = shared_from_this()]() {
-            self->cleanupUiResources();
-            PostQuitMessage(0);
-        });
-
         stopping.store(true);
         {
             std::lock_guard<std::mutex> lock(mpvMutex);
@@ -1070,13 +1065,29 @@ public:
         }
         // Bounded: if a thread will not finish we detach rather than block dispose forever.
         joinOrDetach(eventThread);
+
+        // Terminate mpv while its wid (containerHwnd) still exists. Destroying the container
+        // first pulled the window out from under a still-rendering VO: with gpu-api=vulkan
+        // (AnimeJaNai sessions) the VO then recreated its swapchain against the dead window and
+        // the NVIDIA driver crashed in vkDestroySwapchainKHR. The handle is detached under the
+        // lock but terminated outside it, so UI-thread handlers that take mpvMutex (onTimer, web
+        // messages) see a null handle instead of blocking the thread mpv's window teardown may
+        // need to message.
+        mpv_handle *terminating = nullptr;
         {
             std::lock_guard<std::mutex> lock(mpvMutex);
-            if (mpv) {
-                mpvApi().terminateDestroy(mpv);
-                mpv = nullptr;
-            }
+            terminating = mpv;
+            mpv = nullptr;
         }
+        if (terminating) {
+            mpvApi().terminateDestroy(terminating);
+        }
+
+        sendUiTask([self = shared_from_this()]() {
+            self->cleanupUiResources();
+            PostQuitMessage(0);
+        });
+
         if (GetCurrentThreadId() != uiThreadId) {
             joinOrDetach(uiThread);
         }

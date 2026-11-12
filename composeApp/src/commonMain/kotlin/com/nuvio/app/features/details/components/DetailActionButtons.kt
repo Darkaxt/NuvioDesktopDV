@@ -267,16 +267,7 @@ fun DetailActions(
     /** Title whose per-profile Animation toggle is shown (platforms with enhancements only). */
     animationMeta: MetaDetails? = null,
 ) {
-    val animationToggle = animationMeta?.let { meta ->
-        rememberAnimationToggle(
-            metaId = meta.id,
-            metaType = meta.type,
-            displayTitle = meta.name,
-            facts = remember(meta) { meta.toTitleFacts() },
-            surface = AnimationToggleSurface.Details,
-        )
-    }
-    val animationToggleLabel = animationToggle?.label()
+    val animationAction = rememberAnimationToggleAction(animationMeta)
     val shuffleAction = onShuffleClick?.let { onClick ->
         DetailSecondaryAction(
             label = stringResource(if (shuffleEnabled) Res.string.shuffle_stop else Res.string.random_episode_title),
@@ -308,20 +299,34 @@ fun DetailActions(
                     onLongClick = onSaveLongClick,
                 ),
             )
-            if (animationToggle != null && animationToggleLabel != null) {
-                add(
-                    DetailSecondaryAction(
-                        label = animationToggleLabel,
-                        icon = Icons.Default.Animation,
-                        isActive = animationToggle.enabled,
-                        onClick = animationToggle::toggle,
-                    ),
-                )
-            }
+            animationAction?.let(::add)
         },
         isTablet = isTablet,
         onPlayClick = onPlayClick,
         onPlayLongClick = onPlayLongClick,
+    )
+}
+
+/**
+ * The details-surface Animation toggle as a secondary action, shared by the mobile/tablet
+ * [DetailActions] row and the desktop hero; null where the platform or title has no toggle.
+ */
+@Composable
+internal fun rememberAnimationToggleAction(meta: MetaDetails?): DetailSecondaryAction? {
+    val toggle = meta?.let {
+        rememberAnimationToggle(
+            metaId = it.id,
+            metaType = it.type,
+            displayTitle = it.name,
+            facts = remember(it) { it.toTitleFacts() },
+            surface = AnimationToggleSurface.Details,
+        )
+    } ?: return null
+    return DetailSecondaryAction(
+        label = toggle.label(),
+        icon = Icons.Default.Animation,
+        isActive = toggle.enabled,
+        onClick = toggle::toggle,
     )
 }
 

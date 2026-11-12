@@ -37,10 +37,31 @@ internal object NativePlayerBridge {
         error
     }
 
-    /** Size and timestamp of the loaded Windows libmpv, identifying the build for cached measurements. */
+    @Volatile
+    private var cachedLibmpvIdentity: Pair<File, String>? = null
+
+    /**
+     * Content hash of the loaded Windows libmpv, identifying the build for cached measurements.
+     * A content hash (not size + timestamp) keeps measurements valid across app updates and
+     * re-extraction of an identical libmpv. Hashed once per run; callers already run off the UI thread.
+     */
     fun libmpvIdentity(): String {
         val library = loadedDirectory?.resolve("libmpv-2.dll")?.takeIf(File::isFile) ?: return "libmpv-unknown"
-        return "libmpv:${library.length()}:${library.lastModified()}"
+        cachedLibmpvIdentity?.takeIf { it.first == library }?.let { return it.second }
+        val identity = runCatching {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            library.inputStream().buffered().use { input ->
+                val buffer = ByteArray(1 shl 16)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+            "libmpv-sha256:" + digest.digest().joinToString("") { "%02x".format(it) }
+        }.getOrElse { "libmpv:${library.length()}:${library.lastModified()}" }
+        cachedLibmpvIdentity = library to identity
+        return identity
     }
 
     fun ensureLoaded() {

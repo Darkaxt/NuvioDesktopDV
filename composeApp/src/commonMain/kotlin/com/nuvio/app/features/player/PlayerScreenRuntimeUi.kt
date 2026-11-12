@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.Color
@@ -297,6 +298,18 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
             addonSubtitle = selectedAddonSubtitle.takeIf { useCustomSubtitles },
         )
     } else emptyList()
+    val enhancementControls = if (enhancementPanelSupported) {
+        rememberPlayerEnhancementControls(
+            visible = showEnhancementPanel,
+            parentMetaId = parentMetaId,
+            parentMetaType = parentMetaType,
+            title = title,
+            meta = playerMeta,
+        )
+    } else {
+        null
+    }
+    SideEffect { enhancementAnimationToggle = enhancementControls?.toggleAnimation }
     val controlChapters = chapters.mapIndexed { index, chapter ->
         PlayerControlChapter(
             startMs = chapter.startMs,
@@ -311,6 +324,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
         autoSyncedLabel = stringResource(Res.string.autosync_label_synced),
         streamInfoLabel = stringResource(Res.string.cd_stream_info),
         streamInfoSections = streamInfoSections,
+        enhancement = enhancementControls?.state ?: PlayerControlEnhancementState(),
         title = title,
         episodeText = episodeText,
         streamTitle = activeStreamTitle,
@@ -1083,6 +1097,8 @@ internal fun PlayerScreenRuntime.handlePlayerControlsEvent(type: String, value: 
             selectPlaybackSpeed(value.toFloat())
         }
         "streamInfo" -> refreshStreamInfo()
+        "enhancementAnimationToggle" -> enhancementAnimationToggle?.invoke()
+        "enhancementDismissed" -> showEnhancementPanel = false
         "selectChapter" -> {
             selectChapter(value.toInt())
         }
@@ -2148,16 +2164,6 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
             showSubmitIntroModal = false
         },
     )
-    if (enhancementPanelSupported) {
-        PlayerEnhancementPanel(
-            visible = showEnhancementPanel,
-            parentMetaId = parentMetaId,
-            parentMetaType = parentMetaType,
-            title = title,
-            meta = playerMeta,
-            onDismiss = { showEnhancementPanel = false },
-        )
-    }
     StreamInfoOverlay(
         visible = showStreamInfo,
         addonName = activeProviderName,

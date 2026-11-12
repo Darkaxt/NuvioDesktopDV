@@ -915,7 +915,9 @@ val buildWindowsPlayerBridge = tasks.register<Exec>("buildWindowsPlayerBridge") 
     outputs.file(windowsPlayerBridgeOutput)
     outputs.file(windowsPlayerBridgeImportLib)
     outputs.file(windowsPlayerBridgePdb)
-    onlyIf { !windowsPlayerBridgeOutput.get().asFile.exists() }
+    // No onlyIf(!output.exists()): it skipped the task whenever any DLL existed, so edits to
+    // player_bridge.cpp were silently packaged as the stale bridge. The declared inputs and
+    // outputs already make an unchanged bridge up to date.
     commandLine(windowsPlayerBridgeCommand)
 }
 

@@ -79,6 +79,16 @@ const chaptersLabel = document.getElementById("chaptersLabel");
 const chapterTitle = document.getElementById("chapterTitle");
 const chapterMarks = document.getElementById("chapterMarks");
 const chaptersModal = document.getElementById("chaptersModal");
+const enhancementModal = document.getElementById("enhancementModal");
+const enhancementPanelTitle = document.getElementById("enhancementPanelTitle");
+const enhancementCloseButton = document.getElementById("enhancementCloseButton");
+const enhancementHeadline = document.getElementById("enhancementHeadline");
+const enhancementReason = document.getElementById("enhancementReason");
+const enhancementNote = document.getElementById("enhancementNote");
+const enhancementAnimationRow = document.getElementById("enhancementAnimationRow");
+const enhancementAnimationLabel = document.getElementById("enhancementAnimationLabel");
+const enhancementAnimationDescription = document.getElementById("enhancementAnimationDescription");
+const enhancementAnimationError = document.getElementById("enhancementAnimationError");
 const streamInfoButton = document.getElementById("streamInfoButton");
 const streamInfoLabel = document.getElementById("streamInfoLabel");
 const streamInfoModal = document.getElementById("streamInfoModal");
@@ -1014,6 +1024,7 @@ const modalByName = {
   sources: sourceModal,
   episodes: episodesModal,
   chapters: chaptersModal,
+  enhancement: enhancementModal,
   streamInfo: streamInfoModal,
   submitIntro: submitIntroModal,
   p2pConsent: p2pConsentModal,
@@ -1071,6 +1082,7 @@ const closePlayerModal = (notifyDismiss = false, animated = true) => {
   }
   if (closingModal === "episodes") onEpisodesModalClosed();
   if (closingModal === "party") onPartyModalClosed();
+  if (closingModal === "enhancement") send("enhancementDismissed", 0);
   renderChrome();
 };
 
@@ -1082,6 +1094,7 @@ const openPlayerModal = modal => {
   }
   if (activeModal === "party" && modal !== "party") onPartyModalClosed();
   if (modal === "party" && activeModal !== "party") onPartyModalOpened();
+  if (activeModal === "enhancement" && modal !== "enhancement") send("enhancementDismissed", 0);
   activeModal = modal;
   if (modal === "submitIntro") {
     const contentKey = state.submitIntroContentKey || "";
@@ -2297,6 +2310,22 @@ const renderStreamInfoModal = () => {
   });
 };
 
+const renderEnhancementModal = () => {
+  const model = state.enhancement || {};
+  enhancementPanelTitle.textContent = model.panelTitle || "Enhancements";
+  enhancementCloseButton.textContent = state.panelCloseLabel || "Close";
+  enhancementHeadline.textContent = model.statusHeadline || "";
+  enhancementReason.textContent = model.statusReason || "";
+  enhancementNote.textContent = model.statusNote || "";
+  enhancementAnimationRow.hidden = !model.animationAvailable;
+  const checked = Boolean(model.animationChecked);
+  enhancementAnimationRow.setAttribute("aria-checked", checked ? "true" : "false");
+  enhancementAnimationRow.classList.toggle("checked", checked);
+  enhancementAnimationLabel.textContent = model.animationLabel || "Animation";
+  enhancementAnimationDescription.textContent = model.animationDescription || "";
+  enhancementAnimationError.textContent = model.animationError || "";
+};
+
 const renderChaptersModal = (modalOpened = false) => {
   const chapters = Array.isArray(state.chapters) ? state.chapters : [];
   const durationMs = Math.max(0, Number(state.durationMs) || 0);
@@ -2401,6 +2430,7 @@ const renderActiveModal = (modalOpened = false) => {
   if (activeModal === "sources") renderSourceModal(modalOpened);
   if (activeModal === "episodes") renderEpisodesModal(modalOpened);
   if (activeModal === "chapters") renderChaptersModal(modalOpened);
+  if (activeModal === "enhancement") renderEnhancementModal();
   if (activeModal === "streamInfo") renderStreamInfoModal();
   if (activeModal === "submitIntro") renderSubmitIntroModal();
   if (activeModal === "p2pConsent") renderP2pConsentModal();
@@ -3368,6 +3398,16 @@ sourceList.addEventListener("scroll", () => {
     requestSourceVirtualRender();
   }
 }, { passive: true });
+enhancementCloseButton.addEventListener("click", event => {
+  event.stopPropagation();
+  closePlayerModal();
+});
+
+enhancementAnimationRow.addEventListener("click", event => {
+  event.stopPropagation();
+  send("enhancementAnimationToggle", 0);
+});
+
 chaptersCloseButton.addEventListener("click", event => {
   event.stopPropagation();
   closePlayerModal();
@@ -3620,6 +3660,7 @@ window.playerControls = nextState => {
   const previousResizeLabel = state.resizeModeLabel || "";
   const previousSpeedLabel = state.playbackSpeedLabel || "";
   const previousEpisodeStreamsVisible = Boolean(state.episodeStreamsVisible);
+  const previousEnhancementVisible = Boolean(state.enhancement && state.enhancement.visible);
   const previousSelectedSubtitleLanguageKey = state.selectedSubtitleLanguageKey || "__off__";
   const previousSelectedSubtitleOptionId = state.selectedSubtitleOptionId || "";
   const previousParty = state.party;
@@ -3660,6 +3701,15 @@ window.playerControls = nextState => {
     closePlayerModal();
   } else if (state.episodeStreamsVisible && !previousEpisodeStreamsVisible && activeModal !== "episodes") {
     openPlayerModal("episodes");
+  }
+  // Edge-triggered so a dismissal racing an in-flight state update cannot reopen the panel.
+  const enhancementVisible = Boolean(state.enhancement && state.enhancement.visible);
+  if (enhancementVisible && !previousEnhancementVisible && activeModal !== "enhancement") {
+    openPlayerModal("enhancement");
+  } else if (!enhancementVisible && previousEnhancementVisible && activeModal === "enhancement") {
+    closePlayerModal();
+  } else if (activeModal === "enhancement") {
+    renderEnhancementModal();
   }
   if (
     activeModal === "subtitles" &&

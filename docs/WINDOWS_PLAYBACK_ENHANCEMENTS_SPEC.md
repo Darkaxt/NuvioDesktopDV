@@ -622,10 +622,47 @@ Native verification (2026-11-12, local-AI gate with per-task VRAM limits, owned
   23.976 fps, so this class qualifies. Inter-frame gaps in this pipelined untimed mode
   (p95 about 33 ms) are not per-frame latency and are not used (D3).
 
-Remaining before this stage is complete: in-app
-verification of the toggle surfaces, settings rows, status and live bypass with the
-owned libmpv; Android/iOS compile of the shared code; measured profile/status across
-episodes on real metadata.
+In-app verification (2026-11-13, local distributable with the owned ajn.1 libmpv,
+isolated app data, driven through the debug-only control bridge
+`DesktopDebugControl` - env `NUVIO_DEBUG_CONTROL_DIR`, loopback + session token,
+accessibility tree/actions, in-process input, window-only screenshots):
+
+- Animation toggle verified on the poster sheet, details hero ("More actions"),
+  Continue Watching sheet and live player panel; each writes the ledger with its
+  surface (`posterSheet`, `details`, `continueWatchingSheet`, `player`) and playback
+  honours it (explicit Off -> Skipped; live-action fixture -> "Title is not marked
+  Animation").
+- Settings: runtime install state, pending-engine preparation and post-prepare
+  benchmark (540p Balanced 17.7 ms of 41.7 ms) -> playback Active 960x540 -> 1920x1080.
+- Bugs found and fixed in-app:
+  1. Details hero had no Animation toggle (added to "More actions").
+  2. The Compose enhancement panel was invisible beneath the heavyweight native video
+     surface; it is now an HTML modal in the WebView2 controls layer (all Windows
+     player panels must live there).
+  3. Pre-navigation release did not detach AnimeJaNai before native dispose.
+  4. Exiting during AnimeJaNai (Vulkan) playback crashed 3/3 in the NVIDIA driver via
+     `vkDestroySwapchainKHR`: `player_bridge.cpp shutdown()` destroyed mpv's `wid`
+     container window before `mpv_terminate_destroy`, so a rendering VO recreated a
+     swapchain on a dead surface. Shutdown now joins the event thread, terminates mpv
+     outside `mpvMutex`, then destroys the UI resources. After the fix: 5/5 exits
+     during Active playback clean, no new dumps.
+  5. `buildWindowsPlayerBridge` skipped rebuilding whenever a DLL existed, so local
+     native edits were silently stale (CI builds clean, unaffected); the `onlyIf` was
+     removed.
+  6. The budget fingerprint identified libmpv by size + timestamp, so every reinstall
+     or re-extraction of an identical libmpv silently required re-preparation; it now
+     uses the content SHA-256 (hashed once per run).
+
+Android compile of the shared code (`:composeApp:compileAndroidMain`, gated ticket
+`7a35882c6e127b71051bba2032406fd6`) fails only on pre-existing upstream errors in
+untouched files (desktop-only `PointerButton`/`onPointerEvent` in commonMain since
+upstream `d9d4e6b20`); no error is in a file changed by this stage. The Android app
+ships from NuvioMobileDV, so this repo's Android target is not a release path.
+
+Remaining before this stage is complete: iOS compile of the shared code (CI
+`ios-test-build`; not buildable on this Windows host); live bypass under a real
+frame-drop breach (unit-tested, not yet provoked in-app); measured profile/status
+across episodes on real metadata.
 
 ### Side effort after the full plan
 

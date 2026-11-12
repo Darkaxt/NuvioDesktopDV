@@ -452,6 +452,29 @@
           </div>
         </div>
       </section>
+      <section class="modal-layer player-side-modal" id="enhancementModal" aria-label="Enhancements" hidden>
+        <div class="track-panel player-side-panel">
+          <div class="track-header-row">
+            <div class="track-title" id="enhancementPanelTitle">Enhancements</div>
+            <div class="panel-actions">
+              <button class="panel-button" id="enhancementCloseButton" type="button">Close</button>
+            </div>
+          </div>
+          <div class="enhancement-status" id="enhancementStatus">
+            <div class="enhancement-headline" id="enhancementHeadline"></div>
+            <div class="panel-context" id="enhancementReason"></div>
+            <div class="panel-context" id="enhancementNote"></div>
+          </div>
+          <button class="enhancement-toggle-row" id="enhancementAnimationRow" type="button" role="switch" aria-checked="false" hidden>
+            <span class="enhancement-toggle-text">
+              <span class="enhancement-toggle-label" id="enhancementAnimationLabel">Animation</span>
+              <span class="panel-context" id="enhancementAnimationDescription"></span>
+              <span class="panel-context enhancement-error" id="enhancementAnimationError"></span>
+            </span>
+            <span class="enhancement-switch" aria-hidden="true"><span></span></span>
+          </button>
+        </div>
+      </section>
       <section class="modal-layer player-side-modal" id="chaptersModal" aria-label="Chapters" hidden>
         <div class="track-panel player-side-panel">
           <div class="track-header-row">

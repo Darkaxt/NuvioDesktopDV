@@ -74,6 +74,7 @@ fun main(args: Array<String>) {
     AppIconRepository.ensureLoaded()
     AutoSyncPreferencesDesktop.initialize()
     DiscordPresenceManager.start()
+    com.nuvio.app.debug.DesktopDebugControl.startIfEnabled()
 
     application {
         val appIconState by AppIconRepository.state.collectAsState()

@@ -322,6 +322,21 @@ data class PlayerControlsState(
     val autoSyncedLabel: String = "Auto synced",
     val streamInfoLabel: String = "Stream info",
     val streamInfoSections: List<PlayerControlInfoSection> = emptyList(),
+    val enhancement: PlayerControlEnhancementState = PlayerControlEnhancementState(),
+)
+
+/** Enhancement status and the title's Animation toggle, rendered by the native controls layer. */
+data class PlayerControlEnhancementState(
+    val visible: Boolean = false,
+    val panelTitle: String = "",
+    val statusHeadline: String = "",
+    val statusReason: String = "",
+    val statusNote: String = "",
+    val animationAvailable: Boolean = false,
+    val animationLabel: String = "",
+    val animationDescription: String = "",
+    val animationChecked: Boolean = false,
+    val animationError: String = "",
 )
 
 data class PlayerControlFilterItem(

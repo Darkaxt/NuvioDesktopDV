@@ -311,6 +311,7 @@ fun DesktopDetailHero(
                 )
             }
             Spacer(modifier = Modifier.height(space.s28))
+            val animationAction = rememberAnimationToggleAction(meta)
             val shuffleAction = onShuffleClick?.let { onClick ->
                 DetailSecondaryAction(
                     label = stringResource(if (shuffleEnabled) Res.string.shuffle_stop else Res.string.random_episode_title),
@@ -355,6 +356,7 @@ fun DesktopDetailHero(
                         onClick = onSaveClick,
                         onLongClick = onSaveLongClick,
                     ))
+                    animationAction?.let(::add)
                 },
                 isTablet = true,
                 onPlayClick = onPlayClick,

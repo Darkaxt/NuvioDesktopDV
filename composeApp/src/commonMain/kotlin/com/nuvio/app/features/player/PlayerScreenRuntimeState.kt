@@ -281,6 +281,8 @@ internal class PlayerScreenRuntime(
     var showSubtitleModal by mutableStateOf(false)
     var showVideoSettingsModal by mutableStateOf(false)
     var showEnhancementPanel by mutableStateOf(false)
+    /** Flips the playing title's Animation choice; set from composition, null when unavailable. */
+    var enhancementAnimationToggle: (() -> Unit)? = null
     var showStreamInfo by mutableStateOf(false)
     var showPartyPanel by mutableStateOf(false)
     var partyPanelToken by mutableStateOf(0L)
