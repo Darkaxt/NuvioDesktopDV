@@ -25,12 +25,22 @@ internal object NativePlayerBridge {
 
     private val log = Logger.withTag("NativePlayerBridge")
 
+    /** Directory the bridge (and its libmpv) was loaded from; declared before [loadFailure] runs the load. */
+    @Volatile
+    private var loadedDirectory: File? = null
+
     private val loadFailure: Throwable? = try {
         loadNativeLibrary()
         null
     } catch (error: Throwable) {
         log.e(error) { "native player library failed to load" }
         error
+    }
+
+    /** Size and timestamp of the loaded Windows libmpv, identifying the build for cached measurements. */
+    fun libmpvIdentity(): String {
+        val library = loadedDirectory?.resolve("libmpv-2.dll")?.takeIf(File::isFile) ?: return "libmpv-unknown"
+        return "libmpv:${library.length()}:${library.lastModified()}"
     }
 
     fun ensureLoaded() {
@@ -223,12 +233,14 @@ internal object NativePlayerBridge {
         findPackagedApplicationLibrary(platformDir, libraryName)?.let { packagedLibrary ->
             loadNativeRuntimeDependencies(platform, packagedLibrary.parentFile)
             System.load(packagedLibrary.absolutePath)
+            loadedDirectory = packagedLibrary.parentFile
             return
         }
         findLocalBuildLibrary(platformDir, libraryName)?.let { localLibrary ->
             copyLocalRuntimeResources(platformDir, localLibrary.parentFile)
             loadNativeRuntimeDependencies(platform, localLibrary.parentFile)
             System.load(localLibrary.absolutePath)
+            loadedDirectory = localLibrary.parentFile
             return
         }
 
@@ -241,6 +253,7 @@ internal object NativePlayerBridge {
         val directory = DesktopCache.installVersionedResources("native-player-bridge/$platformDir", resources).toFile()
         loadNativeRuntimeDependencies(platform, directory)
         System.load(directory.resolve(libraryName).absolutePath)
+        loadedDirectory = directory
     }
 
     private fun findPackagedApplicationLibrary(platformDir: String, libraryName: String): File? {

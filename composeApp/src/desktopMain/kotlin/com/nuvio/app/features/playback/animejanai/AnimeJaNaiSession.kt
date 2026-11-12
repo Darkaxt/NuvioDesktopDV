@@ -33,6 +33,7 @@ internal data class AnimeJaNaiStartPlan(
 internal class AnimeJaNaiSession(
     private val runtime: AnimeJaNaiRuntime = AnimeJaNaiPreparationController.runtime,
     private val engineIndex: AnimeJaNaiEngineIndex = AnimeJaNaiPreparationController.engineIndex,
+    private val budgets: AnimeJaNaiBudgets = AnimeJaNaiPreparationController.budgets,
 ) {
     private val log = Logger.withTag("AnimeJaNai")
     // Single worker thread that exits when idle, so idle players keep no thread alive.
@@ -68,6 +69,11 @@ internal class AnimeJaNaiSession(
     @Volatile private var filterInserted = false
     @Volatile private var skippedForOutput = false
     @Volatile private var animationEnabled = true
+    /** Engines of the inserted filter, for recording a live budget breach. */
+    @Volatile private var insertedEngines: List<EngineFile>? = null
+    /** Set once a sustained budget breach disabled AnimeJaNai; it stays off for this stream. */
+    @Volatile private var budgetDisabled = false
+    private val liveMonitor = LiveBudgetMonitor()
 
     /**
      * Toggle state of a stream that started without AnimeJaNai only because the title was not marked
@@ -114,6 +120,9 @@ internal class AnimeJaNaiSession(
             decidedKey = null
             filterInserted = false
             preparationRequiredKey = null
+            insertedEngines = null
+            budgetDisabled = false
+            liveMonitor.reset()
             if (startPlan != null) {
                 _status.value = EnhancementStatus(EnhancementStatus.Kind.Pending, "Waiting for video", slot = startPlan.slot)
             }
@@ -161,6 +170,7 @@ internal class AnimeJaNaiSession(
         worker.execute {
             try {
                 evaluate()
+                monitorBudget()
             } catch (error: Throwable) {
                 log.w(error) { "evaluation failed" }
             } finally {
@@ -190,6 +200,10 @@ internal class AnimeJaNaiSession(
                 )
                 return@execute
             }
+            if (budgetDisabled) {
+                _status.value = _status.value.copy(reason = "Off for this stream after sustained frame drops")
+                return@execute
+            }
             if (!filterInserted) {
                 animationEnabled = enabled
                 if (enabled) {
@@ -207,6 +221,7 @@ internal class AnimeJaNaiSession(
                 return@execute
             }
             animationEnabled = enabled
+            liveMonitor.reset()
             if (!enabled) {
                 _status.value = _status.value.copy(kind = EnhancementStatus.Kind.Skipped, reason = "Animation is Off")
             } else {
@@ -240,7 +255,11 @@ internal class AnimeJaNaiSession(
             // Actual stream change: never keep a required-mode filter for an unverified size.
             command("vf", "remove", "@${AnimeJaNaiRuntime.FILTER_LABEL}")
             filterInserted = false
+            insertedEngines = null
         }
+        // A new stream size is a new budget decision.
+        budgetDisabled = false
+        liveMonitor.reset()
         decidedKey = key
         preparationRequiredKey = null
         skippedForOutput = false
@@ -279,6 +298,22 @@ internal class AnimeJaNaiSession(
             )
             return
         }
+        val budget = budgets.find(key, engines)
+        if (budget == null) {
+            preparationRequiredKey = key
+            _status.value = EnhancementStatus(
+                EnhancementStatus.Kind.PreparationRequired,
+                "Performance for ${width}x$height at ${key.fps} fps is not measured yet",
+                current.slot, width, height,
+            )
+            return
+        }
+        if (!budget.qualified) {
+            return skip("Over the performance budget (${budget.describe()})")
+        }
+        budget.liveBreaches[AnimeJaNaiBudgets.outputClass(outputHeight)]?.let { breach ->
+            return skip("Off at this output size after frame drops ($breach)")
+        }
         val result = command("vf", "add", runtime.filter(current.slot, "required"))
         if (result < 0) {
             _status.value = EnhancementStatus(
@@ -287,9 +322,30 @@ internal class AnimeJaNaiSession(
             return
         }
         filterInserted = true
+        insertedEngines = engines
         _status.value = EnhancementStatus(
             EnhancementStatus.Kind.Pending, "Starting", current.slot, width, height,
             width * AnimeJaNaiRuntime.SCALE, height * AnimeJaNaiRuntime.SCALE,
+        )
+    }
+
+    /** Live budget check of an active filter; a sustained breach bypasses it for this stream. */
+    private fun monitorBudget() {
+        if (!filterInserted || budgetDisabled || !animationEnabled) return
+        if (_status.value.kind != EnhancementStatus.Kind.Active) return
+        val frame = intProperty("estimated-frame-number")?.toLong() ?: return
+        val drops = (intProperty("frame-drop-count") ?: 0) + (intProperty("decoder-frame-drop-count") ?: 0)
+        val steady = stringProperty("core-idle").trim() == "no" && stringProperty("seeking").trim() == "no"
+        val breach = liveMonitor.sample(frame, drops.toLong(), steady) ?: return
+        val key = decidedKey ?: return
+        val outputClass = AnimeJaNaiBudgets.outputClass(intProperty("osd-height") ?: 0)
+        log.w { "budget breach key=${key.storageKey} output=$outputClass: $breach" }
+        command("vf-command", AnimeJaNaiRuntime.FILTER_LABEL, "slot", "0")
+        budgetDisabled = true
+        insertedEngines?.let { budgets.recordLiveBreach(key, it, outputClass, breach) }
+        _status.value = _status.value.copy(
+            kind = EnhancementStatus.Kind.Skipped,
+            reason = "Turned off for this stream: $breach",
         )
     }
 
@@ -300,7 +356,15 @@ internal class AnimeJaNaiSession(
         val reason: String?
         when (status.state) {
             "active" -> { kind = EnhancementStatus.Kind.Active; reason = "${status.backend} active" }
-            "bypass" -> { kind = EnhancementStatus.Kind.Skipped; reason = "Bypassed" }
+            "bypass" -> {
+                kind = EnhancementStatus.Kind.Skipped
+                // Keep the reason of our own bypass (budget breach or Animation Off).
+                reason = when {
+                    budgetDisabled -> base.reason
+                    !animationEnabled -> "Animation is Off"
+                    else -> "Bypassed"
+                }
+            }
             "building" -> { kind = EnhancementStatus.Kind.Pending; reason = "Building" }
             else -> {
                 kind = EnhancementStatus.Kind.Failed

@@ -440,7 +440,7 @@ the existing DV pipeline with pinned dependencies and publishes a native artifac
 it does not implement AnimeJaNai/SVP or replace this application's runtime pin.
 The required later feature/application checks below remain in force.
 
-The native-runtime stage is COMPLETE (owned build `nuviodv-windows-ajn.1` qualified below). The Animation decisions and adaptive AnimeJaNai stage is ACTIVE: P1-P3 rule/ledger/toggle-store source is written and reviewed but its focused tests have not run yet (blocked by a Coordinator Gradle-gate pre-launch failure reported to the user on 2026-11-12). The other stages are NOT STARTED.
+The native-runtime stage is COMPLETE (owned build `nuviodv-windows-ajn.1` qualified below). The Animation decisions and adaptive AnimeJaNai stage is ACTIVE; see its progress section below. The other stages are NOT STARTED.
 
 | Stage | Requirements | Required end-to-end evidence |
 | --- | --- | --- |
@@ -569,6 +569,53 @@ Codex automation, and dedicated `the-database/mpv` lag monitoring is deferred by
 the user's 2026-11-12 decision (above). The stage's acceptance criteria are met;
 application integration of these paths belongs to the next stages.
 
+#### Animation decisions and adaptive AnimeJaNai: progress (2026-11-12) - ACTIVE
+
+Implemented and pushed on `Dev` (gated Gradle receipts, desktop focused tests):
+
+- P1-P3 classification rules, append-only decision ledger and per-title toggle store;
+  P4 eligibility, filter insertion only for a prepared engine, real-stream supervised
+  preparation (commit `eb44a43b1`; 18 classification + 26 resolver tests).
+- P2 Animation toggle on details, poster sheet, both Continue Watching sheets and the
+  player enhancement panel; P4 settings rows for runtime install and pending-engine
+  preparation (commit `c2d455195`).
+- P4 pinned runtime installer: user-initiated download of the pinned AnimeJaNai
+  3.11.0 overlay, `animejanai-inference` runtime-2 TensorRT packs (GPU-matched builder
+  resource) and pinned `7zr.exe` into `%LOCALAPPDATA%\NuvioDV\AnimeJaNai`, every file
+  hash-verified. Live end-to-end install into scratch passed (receipt
+  `c85569497a01c2a5796314206bc05b61` attempt 2: trt-runtime 11.4.0.106 + trt-sm89).
+- P4 adaptive budgets: after a successful preparation the same supervised operation
+  runs an isolated windowless benchmark (480 frames `untimed`, starting 10% in,
+  `stream-mode=required`), recording mean decode+inference time per frame against
+  80% of the source frame interval. Results are cached locally (never synced) per
+  engine key and an environment fingerprint of GPU name/driver, loaded libmpv, the
+  installed runtime manifest and the engine files. Start-time selection requires a
+  prepared engine AND a qualified measurement; otherwise ordinary scaling with a
+  reported reason (unmeasured = preparation required). During playback a frame-counted
+  monitor (240-frame windows after a 48-frame warm-up; pauses, seeks and buffering
+  reset it) bypasses AnimeJaNai for the rest of the stream after two consecutive
+  windows with more than 2% drops, records the breach for that output-size class and
+  never re-enables it live. Unit-tested (budget/monitor tests, receipt attempt 1).
+
+Decisions and limits recorded for this stage:
+
+- Only the upstream default slot 1002 (HD V3.1 Balanced, SD Compact for SD sources) is
+  documented in the pinned runtime, so it is the only offered profile; "downgrade"
+  therefore means off. Deferral D2.
+- The benchmark measures mean per-frame cost, not the specified 95th percentile; the
+  filter exposes no per-frame timing. Deferral D3. The live drop monitor is the
+  steady-state guard.
+- The application still bundles the shinchiro libmpv (no AnimeJaNai filter). Local
+  in-app testing uses `-Pnuvio.windows.libmpv.runtimeDir=<ajn.1 directory>`; promoting
+  the owned pin belongs to Integrated Windows delivery.
+
+Remaining before this stage is complete: gated native verification of the installed
+runtime and of the benchmark on this GPU (blocked 2026-11-12 by the local-AI gate's
+10 GB free-VRAM admission while desktop applications held about 7 GB); in-app
+verification of the toggle surfaces, settings rows, status and live bypass with the
+owned libmpv; Android/iOS compile of the shared code; measured profile/status across
+episodes on real metadata.
+
 ### Side effort after the full plan
 
 User request 2026-11-12: once every stage of this plan is complete, deploy the
@@ -588,6 +635,8 @@ after them.
 
 | ID | Deferred requirement | Target | Resolution condition |
 | --- | --- | --- | --- |
+| D2 | Additional AnimeJaNai quality/performance profiles. The pinned runtime documents only slot 1002, so no smaller fallback profile can be offered or downgraded to. | Integrated Windows delivery, or earlier if the runtime documents more slots | Further upstream profile slots are documented and pinned, each passes image-quality comparison on moving fixtures, and selection/downgrade chooses among prepared qualified profiles. |
+| D3 | 95th-percentile per-frame processing cost (P4 initial acceptance budget). The in-app benchmark records mean decode+inference cost; the filter emits no per-frame timing. | Integrated Windows delivery (owned libmpv update) | The owned filter reports GPU-completed per-frame inference timing, the benchmark records its p95 against 80% of the output-frame interval, and the verification fixture shows no enhancement-induced steady-state drops. |
 | D1 | AnimeJaNai on NuvioDV Android (asked 2026-11-08). AnimeJaNai has no Android inference backend (TensorRT/DirectML only); a mobile GPU backend such as ncnn/Vulkan plus model conversion would be required. | Separate Android port stage, after Integrated Windows delivery | Converted lightest model runs inside the Android libmpv pipeline; measured decode+inference+render frame time and sustained thermal behavior for 480p/720p 24 fps anime meet P4's budget on the user's device; same P1 rules, P2 per-title choice and P3 ledger semantics. Until then Android is unchanged and nothing claims Android support. |
 
 ## Sources

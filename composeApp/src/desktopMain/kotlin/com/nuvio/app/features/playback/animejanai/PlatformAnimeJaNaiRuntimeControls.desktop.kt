@@ -29,7 +29,7 @@ private object DesktopAnimeJaNaiRuntimeControls : AnimeJaNaiRuntimeControls {
                 }
             }
             val preparationActivity = (preparation as? AnimeJaNaiPreparationState.Preparing)?.let {
-                "Preparing engine ${it.width}x${it.height} at ${it.fps} fps (${it.elapsedSeconds} s)"
+                "${it.phase} ${it.width}x${it.height} at ${it.fps} fps (${it.elapsedSeconds} s)"
             }
             AnimeJaNaiRuntimeUiState(
                 installed = availability is AnimeJaNaiRuntime.Availability.Available,
@@ -39,7 +39,8 @@ private object DesktopAnimeJaNaiRuntimeControls : AnimeJaNaiRuntimeControls {
                     ?: (preparation as? AnimeJaNaiPreparationState.Failed)?.reason,
                 pendingPreparation = pending?.key?.describe(),
                 lastPrepared = (preparation as? AnimeJaNaiPreparationState.Ready)?.let {
-                    EngineKey(it.slot, it.width, it.height, it.fps).describe()
+                    val verdict = if (it.qualified) "within budget" else "over budget, AnimeJaNai stays off"
+                    "${EngineKey(it.slot, it.width, it.height, it.fps).describe()}: ${it.budget}, $verdict"
                 },
             )
         }.stateIn(scope, SharingStarted.Eagerly, AnimeJaNaiRuntimeUiState())
