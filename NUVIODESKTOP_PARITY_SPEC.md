@@ -154,10 +154,14 @@ public-MSI inspection passed: product `NuvioDV`, MSI `1.1.3505`, the upgrade cod
 above, desktop `0.1.35-nuviodv.5` / code 41, provider-client hashes equal to the
 installed baseline, updater `Darkaxt/NuvioDesktopDV`, RPDB present, JAR SHA-256
 `29f7ccea…aff7`, libmpv SHA-256 `04e4d27d…2f4a`. The release branch was deleted.
-Local installation is still PENDING: the elevation-broker install request
-(ticket 5) ended `approval_timeout` with nothing launched, so the machine remains
-on `.4`. Resume with one new broker request when the user is present, then run the
-installed-vs-public verification helper; the recovery folder stays until then.
+Local installation COMPLETE (2026-11-12): two earlier broker requests ended
+`approval_timeout` with nothing launched because the approval dialog was not shown
+(placement bug, fixed in LLM Coordinator). After the Coordinator update, the user
+accepted one broker request: msiexec exit 0, no reboot. Installed-vs-public
+verification passed: installed JAR SHA-256 equals the public MSI JAR
+(`29f7ccea…aff7`), desktop `0.1.35-nuviodv.5` / code 41, MSI `1.1.3505`, product
+`{C3313280-A0ED-3929-A178-73924104C7D7}`, provider-client hashes unchanged, and
+both existing profile directories preserved. Desktop `.5` delivery is complete.
 
 | Stage | Status | Requirements | Acceptance evidence | Blockers | Tracked deferrals |
 |---|---|---|---|---|---|
