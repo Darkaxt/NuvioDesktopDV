@@ -139,6 +139,26 @@ They contain no secret values. Remove this exact recovery folder transactionally
 after the original Desktop delivery consumer finishes. All bulk downloads and
 local preflight MSI copies from the completed checks are expendable.
 
+Recovery (2026-11-12): run `43096139223` stayed a wedged phantom (queued in the run
+API, startup_failure in the attempt API; cancel/force-cancel return HTTP 409) and is
+left alone; it does not block new runs. A dispatch from Dev (`43209887104`) correctly
+failed the metadata guard because documentation commits follow the version bump.
+Branch `release/0.1.35-nuviodv.5` was created at exactly `868730fb1` and publish run
+`43210104541` (`mode=publish`, `target=windows`) succeeded. Public release
+`0.1.35-nuviodv.5` (published 2026-11-12T11:40:19Z, not draft/prerelease) has tag ->
+`868730fb1736b184768a02952667a6514ad93701` and Windows-only assets
+`NuvioDV-Windows-x64-0.1.35-nuviodv.5.msi` (SHA-256
+`572ea3cdde6f44164004b1c2e34ed2b2e498bbcafd2d71f106caccccb57f8c84`, matches
+`SHA256SUMS.txt` and the GitHub asset digest) plus `SHA256SUMS.txt`. Independent
+public-MSI inspection passed: product `NuvioDV`, MSI `1.1.3505`, the upgrade code
+above, desktop `0.1.35-nuviodv.5` / code 41, provider-client hashes equal to the
+installed baseline, updater `Darkaxt/NuvioDesktopDV`, RPDB present, JAR SHA-256
+`29f7ccea…aff7`, libmpv SHA-256 `04e4d27d…2f4a`. The release branch was deleted.
+Local installation is still PENDING: the elevation-broker install request
+(ticket 5) ended `approval_timeout` with nothing launched, so the machine remains
+on `.4`. Resume with one new broker request when the user is present, then run the
+installed-vs-public verification helper; the recovery folder stays until then.
+
 | Stage | Status | Requirements | Acceptance evidence | Blockers | Tracked deferrals |
 |---|---|---|---|---|---|
 | 1. Corrected parity inventory | COMPLETE | R1, inventory portion of R2, R8 provenance decision | Exact-commit source comparison established that Desktop's generic poster editor is not the Android fork's RPDB integration; binary inspection established only unproven DV/RPU capability and therefore requires source/build provenance before acceptance | None | None |

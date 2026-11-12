@@ -440,7 +440,7 @@ the existing DV pipeline with pinned dependencies and publishes a native artifac
 it does not implement AnimeJaNai/SVP or replace this application's runtime pin.
 The required later feature/application checks below remain in force.
 
-All stages are NOT STARTED. No runtime feature is implemented by this specification.
+The native-runtime stage is ACTIVE (feasibility evidence below); all other stages are NOT STARTED. No runtime feature is implemented by this specification.
 
 | Stage | Requirements | Required end-to-end evidence |
 | --- | --- | --- |
@@ -464,6 +464,41 @@ while Nuvio embeds libmpv in its own process, so the app may need to drive SVP's
 VapourSynth plugins directly under P5's application-owned control; and whether the
 TensorRT runtime and models (roughly 1-1.6 GB) ship inside the Windows release or
 as a pinned, hash-verified application-owned download consistent with P4/P7.
+
+#### Native-runtime stage: feasibility evidence (2026-11-12, comparison build)
+
+The native-runtime stage is ACTIVE. These checks used the third-party
+`the-database/mpv-winbuild` libmpv (SHA-256 `77fec11d…`) only as comparison evidence
+through a ctypes harness, not as the owned P7 artifact; the stage stays open until
+the owned build repeats them.
+
+- Dolby Vision on D3D11: profiles 5 and 8.1 map to `dolbyvision` on gpu-next/d3d11.
+  The renders match the owned `nuviodv-windows-dv.2` renders (WARP about 77 dB PSNR,
+  RTX 4090 about 88 dB, AE@2% = 0; SDR identical).
+- Dolby Vision on Vulkan: profiles 5 and 8.1 map to `dolbyvision`/PQ on
+  gpu-next/vulkan. The renders match the qualified D3D11 hardware renders
+  (87.5/87.2 dB PSNR, AE@2% = 0).
+- SVP (open question 1 resolved): Nuvio's embedded libmpv drives the licensed SVP 4
+  VapourSynth runtime and `svpflow1/2_vs` plugins directly through
+  `vf=vapoursynth`, with no SVP Manager or IPC. On gpu-next/d3d11 with
+  `hwdec=auto-copy` (`d3d11va-copy`), a 23.976 fps 1080p source ran at about
+  47.5 fps (2x) with 0 decoder drops and 3 VO drops. libmpv resolves
+  `VSScript.dll` at runtime, so the integration must point it at SVP's `mpv64`
+  directory. Defect to fix in P5: the host process did not exit after
+  `mpv_terminate_destroy` returned with the VapourSynth filter loaded, so teardown
+  and stream transitions must be qualified explicitly.
+- AnimeJaNai TensorRT requires CUDA frames (`hwdec=nvdec`) and `gpu-api=vulkan`;
+  DirectML uses d3d11va/d3d11. Nuvio currently defaults to gpu-next with automatic
+  gpu-api, so AnimeJaNai on TensorRT requires selecting Vulkan at stream start (DV
+  on Vulkan qualified above). The TensorRT inference smoke test is still pending
+  (queued behind the local-AI gate).
+- Package size (open question 2 input): the TensorRT runtime is about 167 MB plus
+  about 152 MB per GPU-architecture builder resource (sm89 here), well below the
+  1-1.6 GB estimate.
+- Provenance gap: mpv-winbuild floats libplacebo (master plus 4 Vulkan patches) and
+  FFmpeg without recording exact revisions. The leak fix `c93aa134` is present. The
+  owned P7 build must pin both explicitly.
+- mpv filter options need `[...]` quoting for Windows paths (drive colons).
 
 ### Tracked deferrals
 
