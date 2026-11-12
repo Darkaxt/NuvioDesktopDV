@@ -19,6 +19,7 @@
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <cwctype>
 #include <deque>
 #include <functional>
@@ -49,7 +50,16 @@ typedef enum mpv_format {
 typedef enum mpv_event_id {
     MPV_EVENT_NONE = 0,
     MPV_EVENT_SHUTDOWN = 1,
+    MPV_EVENT_LOG_MESSAGE = 2,
+    MPV_EVENT_END_FILE = 7,
 } mpv_event_id;
+
+typedef struct mpv_event_log_message {
+    const char *prefix;
+    const char *level;
+    const char *text;
+    int log_level;
+} mpv_event_log_message;
 
 typedef struct mpv_event {
     mpv_event_id event_id;
@@ -197,6 +207,19 @@ std::string jstringToUtf8(JNIEnv *env, jstring value) {
 jstring newJavaStringUtf8(JNIEnv *env, const std::string &value) {
     std::wstring wide = toWide(value);
     return env->NewString(reinterpret_cast<const jchar *>(wide.data()), (jsize)wide.size());
+}
+
+std::vector<std::string> jstringArrayToVectorKeepEmpty(JNIEnv *env, jobjectArray values) {
+    std::vector<std::string> result;
+    if (!values) return result;
+    jsize count = env->GetArrayLength(values);
+    result.reserve((size_t)count);
+    for (jsize index = 0; index < count; index++) {
+        jstring item = (jstring)env->GetObjectArrayElement(values, index);
+        result.push_back(jstringToUtf8(env, item));
+        env->DeleteLocalRef(item);
+    }
+    return result;
 }
 
 std::vector<std::string> jstringArrayToVector(JNIEnv *env, jobjectArray values) {
@@ -528,6 +551,7 @@ struct MpvApi {
     using mpv_free_fn = void (*)(void *);
     using mpv_wait_event_fn = mpv_event *(*)(mpv_handle *, double);
     using mpv_wakeup_fn = void (*)(mpv_handle *);
+    using mpv_request_log_messages_fn = int (*)(mpv_handle *, const char *);
 
     HMODULE library = nullptr;
     std::once_flag loadOnce;
@@ -546,6 +570,8 @@ struct MpvApi {
     mpv_free_fn freeValue = nullptr;
     mpv_wait_event_fn waitEvent = nullptr;
     mpv_wakeup_fn wakeup = nullptr;
+    // Optional: only used when a caller requests filtered log delivery (AnimeJaNai status lines).
+    mpv_request_log_messages_fn requestLogMessages = nullptr;
 
     void ensureLoaded() {
         std::call_once(loadOnce, [this]() { load(); });
@@ -605,6 +631,9 @@ struct MpvApi {
         freeValue = loadSymbol<mpv_free_fn>("mpv_free");
         waitEvent = loadSymbol<mpv_wait_event_fn>("mpv_wait_event");
         wakeup = loadSymbol<mpv_wakeup_fn>("mpv_wakeup");
+        requestLogMessages = reinterpret_cast<mpv_request_log_messages_fn>(
+            GetProcAddress(library, "mpv_request_log_messages")
+        );
     }
 
     template <typename T>
@@ -624,6 +653,69 @@ MpvApi &mpvApi() {
     static MpvApi api;
     api.ensureLoaded();
     return api;
+}
+
+// Caller-supplied extra start options ("name=value"). Names starting with "nuvio-" are bridge
+// directives; everything else is passed to mpv_set_option_string after the built-in defaults.
+struct ExtraStartOptions {
+    std::vector<std::pair<std::string, std::string>> mpvOptions;
+    std::string dllDirectory;   // nuvio-dll-dir: search directory for filter runtime DLLs
+    std::string logLevel;       // nuvio-log-level: mpv_request_log_messages level
+    std::string logFilter;      // nuvio-log-filter: forward only log lines containing this text
+
+    static ExtraStartOptions parse(const std::vector<std::string> &entries) {
+        ExtraStartOptions result;
+        for (const std::string &entry : entries) {
+            size_t separator = entry.find('=');
+            if (separator == std::string::npos || separator == 0) continue;
+            std::string name = entry.substr(0, separator);
+            std::string value = entry.substr(separator + 1);
+            if (name == "nuvio-dll-dir") {
+                result.dllDirectory = value;
+            } else if (name == "nuvio-log-level") {
+                result.logLevel = value;
+            } else if (name == "nuvio-log-filter") {
+                result.logFilter = value;
+            } else {
+                result.mpvOptions.emplace_back(name, value);
+            }
+        }
+        return result;
+    }
+
+    void applyProcessDirectives() const {
+        if (!dllDirectory.empty()) {
+            // Lets the filter's LoadLibrary of aji.dll resolve its TensorRT/CUDA dependencies.
+            SetDllDirectoryW(toWide(dllDirectory).c_str());
+        }
+    }
+
+    void applyMpvOptions(mpv_handle *handle) const {
+        for (const auto &option : mpvOptions) {
+            (void)mpvApi().setOptionString(handle, option.first.c_str(), option.second.c_str());
+        }
+    }
+
+    void requestLogs(mpv_handle *handle) const {
+        if (logFilter.empty()) return;
+        MpvApi &api = mpvApi();
+        if (!api.requestLogMessages) return;
+        std::string level = logLevel.empty() ? std::string("info") : logLevel;
+        (void)api.requestLogMessages(handle, level.c_str());
+    }
+
+    bool matches(const mpv_event_log_message *message) const {
+        if (logFilter.empty() || !message || !message->text) return false;
+        return std::strstr(message->text, logFilter.c_str()) != nullptr;
+    }
+};
+
+std::string trimmedLogText(const char *text) {
+    std::string value = text ? text : "";
+    while (!value.empty() && (value.back() == '\n' || value.back() == '\r' || value.back() == ' ')) {
+        value.pop_back();
+    }
+    return value;
 }
 
 class WindowsMpvWebPlayer;
@@ -871,6 +963,21 @@ class WindowsMpvWebPlayer : public std::enable_shared_from_this<WindowsMpvWebPla
     };
 
 public:
+    void setExtraStartOptions(const std::vector<std::string> &entries) {
+        extraStartOptions = ExtraStartOptions::parse(entries);
+    }
+
+    int runCommand(const std::vector<std::string> &args) {
+        if (args.empty()) return -1;
+        std::lock_guard<std::mutex> lock(mpvMutex);
+        if (!mpv) return -1;
+        std::vector<const char *> argv;
+        argv.reserve(args.size() + 1);
+        for (const std::string &arg : args) argv.push_back(arg.c_str());
+        argv.push_back(nullptr);
+        return mpvApi().command(mpv, argv.data());
+    }
+
     void initialize(
         HWND host,
         const std::string &sourceUrl,
@@ -1410,6 +1517,7 @@ private:
     std::atomic_bool stopping = false;
     std::atomic_bool shuttingDown = false;
     std::atomic_bool hwdecLogged = false;  // one-shot log for hwdec-current
+    ExtraStartOptions extraStartOptions;
 
     bool hasAppliedSubtitleStyle = false;
     bool appliedSubtitleUseLibass = false;
@@ -1794,6 +1902,9 @@ private:
             if (!shaderCacheDirectory.empty()) {
                 setMpvOptionStringLocked("gpu-shader-cache-dir", shaderCacheDirectory.c_str());
             }
+            // Empty unless the caller used createWithStartOptions (e.g. AnimeJaNai: vulkan + nvdec).
+            extraStartOptions.applyProcessDirectives();
+            extraStartOptions.applyMpvOptions(mpv);
 
             int64_t wid = (int64_t)(intptr_t)containerHwnd;
             int widResult = api.setOption(mpv, "wid", MPV_FORMAT_INT64, &wid);
@@ -1818,6 +1929,7 @@ private:
             if (initResult < 0) {
                 throw std::runtime_error(std::string("mpv_initialize failed: ") + api.errorText(initResult));
             }
+            extraStartOptions.requestLogs(mpv);
 
             std::vector<const char *> loadCommand = {"loadfile", sourceUrl.c_str()};
             std::string loadOptions;
@@ -2043,6 +2155,12 @@ private:
             if (!event) continue;
             if (event->event_id == MPV_EVENT_SHUTDOWN) {
                 return;
+            }
+            if (event->event_id == MPV_EVENT_LOG_MESSAGE) {
+                auto *message = static_cast<mpv_event_log_message *>(event->data);
+                if (extraStartOptions.matches(message)) {
+                    sendPlayerEvent(std::string("mpvLog:") + trimmedLogText(message->text), 0.0);
+                }
             }
         }
     }
@@ -2398,10 +2516,9 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID) {
     return TRUE;
 }
 
-extern "C" JNIEXPORT jlong JNICALL
-Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_create(
+namespace {
+jlong createNativePlayer(
     JNIEnv *env,
-    jobject,
     jlong hostViewPtr,
     jstring sourceUrl,
     jobjectArray headerLines,
@@ -2410,7 +2527,8 @@ Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_create(
     jstring controlsPageUrl,
     jint decoderPriority,
     jboolean nvidiaRtxSuperResolutionEnabled,
-    jobject eventSink
+    jobject eventSink,
+    jobjectArray startOptions
 ) {
     HWND hostHwnd = (HWND)(intptr_t)hostViewPtr;
     std::string sourceUrlText = jstringToUtf8(env, sourceUrl);
@@ -2434,6 +2552,7 @@ Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_create(
     }
 
     auto player = std::make_shared<WindowsMpvWebPlayer>();
+    player->setExtraStartOptions(jstringArrayToVector(env, startOptions));
     try {
         player->initialize(
             hostHwnd,
@@ -2457,6 +2576,144 @@ Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_create(
     auto *holder = new std::shared_ptr<WindowsMpvWebPlayer>(player);
     jlong handle = (jlong)(intptr_t)holder;
     return handle;
+}
+
+// Hidden, windowless libmpv instance used for AnimeJaNai engine preparation.
+struct HeadlessMpv {
+    mpv_handle *mpv = nullptr;
+    ExtraStartOptions options;
+};
+} // namespace
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_create(
+    JNIEnv *env,
+    jobject,
+    jlong hostViewPtr,
+    jstring sourceUrl,
+    jobjectArray headerLines,
+    jboolean playWhenReady,
+    jlong initialPositionMs,
+    jstring controlsPageUrl,
+    jint decoderPriority,
+    jboolean nvidiaRtxSuperResolutionEnabled,
+    jobject eventSink
+) {
+    return createNativePlayer(
+        env, hostViewPtr, sourceUrl, headerLines, playWhenReady, initialPositionMs, controlsPageUrl,
+        decoderPriority, nvidiaRtxSuperResolutionEnabled, eventSink, nullptr
+    );
+}
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_createWithStartOptions(
+    JNIEnv *env,
+    jobject,
+    jlong hostViewPtr,
+    jstring sourceUrl,
+    jobjectArray headerLines,
+    jboolean playWhenReady,
+    jlong initialPositionMs,
+    jstring controlsPageUrl,
+    jint decoderPriority,
+    jboolean nvidiaRtxSuperResolutionEnabled,
+    jobject eventSink,
+    jobjectArray startOptions
+) {
+    return createNativePlayer(
+        env, hostViewPtr, sourceUrl, headerLines, playWhenReady, initialPositionMs, controlsPageUrl,
+        decoderPriority, nvidiaRtxSuperResolutionEnabled, eventSink, startOptions
+    );
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_command(JNIEnv *env, jobject, jlong handle, jobjectArray args) {
+    auto player = playerFromHandle(handle);
+    if (!player) return -1;
+    return player->runCommand(jstringArrayToVectorKeepEmpty(env, args));
+}
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_headlessCreate(JNIEnv *env, jobject, jobjectArray options) {
+    try {
+        MpvApi &api = mpvApi();
+        if (setlocale(LC_NUMERIC, "C") == nullptr) {
+            throwJavaError(env, "setlocale(LC_NUMERIC, \"C\") failed.");
+            return 0;
+        }
+        auto *headless = new HeadlessMpv();
+        headless->options = ExtraStartOptions::parse(jstringArrayToVector(env, options));
+        headless->mpv = api.create();
+        if (!headless->mpv) {
+            delete headless;
+            throwJavaError(env, "mpv_create failed.");
+            return 0;
+        }
+        api.setOptionString(headless->mpv, "config", "no");
+        api.setOptionString(headless->mpv, "vo", "null");
+        api.setOptionString(headless->mpv, "ao", "null");
+        api.setOptionString(headless->mpv, "audio", "no");
+        api.setOptionString(headless->mpv, "idle", "yes");
+        headless->options.applyProcessDirectives();
+        headless->options.applyMpvOptions(headless->mpv);
+        int initResult = api.initialize(headless->mpv);
+        if (initResult < 0) {
+            std::string failure = std::string("mpv_initialize failed: ") + api.errorText(initResult);
+            api.terminateDestroy(headless->mpv);
+            delete headless;
+            throwJavaError(env, failure);
+            return 0;
+        }
+        headless->options.requestLogs(headless->mpv);
+        return (jlong)(intptr_t)headless;
+    } catch (const std::exception &error) {
+        throwJavaError(env, error.what());
+        return 0;
+    }
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_headlessCommand(JNIEnv *env, jobject, jlong handle, jobjectArray args) {
+    auto *headless = reinterpret_cast<HeadlessMpv *>(handle);
+    if (!headless || !headless->mpv) return -1;
+    std::vector<std::string> values = jstringArrayToVectorKeepEmpty(env, args);
+    if (values.empty()) return -1;
+    std::vector<const char *> argv;
+    for (const std::string &value : values) argv.push_back(value.c_str());
+    argv.push_back(nullptr);
+    return mpvApi().command(headless->mpv, argv.data());
+}
+
+// Waits up to timeoutSeconds for the next matching log line. Returns the line, "" on timeout,
+// or "event:end-file" / "event:shutdown" when the source ended or the core shut down.
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_headlessNextLog(JNIEnv *env, jobject, jlong handle, jdouble timeoutSeconds) {
+    auto *headless = reinterpret_cast<HeadlessMpv *>(handle);
+    if (!headless || !headless->mpv) return newJavaStringUtf8(env, "event:shutdown");
+    MpvApi &api = mpvApi();
+    ULONGLONG deadline = GetTickCount64() + (ULONGLONG)std::max(0.0, (double)timeoutSeconds * 1000.0);
+    while (true) {
+        ULONGLONG now = GetTickCount64();
+        if (now >= deadline) return newJavaStringUtf8(env, "");
+        mpv_event *event = api.waitEvent(headless->mpv, (double)(deadline - now) / 1000.0);
+        if (!event || event->event_id == MPV_EVENT_NONE) continue;
+        if (event->event_id == MPV_EVENT_SHUTDOWN) return newJavaStringUtf8(env, "event:shutdown");
+        if (event->event_id == MPV_EVENT_END_FILE) return newJavaStringUtf8(env, "event:end-file");
+        if (event->event_id == MPV_EVENT_LOG_MESSAGE) {
+            auto *message = static_cast<mpv_event_log_message *>(event->data);
+            if (headless->options.matches(message)) {
+                return newJavaStringUtf8(env, trimmedLogText(message->text));
+            }
+        }
+    }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_headlessDestroy(JNIEnv *, jobject, jlong handle) {
+    auto *headless = reinterpret_cast<HeadlessMpv *>(handle);
+    if (!headless) return;
+    if (headless->mpv) mpvApi().terminateDestroy(headless->mpv);
+    delete headless;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL

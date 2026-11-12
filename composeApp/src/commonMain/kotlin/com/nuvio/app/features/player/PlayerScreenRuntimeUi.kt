@@ -616,6 +616,8 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
         if (renderPlayerSurface) {
             val surfaceSource = currentPlayerSurfaceSource
             val sourceAvailable = surfaceSource != null
+            // Parent movie/series identity for platform enhancement eligibility (episodes inherit).
+            ActivePlaybackTitle.current = ActivePlaybackTitle.Value(parentMetaId, parentMetaType)
             PlatformPlayerSurface(
                 sourceUrl = surfaceSource?.sourceUrl.orEmpty(),
                 sourceAvailable = sourceAvailable,

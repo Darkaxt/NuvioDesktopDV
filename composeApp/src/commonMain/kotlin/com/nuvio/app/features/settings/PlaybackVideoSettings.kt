@@ -16,6 +16,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.features.player.AndroidLibmpvVideoOutput
+import com.nuvio.app.features.player.AnimeJaNaiMode
+import com.nuvio.app.features.player.AnimeJaNaiProfile
 import com.nuvio.app.features.player.AndroidPlaybackEngine
 import com.nuvio.app.features.player.IosHardwareDecoderMode
 import com.nuvio.app.features.player.localizedLabel
@@ -120,6 +122,36 @@ internal fun PlaybackVideoSettings(
                             checked = settings.nvidiaRtxSuperResolutionEnabled,
                             isTablet = isTablet,
                             onCheckedChange = PlayerSettingsRepository::setNvidiaRtxSuperResolutionEnabled,
+                        )
+                    }
+                }
+                SettingsSection(
+                    title = stringResource(Res.string.settings_playback_animejanai_section),
+                    isTablet = isTablet,
+                ) {
+                    SettingsGroup(isTablet = isTablet) {
+                        SettingsSwitchRow(
+                            title = stringResource(Res.string.settings_playback_animejanai_automatic),
+                            description = stringResource(Res.string.settings_playback_animejanai_automatic_desc),
+                            checked = settings.animeJaNaiMode == AnimeJaNaiMode.Automatic,
+                            isTablet = isTablet,
+                            onCheckedChange = { enabled ->
+                                PlayerSettingsRepository.setAnimeJaNaiMode(
+                                    if (enabled) AnimeJaNaiMode.Automatic else AnimeJaNaiMode.Off,
+                                )
+                            },
+                        )
+                        SettingsGroupDivider(isTablet = isTablet)
+                        SettingsNavigationRow(
+                            title = stringResource(Res.string.settings_playback_animejanai_profile),
+                            description = settings.animeJaNaiProfile.label,
+                            enabled = settings.animeJaNaiMode == AnimeJaNaiMode.Automatic,
+                            isTablet = isTablet,
+                            onClick = {
+                                val profiles = AnimeJaNaiProfile.entries
+                                val next = profiles[(profiles.indexOf(settings.animeJaNaiProfile) + 1) % profiles.size]
+                                PlayerSettingsRepository.setAnimeJaNaiProfile(next)
+                            },
                         )
                     }
                 }

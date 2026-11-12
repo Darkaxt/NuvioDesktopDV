@@ -210,6 +210,11 @@ internal expect object PlayerSettingsStorage {
     fun saveIosGamma(value: Int)
     fun loadNvidiaRtxSuperResolutionEnabled(): Boolean?
     fun saveNvidiaRtxSuperResolutionEnabled(enabled: Boolean)
+    /** Machine-local (not profile-scoped, not cloud-synced); only Windows desktop persists it. */
+    fun loadAnimeJaNaiMode(): String?
+    fun saveAnimeJaNaiMode(value: String)
+    fun loadAnimeJaNaiProfile(): String?
+    fun saveAnimeJaNaiProfile(value: String)
     fun exportToSyncPayload(): JsonObject
     fun replaceFromSyncPayload(payload: JsonObject)
 }

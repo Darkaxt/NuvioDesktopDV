@@ -122,6 +122,8 @@ data class PlayerSettingsUiState(
     val iosSaturation: Int = 0,
     val iosGamma: Int = 0,
     val nvidiaRtxSuperResolutionEnabled: Boolean = false,
+    val animeJaNaiMode: AnimeJaNaiMode = AnimeJaNaiMode.Off,
+    val animeJaNaiProfile: AnimeJaNaiProfile = AnimeJaNaiProfile.Default,
 )
 
 object PlayerSettingsRepository {
@@ -217,6 +219,8 @@ object PlayerSettingsRepository {
     private var iosSaturation = 0
     private var iosGamma = 0
     private var nvidiaRtxSuperResolutionEnabled = false
+    private var animeJaNaiMode = AnimeJaNaiMode.Off
+    private var animeJaNaiProfile = AnimeJaNaiProfile.Default
 
     fun ensureLoaded() {
         if (hasLoaded) return
@@ -318,6 +322,8 @@ object PlayerSettingsRepository {
         iosSaturation = 0
         iosGamma = 0
         nvidiaRtxSuperResolutionEnabled = false
+        animeJaNaiMode = AnimeJaNaiMode.Off
+        animeJaNaiProfile = AnimeJaNaiProfile.Default
         publish()
     }
 
@@ -506,6 +512,8 @@ object PlayerSettingsRepository {
         iosSaturation = PlayerSettingsStorage.loadIosSaturation() ?: 0
         iosGamma = PlayerSettingsStorage.loadIosGamma() ?: 0
         nvidiaRtxSuperResolutionEnabled = PlayerSettingsStorage.loadNvidiaRtxSuperResolutionEnabled() ?: false
+        animeJaNaiMode = AnimeJaNaiMode.fromStorage(PlayerSettingsStorage.loadAnimeJaNaiMode())
+        animeJaNaiProfile = AnimeJaNaiProfile.fromStorage(PlayerSettingsStorage.loadAnimeJaNaiProfile())
         publish()
     }
 
@@ -1145,6 +1153,22 @@ object PlayerSettingsRepository {
         PlayerSettingsStorage.saveNvidiaRtxSuperResolutionEnabled(enabled)
     }
 
+    fun setAnimeJaNaiMode(mode: AnimeJaNaiMode) {
+        ensureLoaded()
+        if (animeJaNaiMode == mode) return
+        animeJaNaiMode = mode
+        publish()
+        PlayerSettingsStorage.saveAnimeJaNaiMode(mode.storageValue)
+    }
+
+    fun setAnimeJaNaiProfile(profile: AnimeJaNaiProfile) {
+        ensureLoaded()
+        if (animeJaNaiProfile == profile) return
+        animeJaNaiProfile = profile
+        publish()
+        PlayerSettingsStorage.saveAnimeJaNaiProfile(profile.storageValue)
+    }
+
     fun setLibassRenderType(renderType: String) {
         ensureLoaded()
         if (libassRenderType == renderType) return
@@ -1424,6 +1448,8 @@ object PlayerSettingsRepository {
             iosSaturation = iosSaturation,
             iosGamma = iosGamma,
             nvidiaRtxSuperResolutionEnabled = nvidiaRtxSuperResolutionEnabled,
+            animeJaNaiMode = animeJaNaiMode,
+            animeJaNaiProfile = animeJaNaiProfile,
         )
     }
 

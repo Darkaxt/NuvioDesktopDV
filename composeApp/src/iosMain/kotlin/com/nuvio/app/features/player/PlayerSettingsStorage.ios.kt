@@ -1249,6 +1249,12 @@ actual object PlayerSettingsStorage {
         NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = ProfileScopedKey.of(nvidiaRtxSuperResolutionEnabledKey))
     }
 
+    // AnimeJaNai is a Windows-only enhancement; nothing is persisted on this platform.
+    actual fun loadAnimeJaNaiMode(): String? = null
+    actual fun saveAnimeJaNaiMode(value: String) = Unit
+    actual fun loadAnimeJaNaiProfile(): String? = null
+    actual fun saveAnimeJaNaiProfile(value: String) = Unit
+
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
         loadShowLoadingOverlay()?.let { put(showLoadingOverlayKey, encodeSyncBoolean(it)) }
         loadShowPlaybackDetails()?.let { put(showPlaybackDetailsKey, encodeSyncBoolean(it)) }

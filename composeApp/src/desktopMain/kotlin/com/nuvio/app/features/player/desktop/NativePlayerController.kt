@@ -2,6 +2,9 @@ package com.nuvio.app.features.player.desktop
 
 import androidx.compose.ui.graphics.Color
 import co.touchlab.kermit.Logger
+import com.nuvio.app.features.playback.animejanai.AnimeJaNaiSession
+import com.nuvio.app.features.playback.animejanai.AnimeJaNaiStartPlan
+import com.nuvio.app.features.playback.animejanai.PreparationSource
 import com.nuvio.app.features.player.PlayerControlAddonSubtitleItem
 import com.nuvio.app.features.player.PlayerControlEpisodeItem
 import com.nuvio.app.features.player.PlayerControlFilterItem
@@ -61,6 +64,14 @@ internal class NativePlayerController(
         NativePlayerBridge.ensureLoaded()
         NativePlayerBridge.create(hostViewPtr, source, headers, playWhenReady, positionMs, controlsUrl, decoder, rtx, sink)
     },
+    private val nativeCreateWithStartOptions: (NativePlayerCreateArgs) -> Long = { args ->
+        NativePlayerBridge.ensureLoaded()
+        NativePlayerBridge.createWithStartOptions(
+            args.hostViewPtr, args.sourceUrl, args.headerLines, args.playWhenReady, args.initialPositionMs,
+            args.controlsPageUrl, args.decoderPriority, args.nvidiaRtxSuperResolutionEnabled, args.eventSink,
+            args.startOptions,
+        )
+    },
     private val nativeDispose: (Long) -> Unit = NativePlayerBridge::dispose,
     private val nativeSeekTo: (Long, Long) -> Unit = NativePlayerBridge::seekTo,
     private val isHostDisplayable: () -> Boolean = { host.isDisplayable },
@@ -87,6 +98,9 @@ internal class NativePlayerController(
         val onReleased: () -> Unit,
         val onFailed: (String) -> Unit,
     )
+
+    /** AnimeJaNai integration for this player (Windows; inert unless a start plan is supplied). */
+    val animeJaNai = AnimeJaNaiSession()
 
     private val lifecycleLock = Any()
     private var currentNowPlayingTitle: String = ""
@@ -138,6 +152,7 @@ internal class NativePlayerController(
         decoderPriority: Int,
         nvidiaRtxSuperResolutionEnabled: Boolean,
         onError: (String?) -> Unit,
+        animeJaNaiPlan: AnimeJaNaiStartPlan? = null,
     ) {
         val pending = PendingSource(
             sourceUrl = sourceUrl,
@@ -147,7 +162,9 @@ internal class NativePlayerController(
             decoderPriority = decoderPriority,
             nvidiaRtxSuperResolutionEnabled = nvidiaRtxSuperResolutionEnabled,
             onError = onError,
+            animeJaNaiPlan = animeJaNaiPlan,
         )
+        animeJaNai.beginStream(animeJaNaiPlan)
         var terminalFailure: String? = null
         val accepted = synchronized(lifecycleLock) {
             when {
@@ -302,6 +319,7 @@ internal class NativePlayerController(
         } else {
             pending.sourceUrl
         }
+        animeJaNai.setPreparationSource(PreparationSource(resolvedSource, pending.headerLines))
 
         // Native create blocks until the player's own UI thread finishes initialising, and that
         // thread creates child windows of the AWT host, which needs the EDT to keep pumping
@@ -311,21 +329,40 @@ internal class NativePlayerController(
         val createWorker = Thread({
             try {
                 runCatching {
-                    nativeCreate(
-                        hostViewPtr,
-                        resolvedSource,
-                        pending.headerLines.toTypedArray(),
-                        pending.playWhenReady,
-                        pending.initialPositionMs,
-                        NativePlayerBridge.controlsPageUrl,
-                        pending.decoderPriority,
-                        pending.nvidiaRtxSuperResolutionEnabled,
-                        eventSink,
-                    ).also { if (it == 0L) error("Native player did not return a handle.") }
+                    val startOptions = pending.animeJaNaiPlan?.startOptions.orEmpty()
+                    if (startOptions.isEmpty()) {
+                        nativeCreate(
+                            hostViewPtr,
+                            resolvedSource,
+                            pending.headerLines.toTypedArray(),
+                            pending.playWhenReady,
+                            pending.initialPositionMs,
+                            NativePlayerBridge.controlsPageUrl,
+                            pending.decoderPriority,
+                            pending.nvidiaRtxSuperResolutionEnabled,
+                            eventSink,
+                        )
+                    } else {
+                        nativeCreateWithStartOptions(
+                            NativePlayerCreateArgs(
+                                hostViewPtr = hostViewPtr,
+                                sourceUrl = resolvedSource,
+                                headerLines = pending.headerLines.toTypedArray(),
+                                playWhenReady = pending.playWhenReady,
+                                initialPositionMs = pending.initialPositionMs,
+                                controlsPageUrl = NativePlayerBridge.controlsPageUrl,
+                                decoderPriority = pending.decoderPriority,
+                                nvidiaRtxSuperResolutionEnabled = pending.nvidiaRtxSuperResolutionEnabled,
+                                eventSink = eventSink,
+                                startOptions = startOptions.toTypedArray(),
+                            ),
+                        )
+                    }.also { if (it == 0L) error("Native player did not return a handle.") }
                 }.onSuccess { created ->
                     val accepted = synchronized(lifecycleLock) {
                         if (!releaseRequested && terminalReleaseFailure == null && pendingSource === pending) {
                             handle = created
+                            animeJaNai.attachHandle(created)
                             true
                         } else {
                             false
@@ -549,6 +586,10 @@ internal class NativePlayerController(
     }
 
     private fun handlePlayerEvent(type: String, value: Double) {
+        if (type.startsWith(MPV_LOG_EVENT_PREFIX)) {
+            animeJaNai.onLogLine(type.removePrefix(MPV_LOG_EVENT_PREFIX))
+            return
+        }
         if (type.shouldLogNativeControlEvent()) {
             log.d { "event received handle=$handle type=$type value=$value" }
         }
@@ -945,6 +986,8 @@ internal class NativePlayerController(
         disposeInFlight = Thread(
             {
                 awaitThreadCompletion(prior, "prior native teardown")
+                // Waits for any in-flight AnimeJaNai native call before the handle is freed.
+                animeJaNai.detachHandle(current)
                 runCatching { nativeDispose(current) }
                     .onFailure { error -> recordTerminalDisposeFailure(error, "native", current) }
             },
@@ -1005,6 +1048,7 @@ internal class NativePlayerController(
             decoderPriority = pending.decoderPriority,
             nvidiaRtxSuperResolutionEnabled = pending.nvidiaRtxSuperResolutionEnabled,
             onError = pending.onError,
+            animeJaNaiPlan = pending.animeJaNaiPlan,
         )
     }
 
@@ -1258,6 +1302,22 @@ private data class PendingSource(
     val decoderPriority: Int,
     val nvidiaRtxSuperResolutionEnabled: Boolean,
     val onError: (String?) -> Unit,
+    val animeJaNaiPlan: AnimeJaNaiStartPlan? = null,
+)
+
+private const val MPV_LOG_EVENT_PREFIX = "mpvLog:"
+
+internal class NativePlayerCreateArgs(
+    val hostViewPtr: Long,
+    val sourceUrl: String,
+    val headerLines: Array<String>,
+    val playWhenReady: Boolean,
+    val initialPositionMs: Long,
+    val controlsPageUrl: String,
+    val decoderPriority: Int,
+    val nvidiaRtxSuperResolutionEnabled: Boolean,
+    val eventSink: NativePlayerEventSink,
+    val startOptions: Array<String>,
 )
 
 private fun Map<String, String>.toHeaderLines(): List<String> =

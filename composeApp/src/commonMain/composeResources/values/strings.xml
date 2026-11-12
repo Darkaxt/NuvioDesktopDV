@@ -2148,6 +2148,10 @@
     <string name="settings_playback_nvidia_rtx_video_section">NVIDIA RTX Video</string>
     <string name="settings_playback_nvidia_rtx_super_resolution">RTX Video Super Resolution</string>
     <string name="settings_playback_nvidia_rtx_super_resolution_desc">Upscale low-resolution video using NVIDIA RTX AI Super Resolution.</string>
+    <string name="settings_playback_animejanai_section">AnimeJaNai upscaling</string>
+    <string name="settings_playback_animejanai_automatic">Automatic AnimeJaNai</string>
+    <string name="settings_playback_animejanai_automatic_desc">Upscale animation below 4K with AnimeJaNai when the title is marked Animation and an engine is prepared. Skipped while RTX Video Super Resolution is on.</string>
+    <string name="settings_playback_animejanai_profile">AnimeJaNai profile</string>
     <!-- Playback settings iOS video output -->
     <string name="settings_playback_ios_video_output">iOS VIDEO OUTPUT</string>
     <string name="settings_playback_ios_hardware_decoder">Hardware decoder</string>

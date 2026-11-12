@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "ruleSetVersion": 2,
-  "status": "specification-only-not-loaded-by-app",
+  "status": "packaged-and-loaded-by-windows-app",
   "normalization": {
     "strings": "trim-casefold-collapse-whitespace-exact-match",
     "fields": {

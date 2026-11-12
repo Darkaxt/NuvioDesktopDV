@@ -41,6 +41,7 @@ import com.nuvio.app.features.autosync.AutoSyncMpvCoordinator
 import com.nuvio.app.features.autosync.DesktopAutoSyncMpvPlatform
 import com.nuvio.app.features.autosync.withAutoSyncMessage
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.drop
 
 @Composable
@@ -244,6 +245,12 @@ private fun NativePlayerSurface(
             return@LaunchedEffect
         }
         delay(16L)
+        // AnimeJaNai (Windows): decided once per stream start; settings changes apply at the next start.
+        val animeJaNaiPlan = if (DesktopHostOs.current == DesktopHostOs.WINDOWS) {
+            controller.animeJaNai.planStart(PlayerSettingsRepository.uiState.value)
+        } else {
+            null
+        }
         controller.attach(
             sourceUrl = sourceUrl,
             sourceHeaders = playbackHeaders,
@@ -252,7 +259,11 @@ private fun NativePlayerSurface(
             decoderPriority = decoderPriority,
             nvidiaRtxSuperResolutionEnabled = nvidiaRtxSuperResolutionEnabled,
             onError = { message -> latestOnError.value(message) },
+            animeJaNaiPlan = animeJaNaiPlan,
         )
+        animeJaNaiPlan?.toggleState?.let { toggleState ->
+            launch { controller.animeJaNai.observeToggle(toggleState) }
+        }
         initialPositionRequestKey?.let { key ->
             latestOnInitialPositionHandled.value(key, initialPositionMs > 0L)
         }
@@ -298,7 +309,10 @@ private fun NativePlayerSurface(
 
     LaunchedEffect(controller) {
         while (true) {
-            if (!controller.isReleasing) onSnapshot(controller.snapshot())
+            if (!controller.isReleasing) {
+                onSnapshot(controller.snapshot())
+                controller.animeJaNai.onTick()
+            }
             delay(250L)
         }
     }

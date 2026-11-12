@@ -61,6 +61,35 @@ internal object NativePlayerBridge {
         eventSink: NativePlayerEventSink,
     ): Long
 
+    /**
+     * Windows only: [create] plus extra "name=value" start options applied after the built-in
+     * defaults. "nuvio-dll-dir", "nuvio-log-level" and "nuvio-log-filter" are bridge directives;
+     * matching mpv log lines arrive on [eventSink] as "mpvLog:<text>".
+     */
+    external fun createWithStartOptions(
+        hostViewPtr: Long,
+        sourceUrl: String,
+        headerLines: Array<String>,
+        playWhenReady: Boolean,
+        initialPositionMs: Long,
+        controlsPageUrl: String,
+        decoderPriority: Int,
+        nvidiaRtxSuperResolutionEnabled: Boolean,
+        eventSink: NativePlayerEventSink,
+        startOptions: Array<String>,
+    ): Long
+
+    /** Windows only: mpv_command on the player instance; returns the mpv error code (>= 0 ok). */
+    external fun command(handle: Long, args: Array<String>): Int
+
+    /** Windows only: hidden, windowless libmpv instance (vo/ao null) for engine preparation. */
+    external fun headlessCreate(options: Array<String>): Long
+    external fun headlessCommand(handle: Long, args: Array<String>): Int
+
+    /** Next matching log line, "" on timeout, or "event:end-file" / "event:shutdown". */
+    external fun headlessNextLog(handle: Long, timeoutSeconds: Double): String
+    external fun headlessDestroy(handle: Long)
+
     external fun dispose(handle: Long)
     external fun updateControls(handle: Long, controlsJson: String)
 
