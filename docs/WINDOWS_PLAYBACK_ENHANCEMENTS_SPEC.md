@@ -22,6 +22,17 @@ ongoing responsibility. The initial specification update created no repositories
 or native builds. The subsequent source-sync authorization below supersedes its
 documentation-only boundary for the narrowly stated maintenance setup.
 
+Revision 2026-11-12 (pre-implementation plan review, documentation only):
+- The user directed that the Animation toggle exist everywhere it makes sense.
+  P2 now defines one per-title choice (movies and series) exposed on every
+  title-scoped surface, which also resolves the earlier contradiction between a
+  series-only control and the movie-only Disney exclusion.
+- The user is not interested in NVIDIA RTX Video Super Resolution (found jarring
+  in testing). It is out of scope; P4 defines the only interaction required.
+- P7's native strategy is corrected after measuring the AnimeJaNai mpv delta.
+- Android AnimeJaNai is recorded as tracked deferral D1 instead of an untracked
+  verbal answer.
+
 ## P1. Content indicators and initial suggestion
 
 `playback-content-indicators.json` is the versioned, editable rule artifact.
@@ -53,22 +64,44 @@ Rules produce separate facts: animation evidence, suggested Animation toggle,
 matched rule IDs, and any automatic AnimeJaNai exclusion. This distinction avoids
 mistaking an excluded cartoon for confidently identified live action.
 
-## P2. Final independent per-series toggle
+## P2. Final independent per-title toggle
 
-Place a two-state `Animation` control beside the series playback/watch/list/more
-actions shown in the user's reference. Fit into the existing action layout with
-an accessible label, keyboard focus and a clear On/Off state. Do not use a
-three-state Auto/Yes/No switch.
+The `Animation` choice is one two-state value per profile and title, where a
+title is a movie or a series. Episodes inherit their series' value; there is no
+per-episode or per-season value. Do not use a three-state Auto/Yes/No switch.
+
+Expose that same value on every title-scoped surface where the user acts on a
+specific movie or series:
+- Title details action row for movies and series, beside the playback/watched/
+  library actions shown in the user's reference (`DetailActions`).
+- The shared poster long-press action sheet (`PosterActionTarget`) used by Home,
+  catalog, collection, library and search posters.
+- The Continue Watching action sheet; for an episode it edits the series value.
+- The player side panel during playback of a movie or episode, next to the
+  existing enhancement status/skip reason.
+Do not add it to non-title surfaces (browse rows themselves, global settings,
+person pages, folder/collection headers, episode or season watched sheets).
+Every surface reads and writes the same stored choice; a change on one surface is
+reflected immediately on the others. Fit into each existing layout with an
+accessible label, keyboard focus and a clear On/Off state, including normal and
+maximized Windows sizes.
+
+A change made in the player is saved immediately. It applies live only when the
+affected enhancement can switch without reloading the stream and any required
+AnimeJaNai engine is already prepared; otherwise it applies at the next stream
+start and the panel shows it as pending. Never reload or replace the current
+stream automatically to apply the toggle.
 
 Before a user choice exists, show the rule-suggested initial value. Metadata can
 refine this suggestion until the user interacts; do not persist a suggestion as
 though it were an explicit choice. Once the user sets On or Off, that boolean is
-final for this profile/series and all episodes, regardless of subsequent metadata,
-rule changes or Disney exclusions. On classifies it as animation and permits
-AnimeJaNai; Off classifies it as non-animation and permits SVP where otherwise eligible.
+final for this profile/title and, for a series, all its episodes, regardless of
+subsequent metadata, rule changes or Disney exclusions. On classifies it as
+animation and permits AnimeJaNai; Off classifies it as non-animation and permits
+SVP where otherwise eligible.
 No rule may silently undo, periodically reset or re-prompt an explicit choice.
 
-Resolve the series by canonical provider namespace/ID and preserve known aliases;
+Resolve the title by canonical provider namespace/ID and preserve known aliases;
 never key by display title or current episode ID. Scope choices to the active user
 profile. Unknown/ambiguous ID aliases must not merge unrelated titles. A global
 AnimeJaNai/SVP Off switch and technical feasibility constraints still apply: the
@@ -90,7 +123,8 @@ Avoid a second independent preferences store that can disagree with the ledger.
 Each event records schema version, unique event ID, UTC timestamp, profile ID,
 canonical title ID/type, readable title, chosen boolean, previous explicit value,
 original and current rule suggestion, rule-set version/hash, matched positive and
-exclusion rule IDs, and the minimal normalized metadata evidence used. Store no
+exclusion rule IDs, the originating surface (`details`, `posterSheet`,
+`continueWatchingSheet` or `player`), and the minimal normalized metadata evidence used. Store no
 tokens, private keys, stream URLs or unrelated personal data.
 
 Append an event when the user first explicitly selects a value, including selecting
@@ -111,7 +145,7 @@ uploads, automatic pruning, or cloud sync as part of this ledger.
 Example event structure (illustrative IDs, not user data):
 
 ```json
-{"schemaVersion":1,"eventId":"example-unique-event","timestampUtc":"2026-11-08T16:00:00Z","profileId":"example-profile","titleId":"tmdb:tv:123","titleType":"series","title":"Example series","animation":true,"previousExplicitValue":null,"initialSuggestedValue":false,"currentSuggestedValue":false,"ruleSetVersion":2,"ruleSetSha256":"<actual-file-sha256>","matchedRuleIds":[],"matchedExclusionIds":[],"evidence":{"genres":[],"networks":[],"originCountries":["JP"]}}
+{"schemaVersion":1,"eventId":"example-unique-event","timestampUtc":"2026-11-08T16:00:00Z","profileId":"example-profile","titleId":"tmdb:tv:123","titleType":"series","title":"Example series","animation":true,"previousExplicitValue":null,"initialSuggestedValue":false,"currentSuggestedValue":false,"ruleSetVersion":2,"ruleSetSha256":"<actual-file-sha256>","matchedRuleIds":[],"matchedExclusionIds":[],"surface":"details","evidence":{"genres":[],"networks":[],"originCountries":["JP"]}}
 ```
 
 ## P4. AnimeJaNai eligibility, runtime and adaptive profiles
@@ -151,6 +185,13 @@ Offer a small reviewed set of upstream quality/balanced/performance model profil
 Retain normal scaling when no upscaling is needed. Do not stack a second neural
 upscaler, import Kai's color/audio/denoise configuration, or enable AnimeJaNai's
 optional frame interpolation. SVP remains the separate non-animation motion path.
+
+NVIDIA RTX Video Super Resolution (upstream's opt-in `d3d11vpp` scaling setting,
+off by default) is out of scope: the user found it jarring and will not use it.
+Do not extend, recommend, auto-enable or build on it, and run all qualification
+with it off. The only required interaction is no stacking: while that upstream
+setting is on, automatic AnimeJaNai is skipped with a reported reason. Leave the
+upstream setting and its code path otherwise unchanged.
 
 Prepare any required GPU-specific inference engines before enabling their profile.
 Cache identity must include model hash, GPU compatibility, driver/runtime versions,
@@ -237,8 +278,11 @@ Classification/override behavior, persistence and stream-derived eligibility nee
 focused regression checks. Include: Anime category without Animation genre;
 Animation outside Anime; Crunchyroll; TOKYO MX + JP; JP live action; Disney
 animation; unrelated anime on Disney+; unknown metadata; explicit On overriding
-Disney; explicit Off overriding Anime; rule update preserving both choices;
-all series episodes/launch routes; profile isolation; interrupted/concurrent ledger
+Disney on a movie; explicit Off overriding Anime; rule update preserving both choices;
+all series episodes/launch routes; the same value read and written from every P2
+surface for both a movie and a series; in-player change applied live or shown
+pending without a stream reload; AnimeJaNai skipped while the upstream RTX VSR
+setting is on; profile isolation; interrupted/concurrent ledger
 writes; sub-4K/native-4K and no-upscale cases; driver/output changes; sustained
 performance; model preparation success/failure and incompatible cache rejection;
 runtime/model pins and disabled independent updates; ordinary playback while
@@ -276,10 +320,28 @@ is successful. This source check does not revalidate or replace its old artifact
 
 Carry AnimeJaNai's required native filter/GPU integration in the owned mpv fork.
 Trace it to exact commits from `the-database/mpv`, retain attribution and licenses,
-and keep the fork-specific delta limited to required player support. Record the
-matching `animejanai-inference` ABI, runtime/model pins and build recipe. Prefer
-reviewable upstream history/merges and a small documented patch delta over opaque
-binary replacement or repeated wholesale copying of another distribution.
+record the matching `animejanai-inference` ABI, runtime/model pins and build
+recipe, and prefer reviewable history/merges over opaque binary replacement or
+repeated wholesale copying of another distribution.
+
+Measured on 2026-11-12: `the-database/mpv:master` is 340 commits ahead of and 0
+behind `mpv-player/mpv:master`, and keeps itself synchronized with upstream. Its
+delta is not a small filter patch: besides `vf_animejanai.c` it changes the filter
+chain, hardware transfer, `vo_gpu_next`, D3D11/CUDA helpers, `vf_vapoursynth.c`,
+the MKV demuxer and subtitles/OSD, and adds an addon host, RIFE scene detection and
+a GPL MVTools helper. The owned `Darkaxt/mpv` delta is build/verification tooling
+and documentation only (`TOOLS/nuviodv`, `ci/build-*.sh`, workflow, docs; no player
+source). Therefore the AnimeJaNai integration branch is based on
+`the-database/mpv` history with the owned NuvioDV build/verification tooling
+re-applied on top, instead of merging the AnimeJaNai delta into the
+upstream-tracking `master` every maintenance cycle. `master` remains the plain
+Dolby Vision baseline until an AnimeJaNai-capable candidate is promoted. Record
+which AnimeJaNai features are compiled in or left disabled (addon host, RIFE,
+MVTools) and keep unused ones off; GPL components require a GPL build and license
+record. The first native stage must confirm early, before feature work:
+the CUDA/TensorRT build of the AnimeJaNai filter fits the owned reproducible
+Windows recipe (or record the toolchain change it needs), and the modified
+`vf_vapoursynth.c` still supports the SVP path required by P5.
 
 Track the Windows build recipe in version control with exact toolchain, mpv,
 FFmpeg, libplacebo, VapourSynth, inference-library and dependency revisions. Preserve
@@ -395,6 +457,19 @@ configuration; it does not implement or claim completion of the later automatic
 classification, settings, ledger or adaptive-profile features. It must establish
 both AnimeJaNai and SVP compatibility before either dependent feature stage starts.
 These are unverified implementation requirements, not completed feasibility proofs.
+
+Open qualification questions recorded by the 2026-11-12 review, owned by the
+native-runtime stage: SVP Manager normally attaches to a standalone mpv over IPC,
+while Nuvio embeds libmpv in its own process, so the app may need to drive SVP's
+VapourSynth plugins directly under P5's application-owned control; and whether the
+TensorRT runtime and models (roughly 1-1.6 GB) ship inside the Windows release or
+as a pinned, hash-verified application-owned download consistent with P4/P7.
+
+### Tracked deferrals
+
+| ID | Deferred requirement | Target | Resolution condition |
+| --- | --- | --- | --- |
+| D1 | AnimeJaNai on NuvioDV Android (asked 2026-11-08). AnimeJaNai has no Android inference backend (TensorRT/DirectML only); a mobile GPU backend such as ncnn/Vulkan plus model conversion would be required. | Separate Android port stage, after Integrated Windows delivery | Converted lightest model runs inside the Android libmpv pipeline; measured decode+inference+render frame time and sustained thermal behavior for 480p/720p 24 fps anime meet P4's budget on the user's device; same P1 rules, P2 per-title choice and P3 ledger semantics. Until then Android is unchanged and nothing claims Android support. |
 
 ## Sources
 
