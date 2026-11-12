@@ -2152,6 +2152,14 @@
     <string name="settings_playback_animejanai_automatic">Automatic AnimeJaNai</string>
     <string name="settings_playback_animejanai_automatic_desc">Upscale animation below 4K with AnimeJaNai when the title is marked Animation and an engine is prepared. Skipped while RTX Video Super Resolution is on.</string>
     <string name="settings_playback_animejanai_profile">AnimeJaNai profile</string>
+    <string name="settings_playback_animejanai_runtime_install">Install AnimeJaNai runtime</string>
+    <string name="settings_playback_animejanai_runtime_reinstall">Reinstall AnimeJaNai runtime</string>
+    <string name="settings_playback_animejanai_runtime_install_desc">Downloads the pinned AnimeJaNai models and NVIDIA TensorRT runtime (about 410 MB) and verifies every file.</string>
+    <string name="settings_playback_animejanai_runtime_installed">Installed and verified.</string>
+    <string name="settings_playback_animejanai_prepare">Prepare AnimeJaNai engine</string>
+    <string name="settings_playback_animejanai_prepare_cancel">Cancel engine preparation</string>
+    <string name="settings_playback_animejanai_prepare_pending">The last stream needs an engine for %1$s. Preparation replays that stream silently and takes about a minute.</string>
+    <string name="settings_playback_animejanai_prepare_done">Engine ready for %1$s. It is used from the next stream start.</string>
     <!-- Playback settings iOS video output -->
     <string name="settings_playback_ios_video_output">iOS VIDEO OUTPUT</string>
     <string name="settings_playback_ios_hardware_decoder">Hardware decoder</string>
@@ -2664,4 +2672,19 @@
     <string name="window_menu_window">Window</string>
     <string name="window_menu_close">Close Window</string>
     <string name="window_menu_minimize">Minimize</string>
+    <string name="animation_toggle_on">Animation: On</string>
+    <string name="animation_toggle_off">Animation: Off</string>
+    <string name="animation_toggle_suggested_on">Animation: On (suggested)</string>
+    <string name="animation_toggle_suggested_off">Animation: Off (suggested)</string>
+    <string name="animation_toggle_title">Animation</string>
+    <string name="animation_toggle_explicit_desc">Set by you for this title</string>
+    <string name="animation_toggle_suggested_desc">Suggested from title metadata</string>
+    <string name="player_enhancements_title">Enhancements</string>
+    <string name="player_enhancement_off">AnimeJaNai: Off</string>
+    <string name="player_enhancement_pending">AnimeJaNai: Pending</string>
+    <string name="player_enhancement_active">AnimeJaNai: Active</string>
+    <string name="player_enhancement_skipped">AnimeJaNai: Skipped</string>
+    <string name="player_enhancement_preparation_required">AnimeJaNai: Preparation required</string>
+    <string name="player_enhancement_failed">AnimeJaNai: Failed</string>
+    <string name="player_enhancement_prepare_note">The engine can be prepared after closing the player.</string>
 </resources>

@@ -17,23 +17,6 @@ import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Enhancement status for the player panel. */
-data class EnhancementStatus(
-    val kind: Kind,
-    val reason: String? = null,
-    val slot: Int? = null,
-    val inputWidth: Int? = null,
-    val inputHeight: Int? = null,
-    val outputWidth: Int? = null,
-    val outputHeight: Int? = null,
-) {
-    enum class Kind { Off, Pending, Active, Skipped, PreparationRequired, Failed }
-
-    companion object {
-        val Off = EnhancementStatus(Kind.Off)
-    }
-}
-
 /** Start-time decision; [startOptions] is empty when mpv must start exactly as before. */
 internal data class AnimeJaNaiStartPlan(
     val startOptions: List<String>,
@@ -76,16 +59,6 @@ internal class AnimeJaNaiSession(
         preparationSource = source
     }
 
-    /**
-     * Starts preparing the engine the current stream needs, from the same stream. The player must
-     * be closed first (preparation refuses while any playback is live); returns a refusal reason.
-     */
-    fun requestPreparation(): String? {
-        val key = preparationRequiredKey ?: return "No engine preparation is needed"
-        val source = preparationSource ?: return "The stream is unknown"
-        return AnimeJaNaiPreparationController.prepare(key, source)
-    }
-
     // Mutated on the worker thread only.
     @Volatile private var plan: AnimeJaNaiStartPlan? = null
     /** Live native handle; every native call holds [nativeLock] and re-checks it (dispose safety). */
@@ -96,7 +69,15 @@ internal class AnimeJaNaiSession(
     @Volatile private var skippedForOutput = false
     @Volatile private var animationEnabled = true
 
+    /**
+     * Toggle state of a stream that started without AnimeJaNai only because the title was not marked
+     * Animation; observing it reports a later On as pending for the next stream start.
+     */
+    @Volatile var deferredToggleState: StateFlow<AnimationToggleState>? = null
+        private set
+
     suspend fun planStart(settings: PlayerSettingsUiState): AnimeJaNaiStartPlan? {
+        deferredToggleState = null
         if (settings.animeJaNaiMode != AnimeJaNaiMode.Automatic) {
             _status.value = EnhancementStatus.Off
             return null
@@ -110,6 +91,7 @@ internal class AnimeJaNaiSession(
         val availability = runtime.availability()
         if (availability is AnimeJaNaiRuntime.Availability.Unavailable) return skip(availability.reason)
         if (AnimeJaNaiPreparationController.isPreparing) return skip("An engine preparation is running")
+        if (AnimeJaNaiPreparationController.installer.isInstalling) return skip("The AnimeJaNai runtime is being installed")
         val title = ActivePlaybackTitle.current ?: return skip("Title is unknown")
         val profileId = ProfileRepository.activeProfileId.toString()
         val toggles = DesktopAnimationToggles.repository
@@ -117,7 +99,10 @@ internal class AnimeJaNaiSession(
             toggles.load(profileId)
             toggles.state(profileId, CanonicalTitle.of(title.parentMetaId, title.parentMetaType))
         }.getOrElse { error -> return skip("Animation toggle unavailable: ${error.message}") }
-        if (!toggleState.value.eligibility.animeJaNai) return skip("Title is not marked Animation")
+        if (!toggleState.value.eligibility.animeJaNai) {
+            deferredToggleState = toggleState
+            return skip("Title is not marked Animation")
+        }
         animationEnabled = true
         return AnimeJaNaiStartPlan(runtime.playerStartOptions(), settings.animeJaNaiProfile.slot, toggleState)
     }
@@ -157,6 +142,12 @@ internal class AnimeJaNaiSession(
             } else {
                 false
             }
+        }
+        if (detached) {
+            // Offer the engine this stream needed for preparation once the player is closed.
+            val key = preparationRequiredKey
+            val source = preparationSource
+            if (key != null && source != null) AnimeJaNaiPreparationController.rememberPending(key, source)
         }
         if (detached && playbackRegistered.compareAndSet(true, false)) {
             AnimeJaNaiPreparationController.onPlaybackEnded()

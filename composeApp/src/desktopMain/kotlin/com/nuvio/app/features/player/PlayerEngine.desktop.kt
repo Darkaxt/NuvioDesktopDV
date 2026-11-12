@@ -33,6 +33,7 @@ import com.nuvio.app.core.ui.AppPresenceState
 import com.nuvio.app.core.ui.LocalNuvioPlatformDensity
 import com.nuvio.app.core.ui.PresenceSnapshot
 import com.nuvio.app.features.player.desktop.DesktopHostOs
+import com.nuvio.app.features.playback.animejanai.ActivePlaybackEnhancement
 import com.nuvio.app.features.player.desktop.DesktopPlayerPictureInPicture
 import com.nuvio.app.features.player.desktop.NativePlayerController
 import com.nuvio.app.features.player.desktop.NativePlayerHost
@@ -213,6 +214,14 @@ private fun NativePlayerSurface(
         )
     }
 
+    DisposableEffect(controller) {
+        val status = controller.animeJaNai.status
+        ActivePlaybackEnhancement.status.value = status
+        onDispose {
+            ActivePlaybackEnhancement.status.compareAndSet(status, null)
+        }
+    }
+
     DisposableEffect(controller, sourceAvailable, sourceUrl, playbackHeaders) {
         onDispose { controller.dispose() }
     }
@@ -261,7 +270,7 @@ private fun NativePlayerSurface(
             onError = { message -> latestOnError.value(message) },
             animeJaNaiPlan = animeJaNaiPlan,
         )
-        animeJaNaiPlan?.toggleState?.let { toggleState ->
+        (animeJaNaiPlan?.toggleState ?: controller.animeJaNai.deferredToggleState)?.let { toggleState ->
             launch { controller.animeJaNai.observeToggle(toggleState) }
         }
         initialPositionRequestKey?.let { key ->

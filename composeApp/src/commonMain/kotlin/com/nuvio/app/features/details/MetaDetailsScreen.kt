@@ -1462,6 +1462,7 @@ fun MetaDetailsScreen(
                                                             onWatchedClick = toggleWatched,
                                                             onSaveClick = toggleSaved,
                                                             onSaveLongClick = openLibraryListPicker,
+                                                            animationMeta = meta,
                                                         )
                                                     }
                                                 } else {
@@ -2642,6 +2643,7 @@ private fun ConfiguredMetaSections(
                     onWatchedClick = onWatchedClick,
                     onSaveClick = onSaveClick,
                     onSaveLongClick = onSaveLongClick,
+                    animationMeta = meta,
                 )
             }
             MetaScreenSectionKey.OVERVIEW -> {

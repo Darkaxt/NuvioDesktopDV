@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -129,6 +130,11 @@ import com.nuvio.app.features.library.toLibraryItem
 import com.nuvio.app.features.library.toMetaPreview
 import com.nuvio.app.features.membership.MemberAccessRepository
 import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepository
+import com.nuvio.app.features.playback.classification.AnimationToggleSurface
+import com.nuvio.app.features.playback.classification.continueWatchingTitleFacts
+import com.nuvio.app.features.playback.classification.label
+import com.nuvio.app.features.playback.classification.rememberAnimationToggle
+import com.nuvio.app.features.playback.classification.toTitleFacts
 import com.nuvio.app.features.p2p.P2pSettingsRepository
 import com.nuvio.app.features.party.PartyMedia
 import com.nuvio.app.features.party.PartyRepository
@@ -1800,6 +1806,14 @@ internal fun MainAppContent(
                     )
                     val removesFromLibrary = isSaved &&
                         (posterActionTarget.libraryItem != null || !isRemoteLibrarySource)
+                    val posterAnimationToggle = rememberAnimationToggle(
+                        metaId = preview.id,
+                        metaType = preview.type,
+                        displayTitle = preview.name,
+                        facts = remember(preview) { preview.toTitleFacts() },
+                        surface = AnimationToggleSurface.PosterSheet,
+                    )
+                    val posterAnimationToggleLabel = posterAnimationToggle?.label()
                     NuvioPosterZoomActionOverlay(
                         imageUrl = selectedPosterAnchor?.imageUrl ?: preview.poster,
                         title = preview.name,
@@ -1811,7 +1825,7 @@ internal fun MainAppContent(
                             },
                         isWatched = isWatched,
                         anchor = selectedPosterAnchor,
-                        actions = listOf(
+                        actions = listOfNotNull(
                             PosterZoomOverlayAction(
                                 icon = if (isSaved) Icons.Default.DeleteOutline else Icons.Default.Add,
                                 label = if (isSaved) {
@@ -1942,6 +1956,13 @@ internal fun MainAppContent(
                                     }
                                 },
                             ),
+                            posterAnimationToggle?.let { toggle ->
+                                PosterZoomOverlayAction(
+                                    icon = Icons.Default.Animation,
+                                    label = posterAnimationToggleLabel.orEmpty(),
+                                    onSelected = toggle::toggle,
+                                )
+                            },
                         ),
                         hazeState = posterOverlayHazeState,
                         onDismissed = {
@@ -1957,6 +1978,21 @@ internal fun MainAppContent(
                     key(item.videoId, anchor) {
                         val showManualPlayOption = StreamAutoPlayPolicy.isEffectivelyEnabled(playerSettingsUiState) && canSelectContinueWatchingStreams(item)
                         val showDetailsOption = !item.isCloudLibraryContinueWatchingItem()
+                        // Episodes edit their series value (parentMetaId/parentMetaType).
+                        val cwAnimationToggle = if (showDetailsOption) {
+                            rememberAnimationToggle(
+                                metaId = item.parentMetaId,
+                                metaType = item.parentMetaType,
+                                displayTitle = item.title,
+                                facts = remember(item.parentMetaId, item.parentMetaType) {
+                                    continueWatchingTitleFacts(item.parentMetaId, item.parentMetaType)
+                                },
+                                surface = AnimationToggleSurface.ContinueWatchingSheet,
+                            )
+                        } else {
+                            null
+                        }
+                        val cwAnimationToggleLabel = cwAnimationToggle?.label()
                         NuvioPosterZoomActionOverlay(
                             imageUrl = cloudLibraryDisplayArtworkUrl(anchor.imageUrl ?: item.poster ?: item.imageUrl),
                             title = item.title,
@@ -2010,6 +2046,15 @@ internal fun MainAppContent(
                                             icon = Icons.Default.CheckCircle,
                                             label = stringResource(Res.string.hero_mark_watched),
                                             onSelected = { onContinueWatchingMarkWatched(item) },
+                                        ),
+                                    )
+                                }
+                                if (cwAnimationToggle != null && cwAnimationToggleLabel != null) {
+                                    add(
+                                        PosterZoomOverlayAction(
+                                            icon = Icons.Default.Animation,
+                                            label = cwAnimationToggleLabel,
+                                            onSelected = cwAnimationToggle::toggle,
                                         ),
                                     )
                                 }

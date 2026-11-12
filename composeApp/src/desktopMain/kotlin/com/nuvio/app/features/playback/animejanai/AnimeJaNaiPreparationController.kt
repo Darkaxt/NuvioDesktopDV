@@ -39,6 +39,7 @@ internal object AnimeJaNaiPreparationController {
 
     val runtime: AnimeJaNaiRuntime by lazy { AnimeJaNaiRuntime() }
     val engineIndex: AnimeJaNaiEngineIndex by lazy { AnimeJaNaiEngineIndex(runtime) }
+    val installer: AnimeJaNaiRuntimeInstaller by lazy { AnimeJaNaiRuntimeInstaller(runtime) }
 
     private val _state = MutableStateFlow<AnimeJaNaiPreparationState>(AnimeJaNaiPreparationState.Idle)
     val state: StateFlow<AnimeJaNaiPreparationState> = _state.asStateFlow()
@@ -48,6 +49,7 @@ internal object AnimeJaNaiPreparationController {
     private val activePlaybacks = AtomicInteger(0)
 
     val isPreparing: Boolean get() = running.get()
+    val hasActivePlayback: Boolean get() = activePlaybacks.get() > 0
 
     internal fun onPlaybackStarted() {
         activePlaybacks.incrementAndGet()
@@ -57,11 +59,28 @@ internal object AnimeJaNaiPreparationController {
         activePlaybacks.updateAndGet { (it - 1).coerceAtLeast(0) }
     }
 
+    /** Engine a closed playback needed but that is not prepared yet, with the stream to prepare from. */
+    data class PendingPreparation(val key: EngineKey, val source: PreparationSource)
+
+    private val _pending = MutableStateFlow<PendingPreparation?>(null)
+    val pending: StateFlow<PendingPreparation?> = _pending.asStateFlow()
+
+    internal fun rememberPending(key: EngineKey, source: PreparationSource) {
+        if (engineIndex.find(key) == null) _pending.value = PendingPreparation(key, source)
+    }
+
+    /** Prepares the remembered pending engine; returns a refusal reason, or null when started. */
+    fun preparePending(): String? {
+        val request = _pending.value ?: return "No engine preparation is needed"
+        return prepare(request.key, request.source)
+    }
+
     /** Starts preparation for [key] from [source]; returns a refusal reason, or null when started. */
     fun prepare(key: EngineKey, source: PreparationSource): String? {
         val availability = runtime.availability()
         if (availability is AnimeJaNaiRuntime.Availability.Unavailable) return availability.reason
         if (activePlaybacks.get() > 0) return "Engine preparation cannot run during playback"
+        if (installer.isInstalling) return "The AnimeJaNai runtime is being installed"
         if (!running.compareAndSet(false, true)) return "Another engine preparation is already running"
         cancelRequested.set(false)
         _state.value = AnimeJaNaiPreparationState.Preparing(key.slot, key.width, key.height, key.fps, 0)
@@ -74,6 +93,7 @@ internal object AnimeJaNaiPreparationController {
             } finally {
                 running.set(false)
             }
+            if (result == null) _pending.compareAndSet(PendingPreparation(key, source), null)
             _state.value = if (result == null) {
                 AnimeJaNaiPreparationState.Ready(key.slot, key.width, key.height, key.fps)
             } else {

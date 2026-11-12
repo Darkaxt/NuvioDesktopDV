@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.features.player.AndroidLibmpvVideoOutput
 import com.nuvio.app.features.player.AnimeJaNaiMode
 import com.nuvio.app.features.player.AnimeJaNaiProfile
+import com.nuvio.app.features.playback.animejanai.platformAnimeJaNaiRuntimeControls
+import androidx.compose.runtime.collectAsState
 import com.nuvio.app.features.player.AndroidPlaybackEngine
 import com.nuvio.app.features.player.IosHardwareDecoderMode
 import com.nuvio.app.features.player.localizedLabel
@@ -153,6 +155,7 @@ internal fun PlaybackVideoSettings(
                                 PlayerSettingsRepository.setAnimeJaNaiProfile(next)
                             },
                         )
+                        AnimeJaNaiRuntimeRows(isTablet = isTablet)
                     }
                 }
             }
@@ -321,3 +324,50 @@ private fun decoderPriorityRes(priority: Int): StringResource = when (priority) 
 
 @Composable
 private fun decoderPriorityLabel(priority: Int): String = stringResource(decoderPriorityRes(priority))
+
+/** Runtime installation and engine preparation rows (Windows; nothing elsewhere). */
+@Composable
+private fun AnimeJaNaiRuntimeRows(isTablet: Boolean) {
+    val controls = remember { platformAnimeJaNaiRuntimeControls() } ?: return
+    val state by controls.state.collectAsState()
+    var refusal by remember { mutableStateOf<String?>(null) }
+    val busy = state.activity != null
+    SettingsGroupDivider(isTablet = isTablet)
+    SettingsNavigationRow(
+        title = stringResource(
+            if (state.installed) Res.string.settings_playback_animejanai_runtime_reinstall
+            else Res.string.settings_playback_animejanai_runtime_install,
+        ),
+        description = state.activity
+            ?: refusal
+            ?: state.error
+            ?: if (state.installed) {
+                stringResource(Res.string.settings_playback_animejanai_runtime_installed)
+            } else {
+                state.unavailableReason ?: stringResource(Res.string.settings_playback_animejanai_runtime_install_desc)
+            },
+        enabled = !busy,
+        isTablet = isTablet,
+        onClick = { refusal = controls.install() },
+    )
+    val pending = state.pendingPreparation
+    if (state.installed && (pending != null || state.lastPrepared != null || busy)) {
+        SettingsGroupDivider(isTablet = isTablet)
+        SettingsNavigationRow(
+            title = stringResource(
+                if (busy) Res.string.settings_playback_animejanai_prepare_cancel
+                else Res.string.settings_playback_animejanai_prepare,
+            ),
+            description = when {
+                busy -> state.activity
+                pending != null -> stringResource(Res.string.settings_playback_animejanai_prepare_pending, pending)
+                else -> stringResource(Res.string.settings_playback_animejanai_prepare_done, state.lastPrepared.orEmpty())
+            },
+            enabled = busy || pending != null,
+            isTablet = isTablet,
+            onClick = {
+                if (busy) controls.cancelPreparation() else refusal = controls.preparePending()
+            },
+        )
+    }
+}

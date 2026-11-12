@@ -452,7 +452,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
             playerSettingsUiState.introSubmitEnabled &&
             playerSettingsUiState.introDbApiKey.isNotBlank() &&
             !activeSubmitIntroImdbId().isNullOrBlank(),
-        showVideoSettings = isIos,
+        showVideoSettings = isIos || enhancementPanelSupported,
         showSources = activeVideoId != null,
         showEpisodes = isSeries,
         showExternalPlayer = args.onOpenInExternalPlayer != null,
@@ -835,6 +835,11 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
                     showVideoSettingsModal = true
                     controlsVisible = true
                 }
+            } else if (enhancementPanelSupported) {
+                {
+                    showEnhancementPanel = true
+                    controlsVisible = true
+                }
             } else {
                 null
             },
@@ -1027,6 +1032,9 @@ private fun PlayerScreenRuntime.handlePlayerControlsAction(action: PlayerControl
         PlayerControlsAction.VideoSettings -> {
             if (isIos) {
                 showVideoSettingsModal = true
+                controlsVisible = true
+            } else if (enhancementPanelSupported) {
+                showEnhancementPanel = true
                 controlsVisible = true
             }
         }
@@ -2140,6 +2148,16 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
             showSubmitIntroModal = false
         },
     )
+    if (enhancementPanelSupported) {
+        PlayerEnhancementPanel(
+            visible = showEnhancementPanel,
+            parentMetaId = parentMetaId,
+            parentMetaType = parentMetaType,
+            title = title,
+            meta = playerMeta,
+            onDismiss = { showEnhancementPanel = false },
+        )
+    }
     StreamInfoOverlay(
         visible = showStreamInfo,
         addonName = activeProviderName,
