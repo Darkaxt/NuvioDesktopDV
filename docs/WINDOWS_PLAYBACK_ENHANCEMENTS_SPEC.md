@@ -528,6 +528,21 @@ the owned build repeats them.
   lagging `mpv-player/mpv` by several weeks, the owned AnimeJaNai branch takes over
   tracking mpv master directly (the user owns upstream merges).
 
+### Side effort after the full plan
+
+User request 2026-11-12: once every stage of this plan is complete, deploy the
+updated owned mpv module (the qualified `nuviodv-animejanai` runtime line) to the
+user's other players as well:
+
+- Pathweft (`Darkaxt/Pathweft`), which currently builds its own pinned mpv
+  (`D:\BuildCache\Pathweft\mpv`, `*-pathweft.N`).
+- VLC Redesign (`C:\Users\darka\Documents\Projects\VLC-Redesign`, `Darkaxt/vlc`).
+
+Each needs its own integration point and verification within that project's
+existing build/release process; nothing here claims either project is updated.
+This side effort does not block the plan's completion criteria and starts only
+after them.
+
 ### Tracked deferrals
 
 | ID | Deferred requirement | Target | Resolution condition |
