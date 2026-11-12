@@ -609,9 +609,20 @@ Decisions and limits recorded for this stage:
   in-app testing uses `-Pnuvio.windows.libmpv.runtimeDir=<ajn.1 directory>`; promoting
   the owned pin belongs to Integrated Windows delivery.
 
-Remaining before this stage is complete: gated native verification of the installed
-runtime and of the benchmark on this GPU (blocked 2026-11-12 by the local-AI gate's
-10 GB free-VRAM admission while desktop applications held about 7 GB); in-app
+Native verification (2026-11-12, local-AI gate with per-task VRAM limits, owned
+`nuviodv-windows-ajn.1` libmpv, RTX 4090 Laptop sm89):
+
+- Installed runtime (the installer's own output): hidden `vo=null` preparation on a
+  real 960x540 23.976 fps clip built the engine in 41.3 s (same engine identity as the
+  reference package); `stream-mode=required` playback then reached `active` in 1.74 s,
+  960x540 -> 1920x1080, nvdec, 0 dropped/delayed frames.
+- Benchmark method (`untimed`, `frames=N`, `stream-mode=required`, `vo=null`): `frames`
+  is honored exactly; mean cost 17.6 / 17.6 / 17.5 ms per frame for 240 / 480 / 960
+  frames (sample size adequate), decode alone 0.7 ms, against a 33.4 ms budget at
+  23.976 fps, so this class qualifies. Inter-frame gaps in this pipelined untimed mode
+  (p95 about 33 ms) are not per-frame latency and are not used (D3).
+
+Remaining before this stage is complete: in-app
 verification of the toggle surfaces, settings rows, status and live bypass with the
 owned libmpv; Android/iOS compile of the shared code; measured profile/status across
 episodes on real metadata.
