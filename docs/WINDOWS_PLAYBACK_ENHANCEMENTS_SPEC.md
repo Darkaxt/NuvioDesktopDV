@@ -516,6 +516,12 @@ the owned build repeats them.
   FFmpeg without recording exact revisions. The leak fix `c93aa134` is present. The
   owned P7 build must pin both explicitly.
 - mpv filter options need `[...]` quoting for Windows paths (drive colons).
+- Tablet testing (user request 2026-11-12): the qualification checks are to be
+  repeated on the user's Android tablet at a later point, excluding SVP (not
+  expected to run there). Dolby Vision can be checked against the Android library
+  directly; AnimeJaNai on the tablet depends on tracked deferral D1 (an Android
+  inference backend) and is not claimed until D1 resolves. Requires the
+  established Android device workflow and ownership checks.
 - Upstream lag (user decision 2026-11-12): no dedicated lag monitoring for now.
   Recurring maintenance stays with the Codex automation `Maintain NuvioDV apps and
   native mpv`; Claude sessions do not run it. If `the-database/mpv` is observed
