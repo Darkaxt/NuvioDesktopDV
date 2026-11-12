@@ -499,11 +499,11 @@ the owned build repeats them.
   FFmpeg without recording exact revisions. The leak fix `c93aa134` is present. The
   owned P7 build must pin both explicitly.
 - mpv filter options need `[...]` quoting for Windows paths (drive colons).
-- Upstream-lag monitoring (user decision 2026-11-12): recurring maintenance stays with
-  the Codex automation `Maintain NuvioDV apps and native mpv`; Claude sessions do not
-  run it. When the owned AnimeJaNai branch is created, that automation must also
-  report how far `the-database/mpv` is behind `mpv-player/mpv` and how far the owned
-  branch is behind `the-database/mpv` (report-only; the user owns upstream merges).
+- Upstream lag (user decision 2026-11-12): no dedicated lag monitoring for now.
+  Recurring maintenance stays with the Codex automation `Maintain NuvioDV apps and
+  native mpv`; Claude sessions do not run it. If `the-database/mpv` is observed
+  lagging `mpv-player/mpv` by several weeks, the owned AnimeJaNai branch takes over
+  tracking mpv master directly (the user owns upstream merges).
 
 ### Tracked deferrals
 
