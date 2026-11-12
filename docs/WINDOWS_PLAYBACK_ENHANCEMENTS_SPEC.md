@@ -490,8 +490,25 @@ the owned build repeats them.
 - AnimeJaNai TensorRT requires CUDA frames (`hwdec=nvdec`) and `gpu-api=vulkan`;
   DirectML uses d3d11va/d3d11. Nuvio currently defaults to gpu-next with automatic
   gpu-api, so AnimeJaNai on TensorRT requires selecting Vulkan at stream start (DV
-  on Vulkan qualified above). The TensorRT inference smoke test is still pending
-  (queued behind the local-AI gate).
+  on Vulkan qualified above).
+- AnimeJaNai TensorRT (passed): on gpu-next/vulkan with `hwdec=nvdec`, CUDA frames
+  reach `vf=animejanai` (slot 1002 Balanced, model
+  `2x_AnimeJaNai_HD_V3.1_Balanced_SPANF3_b8f64_unshuffle_fp16`). A 1280x720
+  23.976 fps illustrated excerpt rendered at 2560x1440 at 23.976 fps with 0
+  decoder/VO drops and 0 delayed frames on the RTX 4090 Laptop GPU. The cached
+  engine (2 MiB) deserialized in about 32 ms. The result was compared against a
+  Lanczos upscale of the unfiltered control frame (39.8 dB PSNR, visibly crisper
+  line art). The bundled AnimeJaNai benchmark clips are blank 8 kbps throughput
+  sources, unusable for visual checks.
+- Engine preparation (P4 integration requirement): the first play at a new
+  resolution builds a TensorRT engine (about 2 minutes for 720p at
+  `--builderOptimizationLevel=5`). In `stream-mode=normal` frames pass through
+  unprocessed until the build finishes, and a build in progress is killed if
+  playback ends (observed: trtexec exit 1). `stream-mode=prepare` builds without
+  emitting frames and reports `AJN_STREAM_V1 <state>` log lines, but it re-runs
+  the filter (and reports `active`) only when the host wakes it again after the
+  build. A host that just waits never sees completion. Nuvio must drive
+  preparation explicitly and show the user a preparing state.
 - Package size (open question 2 input): the TensorRT runtime is about 167 MB plus
   about 152 MB per GPU-architecture builder resource (sm89 here), well below the
   1-1.6 GB estimate.
