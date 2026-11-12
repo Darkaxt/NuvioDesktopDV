@@ -440,7 +440,7 @@ the existing DV pipeline with pinned dependencies and publishes a native artifac
 it does not implement AnimeJaNai/SVP or replace this application's runtime pin.
 The required later feature/application checks below remain in force.
 
-The native-runtime stage is ACTIVE (feasibility evidence below); all other stages are NOT STARTED. No runtime feature is implemented by this specification.
+The native-runtime stage is COMPLETE (owned build `nuviodv-windows-ajn.1` qualified below). The Animation decisions and adaptive AnimeJaNai stage is ACTIVE: P1-P3 rule/ledger/toggle-store source is written and reviewed but its focused tests have not run yet (blocked by a Coordinator Gradle-gate pre-launch failure reported to the user on 2026-11-12). The other stages are NOT STARTED.
 
 | Stage | Requirements | Required end-to-end evidence |
 | --- | --- | --- |
@@ -527,6 +527,47 @@ the owned build repeats them.
   native mpv`; Claude sessions do not run it. If `the-database/mpv` is observed
   lagging `mpv-player/mpv` by several weeks, the owned AnimeJaNai branch takes over
   tracking mpv master directly (the user owns upstream merges).
+
+#### Native-runtime stage: owned build qualification (2026-11-12) - COMPLETE
+
+Owned artifact: `Darkaxt/mpv` branch `nuviodv-animejanai` at `a77256324b`, a merge of
+`the-database/mpv` master `042613482d` (0 behind it) with our `master` `222a45316c`.
+Built by `nuviodv-windows.yml` run 43248843240 (GCC, `--werror`, unit tests, WARP DV
+verify) with our DV-qualified pins (libplacebo `9fabf6d5` plus four vendored
+`mpv-winbuild` presentation patches, FFmpeg `9a861e96`, OpenSSL 3.6.5 `c8bd5a57`).
+Published without rebuilding by run 43278638733 as release `nuviodv-windows-ajn.1`
+(not marked Latest; `nuviodv-windows-dv.2` stays the application pin until the
+Integrated Windows delivery stage). Zip SHA-256 `0fcba959…ab44b` (identical to the
+qualified CI artifact), `libmpv-2.dll` SHA-256 `79ca36e4…6779`.
+
+Real-GPU qualification on the RTX 4090 Laptop GPU with the owned DLL (same ctypes
+harness and fixtures as the comparison build):
+- DV D3D11 hardware (`verify-windows.py hardware`): profiles 5/8.1 and SDR
+  pixel-identical to the qualified `nuviodv-windows-dv.2` renders; WARP renders
+  identical to the dv.2 CI renders.
+- DV Vulkan: profiles 5/8.1 map to `dolbyvision`/PQ; 98.7/98.5 dB PSNR against the
+  D3D11 hardware references, AE@2% = 0 (closer than the comparison build's 87 dB).
+- SVP: 1080p 23.976 -> 47.48 fps via `vf=vapoursynth` on `d3d11va-copy`, 0 decoder
+  drops, 1 VO drop. The teardown hang reproduces; it remains a P5 requirement.
+- AnimeJaNai TensorRT (gated local-AI workflow, completed, caches cleaned): the
+  illustrated 720p excerpt renders 2560x1440 at 23.976 fps with 0 drops; the frame
+  is pixel-identical to the comparison build's output.
+- Engine lifecycle for P4 (from `vf_animejanai.c` and measured):
+  `stream-mode=check` reports `engineMissing` in about 2 s without building.
+  `stream-mode=prepare` builds and reports `building` -> `active` when the host
+  sends `vf-command <label> poll ""` periodically (768x576 engine: 47 s); without
+  the poll it never reports completion. `stream-mode=required` plays only with a
+  cached engine (`active` in 1.6 s, 0 drops) and builds nothing; with a missing
+  engine the filter fails fatally and playback ENDS (end-file), so Nuvio must check
+  or prepare before inserting the filter and must never insert it for an
+  unprepared resolution. `vf-command <label> slot 0` bypasses the filter without
+  rebuilding the chain, which allows a live in-player Off (and On for an already
+  inserted, prepared filter) without a stream reload.
+
+Maintenance coverage: recurring upstream maintenance remains with the existing
+Codex automation, and dedicated `the-database/mpv` lag monitoring is deferred by
+the user's 2026-11-12 decision (above). The stage's acceptance criteria are met;
+application integration of these paths belongs to the next stages.
 
 ### Side effort after the full plan
 
