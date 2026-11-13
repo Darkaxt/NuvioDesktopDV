@@ -56,6 +56,8 @@ internal class SvpSession(
     @Volatile private var decidedKey: String? = null
     @Volatile private var inserted: SvpDecision.Interpolate? = null
     @Volatile private var insertedBufferedFrames = 0
+    /** The player's `video-sync` before SVP switched it to [SvpPlanner.VIDEO_SYNC]; restored on removal. */
+    @Volatile private var restoreVideoSync: String? = null
     /** Consecutive steady ticks in which the filtered rate stayed below the target. */
     @Volatile private var lowFpsTicks = 0
     @Volatile private var svpEligible = true
@@ -64,7 +66,9 @@ internal class SvpSession(
     @Volatile private var displayWaitStartMillis = 0L
     /** Off for the rest of this stream (failure or no sustainable target left). */
     @Volatile private var disabledForStream = false
-    private val liveMonitor = LiveBudgetMonitor()
+    @Volatile private var liveMonitor = LiveBudgetMonitor()
+    /** Source frame number at the previous budget check; -1 after a reset. */
+    @Volatile private var lastSourceFrame = -1L
 
     /** Toggle state of a stream that started without SVP only because of its classification. */
     @Volatile var deferredToggleState: StateFlow<AnimationToggleState>? = null
@@ -109,6 +113,7 @@ internal class SvpSession(
             displayWaitStartMillis = 0L
             disabledForStream = false
             liveMonitor.reset()
+            lastTiming = null
             if (startPlan != null) {
                 _status.value = EnhancementStatus(EnhancementStatus.Kind.Pending, "Waiting for video")
             }
@@ -125,6 +130,7 @@ internal class SvpSession(
             if (handle == nativeHandle) {
                 handle = 0L
                 inserted = null
+                restoreVideoSync = null
             }
         }
     }
@@ -244,8 +250,14 @@ internal class SvpSession(
         }
         inserted = decision
         insertedBufferedFrames = bufferedFrames
+        if (restoreVideoSync == null) {
+            restoreVideoSync = stringProperty("video-sync").trim().ifEmpty { "audio" }
+            val result = command("set", "video-sync", SvpPlanner.VIDEO_SYNC)
+            log.i { "video-sync $restoreVideoSync -> ${SvpPlanner.VIDEO_SYNC} ($result)" }
+        }
         lowFpsTicks = 0
-        liveMonitor.reset()
+        liveMonitor = SvpPlanner.budgetMonitor(decision.targetFps)
+        lastSourceFrame = -1L
         _status.value = EnhancementStatus(
             EnhancementStatus.Kind.Pending, "Starting",
             inputWidth = width, inputHeight = height,
@@ -261,6 +273,7 @@ internal class SvpSession(
             // Pause, seek and buffering are not judged.
             lowFpsTicks = 0
             liveMonitor.reset()
+            lastSourceFrame = -1L
             return
         }
         val vfFps = doubleProperty("estimated-vf-fps")
@@ -282,10 +295,19 @@ internal class SvpSession(
             return
         }
         val sourceFrame = intProperty("estimated-frame-number")?.toLong() ?: return
+        if (SvpPlanner.isDiscontinuity(lastSourceFrame, sourceFrame, active.sourceFps)) liveMonitor.reset()
+        lastSourceFrame = sourceFrame
         val outputFrame = (sourceFrame * active.targetFps / active.sourceFps).toLong()
-        val drops = (intProperty("frame-drop-count") ?: 0) + (intProperty("decoder-frame-drop-count") ?: 0)
-        val breach = liveMonitor.sample(outputFrame, drops.toLong(), steady = true) ?: return
-        log.w { "budget breach class=${active.resolutionClass} target=${active.targetMilli}: $breach" }
+        val voDrops = intProperty("frame-drop-count") ?: 0
+        val decoderDrops = intProperty("decoder-frame-drop-count") ?: 0
+        // Presentation (VO) and decoding drops are reported apart so a breach can be attributed.
+        lastTiming = "vo-drops=$voDrops decoder-drops=$decoderDrops" +
+            " delayed=${stringProperty("vo-delayed-frame-count").trim()}" +
+            " mistimed=${stringProperty("mistimed-frame-count").trim()}" +
+            " sync=${stringProperty("video-sync").trim()} display-fps=${stringProperty("display-fps").trim()}" +
+            " vf-fps=${vfFps?.let { "%.2f".format(it) }}"
+        val breach = liveMonitor.sample(outputFrame, (voDrops + decoderDrops).toLong(), steady = true) ?: return
+        log.w { "budget breach class=${active.resolutionClass} target=${active.targetMilli}: $breach ($lastTiming)" }
         capability.recordBreach(active.resolutionClass, active.targetMilli)
         // The next evaluation sees the recorded breach and picks a lower divisor, or skips.
         decidedKey = null
@@ -304,9 +326,13 @@ internal class SvpSession(
     private fun filterPresent(): Boolean = stringProperty("vf").contains(SvpRuntime.FILTER_LABEL)
 
     private fun removeFilter() {
-        if (inserted == null && !filterPresent()) return
-        command("vf", "remove", "@${SvpRuntime.FILTER_LABEL}")
+        if (inserted != null || filterPresent()) command("vf", "remove", "@${SvpRuntime.FILTER_LABEL}")
         inserted = null
+        restoreVideoSync?.let {
+            val result = command("set", "video-sync", it)
+            log.i { "video-sync restored to $it ($result)" }
+        }
+        restoreVideoSync = null
     }
 
     private fun writeScript(decision: SvpDecision.Interpolate): Path {
@@ -343,6 +369,10 @@ internal class SvpSession(
         stringProperty(name).trim().toDoubleOrNull()?.takeIf { it > 0 }
 
     companion object {
+        /** Latest playback timing counters of the active SVP filter, for logs and the debug status. */
+        @Volatile
+        internal var lastTiming: String? = null
+
         private const val DISPLAY_WAIT_MILLIS = 5_000L
         /** Steady ticks (250 ms) allowed to reach the target after insertion, and to lose it later. */
         private const val ACTIVATION_TICKS = 32

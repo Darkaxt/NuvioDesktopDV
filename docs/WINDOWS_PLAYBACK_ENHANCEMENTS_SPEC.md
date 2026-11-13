@@ -762,7 +762,22 @@ competes for control of the filter chain.
   - A filter that mpv bypassed after a failure is reported as Failed: its output
     rate stays at the source rate.
   - A sustained frame-budget breach records the limit and re-plans the session at a
-    lower divisor, or skips SVP.
+    lower divisor, or skips SVP. The budget windows are time-based (3 s of warm-up,
+    then two consecutive 3 s windows over 2% drops), and a seek that completes
+    between checks restarts them.
+  - Timing: while the filter is inserted, `video-sync` is `display-resample`, so
+    frames lock to vsync and audio is resampled. The previous mode is restored when
+    SVP is removed. With mpv's default `audio` timing, an output rate at or near the
+    refresh drops a frame whenever one misses a vsync. Those are presentation drops,
+    not filter overload.
+  - Seeking: the filter is re-initialised on seek (`skip-seek-pre-target=no`).
+    The owned libmpv's soft reset (`vf_vapoursynth.c` `soft_reset_vs`) parks the
+    input and output frame numbers together. That only holds for 1:1 scripts such
+    as AnimeJaNai. With a rate-changing script, the filter fails fatally after a few
+    seeks ("Frame N requested, but only have frames starting from M"). This is a
+    fork defect to report to the libmpv maintenance (P7).
+  - Refresh rates are reported slightly above nominal (165.059 Hz), so a refresh
+    within 1% of a resolution cap counts as that cap.
 - Eligibility comes from P1/P2. AnimeJaNai and SVP are mutually exclusive. Unknown
   titles and trailers get neither.
   - An explicit Animation On removes SVP while the episode is playing; Off allows
@@ -784,10 +799,49 @@ Verification so far:
   540p fixture: `d3d11va-copy` decoding, container 23.976 fps,
   `estimated-vf-fps` 47.48.
 
+In-app verification (2026-11-13). The 540p 23.976 fps fixture stream was played as
+Breaking Bad through the debug bridge on an isolated profile, with gated builds r14 to r17.
+The r17 build passed 45 tests (ticket `8024a1f75e4eaf139fbe8f639aaff708`).
+- Settings shows the SVP section, the switch and the detected component versions.
+- 165.06 Hz LG UltraGear: SVP is Active at 165.058 fps within about 3 s.
+  - 60 s of steady playback: 0 VO drops, 0 decoder drops, filter at 165.06 fps, no
+    learned breach.
+  - 5 forward seeks, 3 back seeks and a seek while paused all stay Active.
+  - Animation On removes SVP live (Skipped, "Animation is On") and restores
+    `video-sync`. Off inserts it again and it is Active within about 2 s.
+  - Leaving the player restores `video-sync`, and the app session exits with the
+    native tree verified.
+- 240 Hz laptop panel: the target is 120 fps (half the refresh, as the 1080p cap is
+  165). With the earlier `audio` timing, VO dropped about 2 frames/s while the
+  filter held 120.00 fps and decoder drops were 0.
+- Cinemeta Frieren (anime) is Skipped ("Title is classified as animation"), and
+  AnimeJaNai is Active.
+- Defects found and fixed during these runs:
+  - 165.059 Hz was planned at 82.5 fps. Fixed by the cap tolerance.
+  - Rapid seeks failed the filter ("VapourSynth frame buffer exhausted"). Fixed by
+    `skip-seek-pre-target=no`.
+  - Seek re-initialisation and frame-count windows caused false budget breaches.
+    Fixed by time-based windows that restart on seek.
+  - `audio` timing presentation drops were judged as breaches, stepping 165 down to
+    82.5 and then 55 fps. Fixed by `display-resample` while SVP runs.
+- Presentation: the first ~90 s at 165 Hz showed vsync misses
+  (`vo-delayed-frame-count`, about 8/s) while DWM was using about 37% of the 3D
+  engine. They stopped without any change, and later minutes had none. They are not
+  part of the SVP budget, because the filter kept its rate throughout.
+- One unreproduced observation: after pause, seek and resume followed by
+  Animation On/Off, the status stayed Pending for 18 s. The same sequence repeated
+  afterwards went back to Active, with frames advancing. The likely cause is that
+  playback stayed paused, which is not judged by design.
+- Trailers: code-verified only. Trailers play in `PlatformPlayerSurface`, with no
+  active title, so `SvpSession` skips them ("Title is unknown"). The debug status
+  does not cover trailer surfaces.
+- WebView2 cost (P8 evidence), 20 s samples during SVP playback:
+  - controls hidden: the 6 `msedgewebview2` processes use 4.1% of one core and
+    256 MB private memory;
+  - controls visible: 8.0% and 307 MB;
+  - the app process including mpv and SVP: 48 to 52%, about 2.5 GB.
+
 Remaining before this stage is complete:
-- In-app run with the fixture stream: Active state and the measured
-  23.976 → 120 fps on the 240 Hz display; seek, pause and resume; Animation On
-  removing SVP; anime and trailer skips; app exit.
 - The SVP component update. Installed: core 4.7.0.302-3, SVPflow 4.6.0.274,
   VapourSynth package 70. The elevated update request expired unanswered and needs
   the user's approval.

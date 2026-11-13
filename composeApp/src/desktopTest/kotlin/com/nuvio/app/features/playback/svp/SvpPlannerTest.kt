@@ -32,6 +32,10 @@ class SvpPlannerTest {
     fun highRefreshDisplaysUseTheHighestDivisorUnderTheResolutionCap() {
         // 1080p: 165 Hz is within the cap.
         assertEquals(165_000, assertIs<SvpDecision.Interpolate>(SvpPlanner.plan(input(display = 165.0))).targetMilli)
+        // A measured 165.059 Hz panel is still the 165 cap, not half of it.
+        assertEquals(165_059, assertIs<SvpDecision.Interpolate>(SvpPlanner.plan(input(display = 165.059))).targetMilli)
+        // 240 Hz is above the 1080p cap: half the refresh.
+        assertEquals(120_000, assertIs<SvpDecision.Interpolate>(SvpPlanner.plan(input(display = 240.0))).targetMilli)
         // 1440p is capped at 120: 144 Hz falls back to 72 (144/2), never a non-divisor.
         val qhd = assertIs<SvpDecision.Interpolate>(SvpPlanner.plan(input(display = 144.0, width = 2560, height = 1440)))
         assertEquals(72_000, qhd.targetMilli)
@@ -91,7 +95,28 @@ class SvpPlannerTest {
         val path = Paths.get("""C:\Users\Ünïcode\svp-1.vpy""")
         val filter = SvpPlanner.filter(path, 8, 4)
         val bytes = path.toString().toByteArray(Charsets.UTF_8).size
-        assertEquals("@nuviosvp:vapoursynth=file=%$bytes%$path:buffered-frames=8:concurrent-frames=4", filter)
+        assertEquals("@nuviosvp:vapoursynth=file=%$bytes%$path:buffered-frames=8:concurrent-frames=4:skip-seek-pre-target=no", filter)
+    }
+
+    @Test
+    fun budgetWindowsAreTimeBasedAndSeeksRestartThem() {
+        // 165 fps: three seconds of warmup, then two three-second windows over 2% drops.
+        val monitor = SvpPlanner.budgetMonitor(165.0)
+        var drops = 0L
+        val breachFrame = (1L..4 * 495L).firstOrNull { frame ->
+            if (frame > 495 && frame % 20 == 0L) drops++ // 5% drops after warmup
+            monitor.sample(frame, drops, steady = true) != null
+        }
+        // Warmup (495) + first window opens at 496, then two full 495-frame windows.
+        assertEquals(496L + 2 * 495, breachFrame)
+        // A short burst right after a (re)start stays within the warmup and is not judged.
+        val fresh = SvpPlanner.budgetMonitor(165.0)
+        assertNull((1L..490L).firstNotNullOfOrNull { fresh.sample(it, it, steady = true) })
+
+        assertTrue(SvpPlanner.isDiscontinuity(1000, 900, 23.976), "backward seek")
+        assertTrue(SvpPlanner.isDiscontinuity(1000, 1100, 23.976), "forward seek beyond 3 s")
+        assertTrue(!SvpPlanner.isDiscontinuity(1000, 1006, 23.976), "normal playback between ticks")
+        assertTrue(!SvpPlanner.isDiscontinuity(-1, 5000, 23.976), "first sample")
     }
 
     @Test

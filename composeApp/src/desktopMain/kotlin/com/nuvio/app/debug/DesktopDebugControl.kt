@@ -414,6 +414,7 @@ object DesktopDebugControl {
                 if (it.inputWidth != null) put("input", "${it.inputWidth}x${it.inputHeight}")
                 put("sourceFps", it.sourceFps)
                 put("outputFps", it.outputFps)
+                put("timing", com.nuvio.app.features.playback.svp.SvpSession.lastTiming)
             }
         } ?: JsonNull)
         val runtime = platformAnimeJaNaiRuntimeControls()?.state?.value

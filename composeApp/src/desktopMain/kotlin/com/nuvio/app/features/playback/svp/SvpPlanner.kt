@@ -1,5 +1,6 @@
 package com.nuvio.app.features.playback.svp
 
+import com.nuvio.app.features.playback.animejanai.LiveBudgetMonitor
 import java.nio.file.Path
 import kotlin.math.roundToInt
 
@@ -41,6 +42,9 @@ internal object SvpPlanner {
     /** A target must be at least this many times the source rate to be worth interpolating. */
     const val MIN_GAIN = 1.5
 
+    /** A refresh rate within 1% of a resolution cap counts as that cap. */
+    const val CAP_TOLERANCE = 1.01
+
     fun resolutionClass(width: Int, height: Int): String {
         val longSide = maxOf(width, height)
         val shortSide = minOf(width, height)
@@ -74,7 +78,8 @@ internal object SvpPlanner {
         val cap = targetCapFps(resolutionClass) ?: return SvpDecision.Skip("Source is larger than 4K")
         val candidates = (1..4)
             .map { divisor -> ((display / divisor) * 1000).roundToInt() }
-            .filter { it >= source * MIN_GAIN * 1000 && it <= cap * 1000 + 0.5 }
+            // Nominal refresh rates are reported slightly high (165 Hz as 165.06), hence the tolerance.
+            .filter { it >= source * MIN_GAIN * 1000 && it <= cap * 1000 * CAP_TOLERANCE }
         if (candidates.isEmpty()) {
             return SvpDecision.Skip("No refresh-rate divisor between %.0f and %.0f fps".format(source * MIN_GAIN, cap))
         }
@@ -84,6 +89,32 @@ internal object SvpPlanner {
         val blockWidth = if (resolutionClass == "1080") 16 else 32
         return SvpDecision.Interpolate(source, target, blockWidth, resolutionClass)
     }
+
+    /**
+     * Frame timing while SVP runs. The output rate is a refresh divisor, so frames are locked to
+     * vsync and audio is resampled; audio-clock timing (`audio`) drops frames whenever one misses a
+     * vsync, which at near-refresh output rates is a presentation artefact, not a filter overload.
+     */
+    const val VIDEO_SYNC = "display-resample"
+
+    /** Seconds of warmup and per judged window for the live budget check. */
+    const val BUDGET_WINDOW_SECONDS = 3.0
+
+    /**
+     * Live budget monitor for an output rate. Windows are time-based: a seek re-initialises the script
+     * and briefly drops frames, which a frame-count window sized for 24 fps would judge at 165 fps.
+     */
+    fun budgetMonitor(targetFps: Double): LiveBudgetMonitor {
+        val frames = (targetFps * BUDGET_WINDOW_SECONDS).toLong().coerceAtLeast(48)
+        return LiveBudgetMonitor(windowFrames = frames, warmupFrames = frames)
+    }
+
+    /**
+     * True when the source frame number moved backwards or further than playback can advance between
+     * two checks: a seek that completed between ticks, which must restart the budget window.
+     */
+    fun isDiscontinuity(previousFrame: Long, currentFrame: Long, sourceFps: Double): Boolean =
+        previousFrame >= 0 && (currentFrame < previousFrame || currentFrame - previousFrame > sourceFps * BUDGET_WINDOW_SECONDS)
 
     /** `concurrent-frames` for vf_vapoursynth: bounded by the CPU and a fixed ceiling. */
     fun concurrentFrames(processors: Int = Runtime.getRuntime().availableProcessors()): Int =
@@ -133,7 +164,9 @@ internal object SvpPlanner {
     fun filter(scriptPath: Path, bufferedFrames: Int, concurrentFrames: Int): String {
         val path = scriptPath.toString()
         val length = path.toByteArray(Charsets.UTF_8).size
+        // The owned libmpv's seek soft reset parks input and output frame numbers together, which
+        // only holds for 1:1 scripts; a rate-changing script must be re-initialised on seek.
         return "@${SvpRuntime.FILTER_LABEL}:vapoursynth=file=%$length%$path" +
-            ":buffered-frames=$bufferedFrames:concurrent-frames=$concurrentFrames"
+            ":buffered-frames=$bufferedFrames:concurrent-frames=$concurrentFrames:skip-seek-pre-target=no"
     }
 }
