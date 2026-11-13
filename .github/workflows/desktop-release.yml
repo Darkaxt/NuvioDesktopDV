@@ -393,6 +393,9 @@ jobs:
           git lfs pull --include="composeApp/src/desktopMain/native/windows/runtime/**" --exclude=""
           # runtime-pins.sha256 lists every bundled runtime file and its pinned SHA-256.
           native_dir="composeApp/src/desktopMain/native/windows"
+          # Windows runners check text files out with CRLF; compare against an LF copy.
+          pins="${RUNNER_TEMP}/runtime-pins.sha256"
+          tr -d '\r' < "${native_dir}/runtime-pins.sha256" > "${pins}"
           while read -r _ runtime_name; do
             runtime_path="${native_dir}/runtime/${runtime_name}"
             if [[ ! -f "${runtime_path}" ]]; then
@@ -404,8 +407,8 @@ jobs:
               echo "The bundled Windows runtime file ${runtime_name} was not materialized from Git LFS." >&2
               exit 1
             fi
-          done < "${native_dir}/runtime-pins.sha256"
-          if ! (cd "${native_dir}/runtime" && sha256sum --check --strict ../runtime-pins.sha256); then
+          done < "${pins}"
+          if ! (cd "${native_dir}/runtime" && sha256sum --check --strict "${pins}"); then
             echo "The bundled Windows libmpv runtime does not match the pinned NuvioDV artifact." >&2
             exit 1
           fi
