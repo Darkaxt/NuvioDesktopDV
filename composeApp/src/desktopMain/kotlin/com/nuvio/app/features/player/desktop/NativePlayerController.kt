@@ -4,6 +4,8 @@ import androidx.compose.ui.graphics.Color
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.playback.animejanai.AnimeJaNaiSession
 import com.nuvio.app.features.playback.animejanai.AnimeJaNaiStartPlan
+import com.nuvio.app.features.playback.svp.SvpSession
+import com.nuvio.app.features.playback.svp.SvpStartPlan
 import com.nuvio.app.features.playback.animejanai.PreparationSource
 import com.nuvio.app.features.player.PlayerControlAddonSubtitleItem
 import com.nuvio.app.features.player.PlayerControlEpisodeItem
@@ -102,6 +104,9 @@ internal class NativePlayerController(
     /** AnimeJaNai integration for this player (Windows; inert unless a start plan is supplied). */
     val animeJaNai = AnimeJaNaiSession()
 
+    /** SVP interpolation for this player (Windows; inert unless a start plan is supplied). */
+    val svp = SvpSession()
+
     private val lifecycleLock = Any()
     private var currentNowPlayingTitle: String = ""
     private var currentNowPlayingSubtitle: String = ""
@@ -153,6 +158,7 @@ internal class NativePlayerController(
         nvidiaRtxSuperResolutionEnabled: Boolean,
         onError: (String?) -> Unit,
         animeJaNaiPlan: AnimeJaNaiStartPlan? = null,
+        svpPlan: SvpStartPlan? = null,
     ) {
         val pending = PendingSource(
             sourceUrl = sourceUrl,
@@ -163,8 +169,11 @@ internal class NativePlayerController(
             nvidiaRtxSuperResolutionEnabled = nvidiaRtxSuperResolutionEnabled,
             onError = onError,
             animeJaNaiPlan = animeJaNaiPlan,
+            // The two enhancements are exclusive per title (Animation decides); AnimeJaNai wins.
+            svpPlan = svpPlan.takeIf { animeJaNaiPlan == null },
         )
         animeJaNai.beginStream(animeJaNaiPlan)
+        svp.beginStream(pending.svpPlan)
         var terminalFailure: String? = null
         val accepted = synchronized(lifecycleLock) {
             when {
@@ -329,7 +338,8 @@ internal class NativePlayerController(
         val createWorker = Thread({
             try {
                 runCatching {
-                    val startOptions = pending.animeJaNaiPlan?.startOptions.orEmpty()
+                    val startOptions = pending.animeJaNaiPlan?.startOptions
+                        ?: pending.svpPlan?.startOptions.orEmpty()
                     if (startOptions.isEmpty()) {
                         nativeCreate(
                             hostViewPtr,
@@ -363,6 +373,7 @@ internal class NativePlayerController(
                         if (!releaseRequested && terminalReleaseFailure == null && pendingSource === pending) {
                             handle = created
                             animeJaNai.attachHandle(created)
+                            svp.attachHandle(created)
                             NativePlayerDebugHooks.activeControlsEvent = ::handlePlayerEvent
                             true
                         } else {
@@ -588,7 +599,9 @@ internal class NativePlayerController(
 
     private fun handlePlayerEvent(type: String, value: Double) {
         if (type.startsWith(MPV_LOG_EVENT_PREFIX)) {
-            animeJaNai.onLogLine(type.removePrefix(MPV_LOG_EVENT_PREFIX))
+            val line = type.removePrefix(MPV_LOG_EVENT_PREFIX)
+            animeJaNai.onLogLine(line)
+            svp.onLogLine(line)
             return
         }
         if (type.shouldLogNativeControlEvent()) {
@@ -982,6 +995,7 @@ internal class NativePlayerController(
      */
     private fun detachEnhancements(current: Long) {
         animeJaNai.detachHandle(current)
+        svp.detachHandle(current)
         NativePlayerDebugHooks.activeControlsEvent = null
     }
 
@@ -1061,6 +1075,7 @@ internal class NativePlayerController(
             nvidiaRtxSuperResolutionEnabled = pending.nvidiaRtxSuperResolutionEnabled,
             onError = pending.onError,
             animeJaNaiPlan = pending.animeJaNaiPlan,
+            svpPlan = pending.svpPlan,
         )
     }
 
@@ -1315,6 +1330,7 @@ private data class PendingSource(
     val nvidiaRtxSuperResolutionEnabled: Boolean,
     val onError: (String?) -> Unit,
     val animeJaNaiPlan: AnimeJaNaiStartPlan? = null,
+    val svpPlan: SvpStartPlan? = null,
 )
 
 private const val MPV_LOG_EVENT_PREFIX = "mpvLog:"
@@ -1835,6 +1851,10 @@ private fun PlayerControlsState.toControlsJson(isFullscreen: Boolean, onImageRea
         appendJsonField("statusReason", enhancement.statusReason)
         append(',')
         appendJsonField("statusNote", enhancement.statusNote)
+        append(',')
+        appendJsonField("svpHeadline", enhancement.svpHeadline)
+        append(',')
+        appendJsonField("svpReason", enhancement.svpReason)
         append(',')
         appendJsonField("animationAvailable", enhancement.animationAvailable)
         append(',')

@@ -216,9 +216,12 @@ private fun NativePlayerSurface(
 
     DisposableEffect(controller) {
         val status = controller.animeJaNai.status
+        val svpStatus = controller.svp.status
         ActivePlaybackEnhancement.status.value = status
+        ActivePlaybackEnhancement.svpStatus.value = svpStatus
         onDispose {
             ActivePlaybackEnhancement.status.compareAndSet(status, null)
+            ActivePlaybackEnhancement.svpStatus.compareAndSet(svpStatus, null)
         }
     }
 
@@ -255,11 +258,14 @@ private fun NativePlayerSurface(
         }
         delay(16L)
         // AnimeJaNai (Windows): decided once per stream start; settings changes apply at the next start.
-        val animeJaNaiPlan = if (DesktopHostOs.current == DesktopHostOs.WINDOWS) {
+        val isWindows = DesktopHostOs.current == DesktopHostOs.WINDOWS
+        val animeJaNaiPlan = if (isWindows) {
             controller.animeJaNai.planStart(PlayerSettingsRepository.uiState.value)
         } else {
             null
         }
+        // SVP (Windows): live-action titles only; exclusive with AnimeJaNai by the Animation toggle.
+        val svpPlan = if (isWindows) controller.svp.planStart(PlayerSettingsRepository.uiState.value) else null
         controller.attach(
             sourceUrl = sourceUrl,
             sourceHeaders = playbackHeaders,
@@ -269,7 +275,11 @@ private fun NativePlayerSurface(
             nvidiaRtxSuperResolutionEnabled = nvidiaRtxSuperResolutionEnabled,
             onError = { message -> latestOnError.value(message) },
             animeJaNaiPlan = animeJaNaiPlan,
+            svpPlan = svpPlan,
         )
+        (svpPlan?.toggleState ?: controller.svp.deferredToggleState)?.let { toggleState ->
+            launch { controller.svp.observeToggle(toggleState) }
+        }
         (animeJaNaiPlan?.toggleState ?: controller.animeJaNai.deferredToggleState)?.let { toggleState ->
             launch { controller.animeJaNai.observeToggle(toggleState) }
         }
@@ -321,6 +331,7 @@ private fun NativePlayerSurface(
             if (!controller.isReleasing) {
                 onSnapshot(controller.snapshot())
                 controller.animeJaNai.onTick()
+                controller.svp.onTick()
             }
             delay(250L)
         }

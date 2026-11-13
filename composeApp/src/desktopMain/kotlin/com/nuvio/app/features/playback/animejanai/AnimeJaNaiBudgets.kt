@@ -79,7 +79,7 @@ internal class AnimeJaNaiBudgets(
             else -> "above2160"
         }
 
-        private val gpuIdentity: String by lazy { queryGpuIdentity() }
+        internal val gpuIdentity: String by lazy { queryGpuIdentity() }
 
         fun defaultEnvironment(runtime: AnimeJaNaiRuntime): String {
             val manifest = runtime.rootDir.resolve(AnimeJaNaiRuntimeInstaller.MANIFEST_NAME)

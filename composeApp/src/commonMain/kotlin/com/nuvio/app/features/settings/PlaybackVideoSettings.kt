@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.features.player.AndroidLibmpvVideoOutput
 import com.nuvio.app.features.player.AnimeJaNaiMode
+import com.nuvio.app.features.player.SvpMode
+import com.nuvio.app.features.player.platformSvpInstallationSummary
 import com.nuvio.app.features.player.AnimeJaNaiProfile
 import com.nuvio.app.features.playback.animejanai.platformAnimeJaNaiRuntimeControls
 import androidx.compose.runtime.collectAsState
@@ -156,6 +158,33 @@ internal fun PlaybackVideoSettings(
                             },
                         )
                         AnimeJaNaiRuntimeRows(isTablet = isTablet)
+                    }
+                }
+                SettingsSection(
+                    title = stringResource(Res.string.settings_playback_svp_section),
+                    isTablet = isTablet,
+                ) {
+                    val svpSummary = remember { platformSvpInstallationSummary() }
+                    SettingsGroup(isTablet = isTablet) {
+                        SettingsSwitchRow(
+                            title = stringResource(Res.string.settings_playback_svp_automatic),
+                            description = stringResource(Res.string.settings_playback_svp_automatic_desc),
+                            checked = settings.svpMode == SvpMode.Automatic,
+                            isTablet = isTablet,
+                            onCheckedChange = { enabled ->
+                                PlayerSettingsRepository.setSvpMode(if (enabled) SvpMode.Automatic else SvpMode.Off)
+                            },
+                        )
+                        if (svpSummary != null) {
+                            SettingsGroupDivider(isTablet = isTablet)
+                            SettingsNavigationRow(
+                                title = stringResource(Res.string.settings_playback_svp_installation),
+                                description = svpSummary,
+                                enabled = false,
+                                isTablet = isTablet,
+                                onClick = {},
+                            )
+                        }
                     }
                 }
             }

@@ -124,6 +124,7 @@ data class PlayerSettingsUiState(
     val nvidiaRtxSuperResolutionEnabled: Boolean = false,
     val animeJaNaiMode: AnimeJaNaiMode = AnimeJaNaiMode.Off,
     val animeJaNaiProfile: AnimeJaNaiProfile = AnimeJaNaiProfile.Default,
+    val svpMode: SvpMode = SvpMode.Off,
 )
 
 object PlayerSettingsRepository {
@@ -221,6 +222,7 @@ object PlayerSettingsRepository {
     private var nvidiaRtxSuperResolutionEnabled = false
     private var animeJaNaiMode = AnimeJaNaiMode.Off
     private var animeJaNaiProfile = AnimeJaNaiProfile.Default
+    private var svpMode = SvpMode.Off
 
     fun ensureLoaded() {
         if (hasLoaded) return
@@ -324,6 +326,7 @@ object PlayerSettingsRepository {
         nvidiaRtxSuperResolutionEnabled = false
         animeJaNaiMode = AnimeJaNaiMode.Off
         animeJaNaiProfile = AnimeJaNaiProfile.Default
+        svpMode = SvpMode.Off
         publish()
     }
 
@@ -514,6 +517,7 @@ object PlayerSettingsRepository {
         nvidiaRtxSuperResolutionEnabled = PlayerSettingsStorage.loadNvidiaRtxSuperResolutionEnabled() ?: false
         animeJaNaiMode = AnimeJaNaiMode.fromStorage(PlayerSettingsStorage.loadAnimeJaNaiMode())
         animeJaNaiProfile = AnimeJaNaiProfile.fromStorage(PlayerSettingsStorage.loadAnimeJaNaiProfile())
+        svpMode = SvpMode.fromStorage(PlayerSettingsStorage.loadSvpMode())
         publish()
     }
 
@@ -1161,6 +1165,14 @@ object PlayerSettingsRepository {
         PlayerSettingsStorage.saveAnimeJaNaiMode(mode.storageValue)
     }
 
+    fun setSvpMode(mode: SvpMode) {
+        ensureLoaded()
+        if (svpMode == mode) return
+        svpMode = mode
+        publish()
+        PlayerSettingsStorage.saveSvpMode(mode.storageValue)
+    }
+
     fun setAnimeJaNaiProfile(profile: AnimeJaNaiProfile) {
         ensureLoaded()
         if (animeJaNaiProfile == profile) return
@@ -1450,6 +1462,7 @@ object PlayerSettingsRepository {
             nvidiaRtxSuperResolutionEnabled = nvidiaRtxSuperResolutionEnabled,
             animeJaNaiMode = animeJaNaiMode,
             animeJaNaiProfile = animeJaNaiProfile,
+            svpMode = svpMode,
         )
     }
 

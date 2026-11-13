@@ -406,6 +406,16 @@ object DesktopDebugControl {
                 if (it.outputWidth != null) put("output", "${it.outputWidth}x${it.outputHeight}")
             }
         } ?: JsonNull)
+        val svp = ActivePlaybackEnhancement.svpStatus.value?.value
+        put("svp", svp?.let {
+            buildJsonObject {
+                put("kind", it.kind.name)
+                put("reason", it.reason)
+                if (it.inputWidth != null) put("input", "${it.inputWidth}x${it.inputHeight}")
+                put("sourceFps", it.sourceFps)
+                put("outputFps", it.outputFps)
+            }
+        } ?: JsonNull)
         val runtime = platformAnimeJaNaiRuntimeControls()?.state?.value
         put("runtime", runtime?.let {
             buildJsonObject {

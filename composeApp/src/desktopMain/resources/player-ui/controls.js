@@ -85,6 +85,9 @@ const enhancementCloseButton = document.getElementById("enhancementCloseButton")
 const enhancementHeadline = document.getElementById("enhancementHeadline");
 const enhancementReason = document.getElementById("enhancementReason");
 const enhancementNote = document.getElementById("enhancementNote");
+const enhancementSvpStatus = document.getElementById("enhancementSvpStatus");
+const enhancementSvpHeadline = document.getElementById("enhancementSvpHeadline");
+const enhancementSvpReason = document.getElementById("enhancementSvpReason");
 const enhancementAnimationRow = document.getElementById("enhancementAnimationRow");
 const enhancementAnimationLabel = document.getElementById("enhancementAnimationLabel");
 const enhancementAnimationDescription = document.getElementById("enhancementAnimationDescription");
@@ -2317,6 +2320,9 @@ const renderEnhancementModal = () => {
   enhancementHeadline.textContent = model.statusHeadline || "";
   enhancementReason.textContent = model.statusReason || "";
   enhancementNote.textContent = model.statusNote || "";
+  enhancementSvpStatus.hidden = !model.svpHeadline;
+  enhancementSvpHeadline.textContent = model.svpHeadline || "";
+  enhancementSvpReason.textContent = model.svpReason || "";
   enhancementAnimationRow.hidden = !model.animationAvailable;
   const checked = Boolean(model.animationChecked);
   enhancementAnimationRow.setAttribute("aria-checked", checked ? "true" : "false");

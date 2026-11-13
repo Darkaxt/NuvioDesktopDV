@@ -631,7 +631,14 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
             val surfaceSource = currentPlayerSurfaceSource
             val sourceAvailable = surfaceSource != null
             // Parent movie/series identity for platform enhancement eligibility (episodes inherit).
-            ActivePlaybackTitle.current = ActivePlaybackTitle.Value(parentMetaId, parentMetaType)
+            // Cleared when this player leaves, so other surfaces (trailers) see an unknown title.
+            DisposableEffect(parentMetaId, parentMetaType) {
+                val playing = ActivePlaybackTitle.Value(parentMetaId, parentMetaType)
+                ActivePlaybackTitle.current = playing
+                onDispose {
+                    if (ActivePlaybackTitle.current == playing) ActivePlaybackTitle.current = null
+                }
+            }
             PlatformPlayerSurface(
                 sourceUrl = surfaceSource?.sourceUrl.orEmpty(),
                 sourceAvailable = sourceAvailable,

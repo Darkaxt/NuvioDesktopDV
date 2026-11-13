@@ -215,6 +215,9 @@ internal expect object PlayerSettingsStorage {
     fun saveAnimeJaNaiMode(value: String)
     fun loadAnimeJaNaiProfile(): String?
     fun saveAnimeJaNaiProfile(value: String)
+    /** Machine-local SVP switch (not profile-scoped, not cloud-synced); only Windows desktop persists it. */
+    fun loadSvpMode(): String?
+    fun saveSvpMode(value: String)
     fun exportToSyncPayload(): JsonObject
     fun replaceFromSyncPayload(payload: JsonObject)
 }

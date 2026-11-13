@@ -12,6 +12,9 @@ data class EnhancementStatus(
     val inputHeight: Int? = null,
     val outputWidth: Int? = null,
     val outputHeight: Int? = null,
+    /** Source and output frame rates (SVP). */
+    val sourceFps: Double? = null,
+    val outputFps: Double? = null,
 ) {
     enum class Kind { Off, Pending, Active, Skipped, PreparationRequired, Failed }
 
@@ -23,4 +26,7 @@ data class EnhancementStatus(
 /** Status of the currently attached player's enhancement session; null when none is attached. */
 object ActivePlaybackEnhancement {
     val status = MutableStateFlow<StateFlow<EnhancementStatus>?>(null)
+
+    /** SVP interpolation status of the attached player; null when none is attached. */
+    val svpStatus = MutableStateFlow<StateFlow<EnhancementStatus>?>(null)
 }

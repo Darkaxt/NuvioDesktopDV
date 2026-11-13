@@ -727,6 +727,71 @@ Remaining before this stage is complete: iOS compile of the shared code (CI
 `ios-test-build`; not buildable on this Windows host); live bypass under a real
 frame-drop breach (unit-tested, not yet provoked in-app).
 
+### P5 progress: SVP setup and adaptive operation
+
+Approach (2026-11-13). The app loads the user's licensed SVP 4 VapourSynth runtime
+into the owned libmpv. SVP's own libmpv and SVP Manager are not used, so no Manager
+competes for control of the filter chain.
+- `vf_vapoursynth` loads `VSScript.dll` dynamically. Starting the player with
+  `nuvio-dll-dir=<SVP 4>\mpv64` therefore resolves SVP's portable VapourSynth and
+  Python with no libmpv rebuild. The SVPflow plugins are loaded from `plugins64` by
+  the generated script.
+- The application owns the filter. It adds and removes only the labelled
+  `@nuviosvp` entry through `vf add`/`vf remove`, so unrelated filters are left
+  alone. The generated scripts are stored in `%LOCALAPPDATA%\NuvioDV\SVP\scripts`.
+- Planning (`SvpPlanner`, unit-tested):
+  - SVP is skipped when the source fps is unknown, the source is 47 fps or more,
+    the source is HDR/Dolby Vision (pq/hlg, not verified), the display refresh is
+    unknown or the source is above 4K.
+  - The target is the highest refresh-rate divisor (k = 1..4) that is at least 1.5
+    times the source rate. It is capped by source size: 1080p 165, 1440p 120,
+    2160p 60. Targets are never hardcoded to 60.
+  - The target also stays below the lowest rate that previously caused frame drops
+    on this machine, for that resolution class. This learned limit is keyed by the
+    GPU, libmpv and SVP component versions.
+- Processing is bounded:
+  - `concurrent-frames` is the CPU count, clamped to 2..8.
+  - `buffered-frames` starts at 8. It grows to 16 and then 24 only when
+    `vf_vapoursynth` reports the buffer as too small (a fatal filter error).
+- Motion analysis runs on an 8-bit copy and rendering keeps 10-bit, as SVP's own
+  generator does.
+- Decoding: copy-back hardware decoding (`hwdec=auto-copy`) is used only while SVP
+  may run. An explicit software-decoding choice is kept.
+- Runtime monitoring (`SvpSession`):
+  - The status becomes Active once `estimated-vf-fps` reaches 90% of the target.
+  - A filter that mpv bypassed after a failure is reported as Failed: its output
+    rate stays at the source rate.
+  - A sustained frame-budget breach records the limit and re-plans the session at a
+    lower divisor, or skips SVP.
+- Eligibility comes from P1/P2. AnimeJaNai and SVP are mutually exclusive. Unknown
+  titles and trailers get neither.
+  - An explicit Animation On removes SVP while the episode is playing; Off allows
+    it.
+  - The player now clears the active title when it leaves, so trailers are
+    reported as having an unknown title.
+- Settings → Playback → "SVP motion interpolation":
+  - an "Automatic SVP" switch, default Off and Windows only;
+  - the detected SVP and SVPflow versions.
+  The player's Enhancements panel and its controls show the SVP status, the source
+  → output fps and the skip reason.
+
+Verification so far:
+- 11 `SvpPlannerTest` cases and the existing desktop suites pass (gated build
+  ticket `1e051a37e48d266a1f6dccc13cb4db89`, 38 tests).
+- `:composeApp:compileAndroidMain` succeeds (ticket
+  `1f3b6836cc1d8870816071ecbc39bc6d`).
+- A standalone probe on 2026-11-12 ran the owned libmpv with SVP's runtime on the
+  540p fixture: `d3d11va-copy` decoding, container 23.976 fps,
+  `estimated-vf-fps` 47.48.
+
+Remaining before this stage is complete:
+- In-app run with the fixture stream: Active state and the measured
+  23.976 → 120 fps on the 240 Hz display; seek, pause and resume; Animation On
+  removing SVP; anime and trailer skips; app exit.
+- The SVP component update. Installed: core 4.7.0.302-3, SVPflow 4.6.0.274,
+  VapourSynth package 70. The elevated update request expired unanswered and needs
+  the user's approval.
+
 ### Side effort after the full plan
 
 User request 2026-11-12: once every stage of this plan is complete, deploy the

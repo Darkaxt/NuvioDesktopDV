@@ -332,6 +332,8 @@ data class PlayerControlEnhancementState(
     val statusHeadline: String = "",
     val statusReason: String = "",
     val statusNote: String = "",
+    val svpHeadline: String = "",
+    val svpReason: String = "",
     val animationAvailable: Boolean = false,
     val animationLabel: String = "",
     val animationDescription: String = "",

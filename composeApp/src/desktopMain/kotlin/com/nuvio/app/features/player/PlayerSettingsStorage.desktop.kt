@@ -122,6 +122,7 @@ internal actual object PlayerSettingsStorage {
     private const val iosGammaKey = "ios_gamma"
     private const val nvidiaRtxSuperResolutionEnabledKey = "nvidia_rtx_super_resolution_enabled"
     private const val animeJaNaiModeKey = "animejanai_mode"
+    private const val svpModeKey = "svp_mode"
     private const val animeJaNaiProfileKey = "animejanai_profile"
     private val syncKeys = listOf(
         showLoadingOverlayKey,
@@ -441,6 +442,11 @@ internal actual object PlayerSettingsStorage {
     actual fun saveNvidiaRtxSuperResolutionEnabled(enabled: Boolean) = saveBoolean(nvidiaRtxSuperResolutionEnabledKey, enabled)
 
     // Machine-local: deliberately not profile-scoped and not part of syncKeys / cloud payloads.
+    actual fun loadSvpMode(): String? = store.getString(svpModeKey)
+    actual fun saveSvpMode(value: String) {
+        store.putString(svpModeKey, value)
+    }
+
     actual fun loadAnimeJaNaiMode(): String? = store.getString(animeJaNaiModeKey)
     actual fun saveAnimeJaNaiMode(value: String) {
         store.putString(animeJaNaiModeKey, value)

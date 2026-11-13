@@ -22,6 +22,11 @@ import nuvio.composeapp.generated.resources.player_enhancement_pending
 import nuvio.composeapp.generated.resources.player_enhancement_prepare_note
 import nuvio.composeapp.generated.resources.player_enhancement_preparation_required
 import nuvio.composeapp.generated.resources.player_enhancement_skipped
+import nuvio.composeapp.generated.resources.player_enhancement_svp_active
+import nuvio.composeapp.generated.resources.player_enhancement_svp_failed
+import nuvio.composeapp.generated.resources.player_enhancement_svp_off
+import nuvio.composeapp.generated.resources.player_enhancement_svp_pending
+import nuvio.composeapp.generated.resources.player_enhancement_svp_skipped
 import nuvio.composeapp.generated.resources.player_enhancements_title
 import org.jetbrains.compose.resources.stringResource
 
@@ -59,6 +64,8 @@ internal fun rememberPlayerEnhancementControls(
     )
     val statusFlow by ActivePlaybackEnhancement.status.collectAsState()
     val status = statusFlow?.collectAsState()?.value
+    val svpStatusFlow by ActivePlaybackEnhancement.svpStatus.collectAsState()
+    val svpStatus = svpStatusFlow?.collectAsState()?.value
     val state = PlayerControlEnhancementState(
         visible = visible,
         panelTitle = stringResource(Res.string.player_enhancements_title),
@@ -69,6 +76,9 @@ internal fun rememberPlayerEnhancementControls(
         } else {
             ""
         },
+        // SVP is shown once it is enabled (Off means the global switch is off).
+        svpHeadline = svpStatus?.takeIf { it.kind != EnhancementStatus.Kind.Off }?.svpHeadline().orEmpty(),
+        svpReason = svpStatus?.takeIf { it.kind != EnhancementStatus.Kind.Off }?.reason.orEmpty(),
         animationAvailable = toggle != null,
         animationLabel = stringResource(Res.string.animation_toggle_title),
         animationDescription = if (toggle == null) {
@@ -108,4 +118,34 @@ private fun EnhancementStatus.headline(): String {
         ""
     }
     return base + sizes
+}
+
+@Composable
+private fun EnhancementStatus.svpHeadline(): String {
+    val base = stringResource(
+        when (kind) {
+            EnhancementStatus.Kind.Off -> Res.string.player_enhancement_svp_off
+            EnhancementStatus.Kind.Pending, EnhancementStatus.Kind.PreparationRequired -> Res.string.player_enhancement_svp_pending
+            EnhancementStatus.Kind.Active -> Res.string.player_enhancement_svp_active
+            EnhancementStatus.Kind.Skipped -> Res.string.player_enhancement_svp_skipped
+            EnhancementStatus.Kind.Failed -> Res.string.player_enhancement_svp_failed
+        },
+    )
+    val source = sourceFps
+    val output = outputFps
+    val rates = when {
+        source != null && output != null -> " ${formatFps(source)} → ${formatFps(output)} fps"
+        source != null -> " ${formatFps(source)} fps"
+        else -> ""
+    }
+    val size = if (inputWidth != null && inputHeight != null) " · ${inputWidth}x$inputHeight" else ""
+    return base + rates + size
+}
+
+/** Up to three decimals without trailing zeros (23.976, 60, 59.94). */
+internal fun formatFps(fps: Double): String {
+    val milli = kotlin.math.round(fps * 1000).toLong()
+    val whole = milli / 1000
+    val fraction = (milli % 1000).toString().padStart(3, '0').trimEnd('0')
+    return if (fraction.isEmpty()) whole.toString() else "$whole.$fraction"
 }

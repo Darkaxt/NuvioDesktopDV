@@ -2149,6 +2149,10 @@
     <string name="settings_playback_nvidia_rtx_super_resolution">RTX Video Super Resolution</string>
     <string name="settings_playback_nvidia_rtx_super_resolution_desc">Upscale low-resolution video using NVIDIA RTX AI Super Resolution.</string>
     <string name="settings_playback_animejanai_section">AnimeJaNai upscaling</string>
+    <string name="settings_playback_svp_section">SVP motion interpolation</string>
+    <string name="settings_playback_svp_automatic">Automatic SVP</string>
+    <string name="settings_playback_svp_automatic_desc">Interpolate live-action films and series to a smooth cadence that matches your display, using your installed SVP 4. Skipped for animation, unknown content, trailers, HDR/Dolby Vision and while RTX Video Super Resolution is on.</string>
+    <string name="settings_playback_svp_installation">SVP installation</string>
     <string name="settings_playback_animejanai_automatic">Automatic AnimeJaNai</string>
     <string name="settings_playback_animejanai_automatic_desc">Upscale animation below 4K with AnimeJaNai when the title is marked Animation and an engine is prepared. Skipped while RTX Video Super Resolution is on.</string>
     <string name="settings_playback_animejanai_profile">AnimeJaNai profile</string>
@@ -2686,5 +2690,10 @@
     <string name="player_enhancement_skipped">AnimeJaNai: Skipped</string>
     <string name="player_enhancement_preparation_required">AnimeJaNai: Preparation required</string>
     <string name="player_enhancement_failed">AnimeJaNai: Failed</string>
+    <string name="player_enhancement_svp_off">SVP: Off</string>
+    <string name="player_enhancement_svp_pending">SVP: Pending</string>
+    <string name="player_enhancement_svp_active">SVP: Active</string>
+    <string name="player_enhancement_svp_skipped">SVP: Skipped</string>
+    <string name="player_enhancement_svp_failed">SVP: Failed</string>
     <string name="player_enhancement_prepare_note">The engine can be prepared after closing the player.</string>
 </resources>

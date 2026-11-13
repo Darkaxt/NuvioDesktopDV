@@ -1561,6 +1561,8 @@ actual object PlayerSettingsStorage {
     // AnimeJaNai is a Windows-only enhancement; nothing is persisted on this platform.
     actual fun loadAnimeJaNaiMode(): String? = null
     actual fun saveAnimeJaNaiMode(value: String) = Unit
+    actual fun loadSvpMode(): String? = null
+    actual fun saveSvpMode(value: String) = Unit
     actual fun loadAnimeJaNaiProfile(): String? = null
     actual fun saveAnimeJaNaiProfile(value: String) = Unit
 
