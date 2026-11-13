@@ -718,7 +718,10 @@ production-company field). With TMDB enrichment disabled or its key rejected, a
 Disney animated movie has unknown studio evidence and is suggested On through the
 Animation genre, consistent with "missing metadata means unknown". The app does not
 issue a hidden TMDB request behind a disabled user setting. Builds without a default
-TMDB key need the user's own key for this exclusion.
+TMDB key need the user's own key for this exclusion. Fork builds now carry a default
+TMDB key: local builds read `TMDB_API_KEY` from `local.properties`, and the Windows
+release job maps the `TMDB_API_KEY` repository secret into the environment fallback.
+The enrichment toggle stays a user setting.
 
 Remaining before this stage is complete: iOS compile of the shared code (CI
 `ios-test-build`; not buildable on this Windows host); live bypass under a real
