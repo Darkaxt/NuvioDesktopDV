@@ -1094,6 +1094,25 @@ existing build/release process; nothing here claims either project is updated.
 This side effort does not block the plan's completion criteria and starts only
 after them.
 
+Handover (2026-11-13): the unchanged `nuviodv-windows-ajn.1` payload is staged at
+`D:\Releases\NuvioDV-mpv\nuviodv-windows-ajn.1`. Its `HANDOVER.md` covers:
+- per-file SHA-256s;
+- mpv, libplacebo and FFmpeg commits (libdovi is not used);
+- toolchain and configure options;
+- the absence of symbols (stripped GCC build, no PDBs);
+- licence texts and source pins;
+- ABI and runtime-DLL changes: public headers identical to the apps' `e471496c56`
+  pin, and `libspirv-cross-c-shared.dll` no longer needed.
+
+The Modern VLC Fork session was messaged with this manifest. Integration gaps:
+- VLC's own `mpv-wasapi-session.patch` is not in the owned build and must be
+  re-applied before VLC adopts it.
+- Pathweft takes its mpv from VLC as donor (`redesign-v1.1.1`), so it refreshes
+  after VLC.
+
+Each project's adoption, packaging and release belong to that project's own
+workflow and are not claimed here.
+
 ### Native Windows player controls overlay
 
 Promoted on 2026-11-13 to phase P8, the last phase to be considered (see P8). Its
