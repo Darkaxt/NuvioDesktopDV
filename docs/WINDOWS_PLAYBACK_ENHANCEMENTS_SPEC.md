@@ -423,6 +423,8 @@ Acceptance: the same in-app checks as the HTML layer (debug control bridge plus
 screenshots) pass. Measured playback overhead is no worse than the WebView2
 baseline. No WebView2 process exists during playback.
 
+Status: closed without migration on 2026-11-13 (see "P8 decision").
+
 Out of scope: a full native rewrite (for example Rust + WPF). That is considered
 only once upstream Nuvio has a stable release, together with the self-hosted Nuvio
 backend side project (`NUVIO_SELF_HOST_DEPLOYMENT_SPEC.md`).
@@ -555,7 +557,8 @@ the owned build repeats them.
   expected to run there). Dolby Vision can be checked against the Android library
   directly; AnimeJaNai on the tablet depends on tracked deferral D1 (an Android
   inference backend) and is not claimed until D1 resolves. Requires the
-  established Android device workflow and ownership checks.
+  established Android device workflow and ownership checks. Done 2026-11-13: see
+  "Tablet testing (2026-11-13)" and deferral D4.
 - Upstream lag (user decision 2026-11-12): no dedicated lag monitoring for now.
   Recurring maintenance stays with the Codex automation `Maintain NuvioDV apps and
   native mpv`; Claude sessions do not run it. If `the-database/mpv` is observed
@@ -1016,6 +1019,66 @@ process resource samples.
   documented profile slots; per-frame GPU timing in the filter), so they are
   re-targeted to P7 (see the table).
 
+### P8 decision (2026-11-13): closed without migration
+
+Based on the P5 evidence above:
+- With controls hidden, WebView2 costs 4.1% of one core, no measurable GPU engine
+  time and 238 MB of dedicated VRAM.
+- With controls visible, it costs 8.0% of one core.
+- Playback with AnimeJaNai/SVP costs about 50% and 1-2.65 GB.
+
+The overhead is negligible next to that, so P8 closes without a native overlay
+migration. This follows P8's own rule ("if the measured cost is negligible, record
+the measurement and close P8"); the user raised no objection when the
+recommendation was given. The evidence limits stay as recorded:
+- no visible-controls GPU sample;
+- no control-free baseline for DWM composition.
+
+Reopen P8 only if a later measurement shows WebView2 or its composition causing
+dropped frames or VRAM pressure during enhanced playback.
+
+### Tablet testing (2026-11-13)
+
+Setup:
+- Device: Galaxy Tab S9 Ultra (SM-X910, Android 16), over USB through the
+  Coordinator physical-device gate. App: NuvioDV Android 0.6.11-nuviodv.1.
+- The panel reports HDR10/HLG/HDR10+ only, with no Dolby Vision output, at
+  540 nits.
+- SVP was excluded (user decision). AnimeJaNai stays deferred (D1).
+- Account-safe method:
+  - a temporary profile without primary addons;
+  - a local fixture addon serving only synthetic `nvdvtest:` IDs over
+    `adb reverse`;
+  - the public mpv DV test clips (Profile 5 and 8.1, looped to 30 s with
+    `-strict unofficial` so the `dvcC` record survives) plus an SDR control.
+  - The profile and addon were deleted afterwards; only the user's profiles
+    remain.
+- Capture limits:
+  - `screencap` excludes the video SurfaceView (SurfaceFlinger's capture layer list
+    omits it), so frames are black.
+  - `screenrecord` does capture the video and was used for colour checks.
+  - The looped 2 s clip's first frame belongs to a different shot, so a still
+    close-up flashes every 2 s. This is a fixture artefact, not a player defect.
+
+Results with the existing engine setting (ExoPlayer):
+
+| Clip | Decoder | Result |
+| --- | --- | --- |
+| SDR control (AVC 540p) | `c2.qti.avc.decoder` | Plays fully; correct colours. |
+| DV Profile 8.1 | `c2.qti.hevc.decoder` (HDR10 base layer) | Plays fully; correct colours, no tint. |
+| DV Profile 5 | none | **Defect:** the timeline plays to the end with no picture and no error. |
+
+Cause of the Profile 5 defect:
+- The tablet's vendor codec list comments out the non-secure `c2.qti.dv.decoder`;
+  only `c2.qti.dv.decoder.secure` (DRM only) is declared.
+- Profile 5 has no HEVC-compatible base layer, so ExoPlayer has no usable video
+  decoder and silently disables the video track.
+- `Auto` resolves to ExoPlayer, and its libmpv fallback triggers only on decoder
+  *errors*, so it never runs here.
+
+Switching to libmpv in the player renders Profile 5 with correct colours (no
+green/purple tint), labelled `1080p • HEVC • DV • 60 FPS`. Tracked as D4.
+
 ### Side effort after the full plan
 
 User request 2026-11-12: once every stage of this plan is complete, deploy the
@@ -1043,6 +1106,7 @@ measurement is taken during P5.
 | D2 | Additional AnimeJaNai quality/performance profiles. The pinned runtime documents only slot 1002, so no smaller fallback profile can be offered or downgraded to. | P7 owned-runtime candidate (re-targeted 2026-11-13: not met by the P6 release), or earlier if the runtime documents more slots | Further upstream profile slots are documented and pinned, each passes image-quality comparison on moving fixtures, and selection/downgrade chooses among prepared qualified profiles. |
 | D3 | 95th-percentile per-frame processing cost (P4 initial acceptance budget). The in-app benchmark records mean decode+inference cost; the filter emits no per-frame timing. | P7 owned libmpv candidate (re-targeted 2026-11-13: not met by the P6 release) | The owned filter reports GPU-completed per-frame inference timing, the benchmark records its p95 against 80% of the output-frame interval, and the verification fixture shows no enhancement-induced steady-state drops. |
 | D1 | AnimeJaNai on NuvioDV Android (asked 2026-11-08). AnimeJaNai has no Android inference backend (TensorRT/DirectML only); a mobile GPU backend such as ncnn/Vulkan plus model conversion would be required. | Separate Android port stage, after Integrated Windows delivery | Converted lightest model runs inside the Android libmpv pipeline; measured decode+inference+render frame time and sustained thermal behavior for 480p/720p 24 fps anime meet P4's budget on the user's device; same P1 rules, P2 per-title choice and P3 ledger semantics. Until then Android is unchanged and nothing claims Android support. |
+| D4 | NuvioDV Android: Dolby Vision Profile 5 shows no picture under ExoPlayer on devices without a non-secure DV decoder. Found in tablet testing 2026-11-13. Darkaxt/NuvioMobileDV has issues disabled, so it is tracked here. | NuvioMobileDV maintenance (Codex-owned), next Android release | When a selected stream has a video track group that no renderer supports (for example `video/dolby-vision` Profile 5 without a non-secure DV decoder), `Auto` switches to libmpv at the current position, as it does for decoder errors. Explicit ExoPlayer instead shows an error. Verified on the SM-X910 tablet with the Profile 5 fixture: picture visible, correct colours. |
 
 ## Sources
 
