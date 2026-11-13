@@ -34,6 +34,14 @@ class AnimeJaNaiRuntimePinTest {
     }
 
     @Test
+    fun everyRequiredModelIsInstalledFromThePinnedOverlay() {
+        val installed = AnimeJaNaiRuntimeInstaller.OVERLAY_FILES.map { it.destination }.toSet()
+        AnimeJaNaiRuntime.REQUIRED_MODEL_FILES.forEach { model ->
+            assertTrue("onnx/$model" in installed, model)
+        }
+    }
+
+    @Test
     fun verificationRejectsAnyOtherContent() {
         val file = Files.createTempFile("ajn-pin", ".bin")
         Files.writeString(file, "abc")

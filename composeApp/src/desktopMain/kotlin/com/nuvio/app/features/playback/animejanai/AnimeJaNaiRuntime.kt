@@ -59,7 +59,7 @@ internal class AnimeJaNaiRuntime(val rootDir: Path = defaultRootDir()) {
         "gpu-api=vulkan",
         "hwdec=nvdec",
         "nuvio-dll-dir=$inferenceDir",
-        "nuvio-log-filter=$STATUS_TOKEN",
+        "nuvio-log-filter=$LOG_TOKEN",
         "nuvio-log-level=info",
     )
 
@@ -78,6 +78,13 @@ internal class AnimeJaNaiRuntime(val rootDir: Path = defaultRootDir()) {
     companion object {
         const val FILTER_LABEL = "aji"
         const val STATUS_TOKEN = "AJN_STREAM_V1"
+        const val TIMING_TOKEN = "AJN_TIMING_V1"
+
+        /**
+         * Bridge log filter (a substring match): admits the versioned filter signals
+         * [STATUS_TOKEN] and [TIMING_TOKEN]; other `AJN_` lines are ignored by the parsers.
+         */
+        const val LOG_TOKEN = "AJN_"
 
         /** Required files of the pinned `nuviodv-windows-ajn.1` TensorRT runtime (GPU-specific builder resources excluded). */
         val REQUIRED_INFERENCE_FILES = listOf(
@@ -90,9 +97,13 @@ internal class AnimeJaNaiRuntime(val rootDir: Path = defaultRootDir()) {
             "nvonnxparser_11.dll",
         )
 
-        /** Models used by the upstream Balanced profile (HD for HD sources, SD Compact for SD sources). */
+        /**
+         * Models of the exposed built-in profiles: HD V3.1 Balanced (1002) and Performance (1003) for
+         * HD sources, SD Compact for SD sources in both.
+         */
         val REQUIRED_MODEL_FILES = listOf(
             "2x_AnimeJaNai_HD_V3.1_Balanced_SPANF3_b8f64_unshuffle_fp16.onnx",
+            "2x_AnimeJaNai_HD_V3.1_Performance_SPANF3_b5f48_unshuffle_fp16.onnx",
             "2x_AnimeJaNai_SD_V1beta34_Compact_1x3xHxW_dyn-HW_strong_fp16_op21_dynamo.onnx",
         )
 
@@ -157,6 +168,31 @@ internal class AnimeJaNaiEngineIndex(
 
     fun remove(key: EngineKey) {
         store.remove(key.storageKey)
+    }
+}
+
+/**
+ * One parsed `AJN_TIMING_V1 <frames> <meanMs> <p50Ms> <p95Ms> <maxMs> <slot>` line: GPU-completed
+ * per-frame inference time over a window of frames (owned libmpv `nuviodv-windows-ajn.3` and later).
+ */
+internal data class AjnTiming(
+    val frames: Int,
+    val meanMillis: Double,
+    val p50Millis: Double,
+    val p95Millis: Double,
+    val maxMillis: Double,
+    val slot: Int?,
+) {
+    companion object {
+        fun parse(line: String): AjnTiming? {
+            val tokens = line.substringAfter(AnimeJaNaiRuntime.TIMING_TOKEN, missingDelimiterValue = "")
+                .trim()
+                .split(Regex("\\s+"))
+                .filter { it.isNotEmpty() }
+            val frames = tokens.getOrNull(0)?.toIntOrNull()?.takeIf { it > 0 } ?: return null
+            val values = (1..4).map { tokens.getOrNull(it)?.toDoubleOrNull()?.takeIf { v -> v.isFinite() && v >= 0 } ?: return null }
+            return AjnTiming(frames, values[0], values[1], values[2], values[3], tokens.getOrNull(5)?.toIntOrNull())
+        }
     }
 }
 

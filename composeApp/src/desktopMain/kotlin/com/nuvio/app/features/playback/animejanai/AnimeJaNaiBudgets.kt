@@ -36,12 +36,27 @@ internal class AnimeJaNaiBudgets(
         val measuredAtMillis: Long,
         /** Output class to reason, for classes where playback breached the budget. */
         val liveBreaches: Map<String, String> = emptyMap(),
+        /**
+         * 95th percentile of the GPU-completed per-frame inference time reported by the filter
+         * (`AJN_TIMING_V1`, the highest window p95 of the sample); null when the libmpv build does not
+         * report timing.
+         */
+        val p95FrameMillis: Double? = null,
     ) {
-        /** Initial acceptance budget: processing cost below 80% of the frame interval. */
-        val qualified: Boolean get() = meanFrameMillis < BUDGET_FRACTION * frameIntervalMillis
+        /**
+         * Acceptance budget: both the mean processing cost (decode + inference) and, when reported,
+         * the p95 GPU inference time stay below 80% of the output-frame interval.
+         */
+        val qualified: Boolean get() {
+            val budget = BUDGET_FRACTION * frameIntervalMillis
+            return meanFrameMillis < budget && (p95FrameMillis == null || p95FrameMillis < budget)
+        }
 
-        fun describe(): String =
-            "%.1f ms of %.1f ms per frame".format(meanFrameMillis, frameIntervalMillis)
+        fun describe(): String = buildString {
+            append("%.1f ms".format(meanFrameMillis))
+            p95FrameMillis?.let { append(", p95 GPU %.1f ms".format(it)) }
+            append(" of %.1f ms per frame".format(frameIntervalMillis))
+        }
     }
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -50,8 +65,18 @@ internal class AnimeJaNaiBudgets(
         store.getString(storageKey(key, engines))
             ?.let { runCatching { json.decodeFromString(Entry.serializer(), it) }.getOrNull() }
 
-    fun recordBenchmark(key: EngineKey, engines: List<EngineFile>, frames: Int, meanFrameMillis: Double, frameIntervalMillis: Double): Entry {
-        val entry = Entry(frames, meanFrameMillis, frameIntervalMillis, System.currentTimeMillis())
+    fun recordBenchmark(
+        key: EngineKey,
+        engines: List<EngineFile>,
+        frames: Int,
+        meanFrameMillis: Double,
+        frameIntervalMillis: Double,
+        p95FrameMillis: Double? = null,
+    ): Entry {
+        val entry = Entry(
+            frames, meanFrameMillis, frameIntervalMillis, System.currentTimeMillis(),
+            p95FrameMillis = p95FrameMillis,
+        )
         store.putString(storageKey(key, engines), json.encodeToString(Entry.serializer(), entry))
         return entry
     }
@@ -112,8 +137,9 @@ internal class AnimeJaNaiBudgets(
  * Steady-state frame-drop watch for an active AnimeJaNai stream (spec P4 live downgrade). Windows
  * are counted in completed frames; pauses, seeks and buffering reset the window and are followed by
  * a warm-up, so only steady rendering is judged. A breach needs [breachWindows] consecutive windows
- * whose drops exceed [maxDropFraction]; the caller then disables AnimeJaNai for the rest of the
- * stream (there is no smaller prepared profile to fall back to) and never re-enables it live.
+ * whose drops exceed [maxDropFraction]; the caller then switches to the next cheaper prepared,
+ * qualified profile, or disables AnimeJaNai for the rest of the stream when there is none; a
+ * breached profile is never re-enabled live.
  */
 internal class LiveBudgetMonitor(
     private val windowFrames: Long = 240,

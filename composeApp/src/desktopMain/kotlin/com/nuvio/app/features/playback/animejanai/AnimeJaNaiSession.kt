@@ -66,6 +66,10 @@ internal class AnimeJaNaiSession(
     private val nativeLock = Any()
     private var handle: Long = 0L
     @Volatile private var decidedKey: EngineKey? = null
+    /** Profile selection for [decidedKey]'s stream (preferred profile first). */
+    @Volatile private var selectionKeys: List<EngineKey> = emptyList()
+    /** Profile of the inserted filter; changes when the live downgrade switches profiles. */
+    @Volatile private var activeKey: EngineKey? = null
     @Volatile private var filterInserted = false
     @Volatile private var skippedForOutput = false
     @Volatile private var animationEnabled = true
@@ -123,6 +127,8 @@ internal class AnimeJaNaiSession(
         worker.execute {
             plan = startPlan
             decidedKey = null
+            activeKey = null
+            selectionKeys = emptyList()
             filterInserted = false
             preparationRequiredKey = null
             insertedEngines = null
@@ -186,6 +192,13 @@ internal class AnimeJaNaiSession(
 
     /** `mpvLog:` lines forwarded by the native bridge. */
     fun onLogLine(line: String) {
+        AjnTiming.parse(line)?.let { timing ->
+            log.i {
+                "timing slot=${timing.slot} frames=${timing.frames} mean=${timing.meanMillis} " +
+                    "p95=${timing.p95Millis} max=${timing.maxMillis} ms"
+            }
+            return
+        }
         val parsed = AjnStreamStatus.parse(line) ?: return
         worker.execute { applyStreamStatus(parsed) }
     }
@@ -219,7 +232,7 @@ internal class AnimeJaNaiSession(
                 }
                 return@execute
             }
-            val slot = if (enabled) current.slot else 0
+            val slot = if (enabled) activeKey?.slot ?: current.slot else 0
             val result = command("vf-command", AnimeJaNaiRuntime.FILTER_LABEL, "slot", slot.toString())
             if (result < 0) {
                 _status.value = _status.value.copy(reason = "Live switch failed; applies at the next stream start")
@@ -261,11 +274,13 @@ internal class AnimeJaNaiSession(
             command("vf", "remove", "@${AnimeJaNaiRuntime.FILTER_LABEL}")
             filterInserted = false
             insertedEngines = null
+            activeKey = null
         }
         // A new stream size is a new budget decision.
         budgetDisabled = false
         liveMonitor.reset()
         decidedKey = key
+        selectionKeys = AnimeJaNaiPreparationController.selectionKeys(key)
         preparationRequiredKey = null
         skippedForOutput = false
 
@@ -283,7 +298,7 @@ internal class AnimeJaNaiSession(
             outputHeight = intProperty("osd-height") ?: 0,
             animationEnabled = animationEnabled,
         )
-        val engines = when (val decision = AnimeJaNaiPlanner.decide(key, facts, engineIndex::find, budgets::find)) {
+        val chosen = when (val decision = AnimeJaNaiPlanner.decide(selectionKeys, facts, engineIndex::find, budgets::find)) {
             is AjnStreamDecision.Skip -> {
                 skippedForOutput = decision.forOutput
                 return skip(decision.reason)
@@ -293,30 +308,36 @@ internal class AnimeJaNaiSession(
                 return
             }
             is AjnStreamDecision.PreparationRequired -> {
+                // Preparation covers the whole selection of the preferred profile.
                 preparationRequiredKey = key
                 _status.value = EnhancementStatus(
                     EnhancementStatus.Kind.PreparationRequired, decision.reason, current.slot, width, height,
                 )
                 return
             }
-            is AjnStreamDecision.Insert -> decision.engines
+            is AjnStreamDecision.Insert -> decision
         }
-        val result = command("vf", "add", runtime.filter(current.slot, "required"))
+        val result = command("vf", "add", runtime.filter(chosen.key.slot, "required"))
         if (result < 0) {
             _status.value = EnhancementStatus(
-                EnhancementStatus.Kind.Failed, "Filter insertion failed ($result)", current.slot, width, height,
+                EnhancementStatus.Kind.Failed, "Filter insertion failed ($result)", chosen.key.slot, width, height,
             )
             return
         }
         filterInserted = true
-        insertedEngines = engines
+        insertedEngines = chosen.engines
+        activeKey = chosen.key
         _status.value = EnhancementStatus(
-            EnhancementStatus.Kind.Pending, "Starting", current.slot, width, height,
+            EnhancementStatus.Kind.Pending, "Starting", chosen.key.slot, width, height,
             width * AnimeJaNaiRuntime.SCALE, height * AnimeJaNaiRuntime.SCALE,
         )
     }
 
-    /** Live budget check of an active filter; a sustained breach bypasses it for this stream. */
+    /**
+     * Live budget check of an active filter. A sustained breach is recorded for the active profile at
+     * this output size; playback then switches live to the next cheaper prepared, qualified profile,
+     * or bypasses AnimeJaNai for the rest of the stream when there is none.
+     */
     private fun monitorBudget() {
         if (!filterInserted || budgetDisabled || !animationEnabled) return
         if (_status.value.kind != EnhancementStatus.Kind.Active) return
@@ -324,12 +345,27 @@ internal class AnimeJaNaiSession(
         val drops = (intProperty("frame-drop-count") ?: 0) + (intProperty("decoder-frame-drop-count") ?: 0)
         val steady = stringProperty("core-idle").trim() == "no" && stringProperty("seeking").trim() == "no"
         val breach = liveMonitor.sample(frame, drops.toLong(), steady) ?: return
-        val key = decidedKey ?: return
+        val key = activeKey ?: return
         val outputClass = AnimeJaNaiBudgets.outputClass(intProperty("osd-height") ?: 0)
         log.w { "budget breach key=${key.storageKey} output=$outputClass: $breach" }
+        insertedEngines?.let { budgets.recordLiveBreach(key, it, outputClass, breach) }
+        val fallback = AnimeJaNaiPlanner.downgrade(selectionKeys, key, outputClass, engineIndex::find, budgets::find)
+        if (fallback != null &&
+            command("vf-command", AnimeJaNaiRuntime.FILTER_LABEL, "slot", fallback.key.slot.toString()) >= 0
+        ) {
+            log.i { "live downgrade ${key.slot} -> ${fallback.key.slot}" }
+            activeKey = fallback.key
+            insertedEngines = fallback.engines
+            liveMonitor.reset()
+            _status.value = _status.value.copy(
+                kind = EnhancementStatus.Kind.Pending,
+                reason = "Switched to a lighter profile after frame drops",
+                slot = fallback.key.slot,
+            )
+            return
+        }
         command("vf-command", AnimeJaNaiRuntime.FILTER_LABEL, "slot", "0")
         budgetDisabled = true
-        insertedEngines?.let { budgets.recordLiveBreach(key, it, outputClass, breach) }
         _status.value = _status.value.copy(
             kind = EnhancementStatus.Kind.Skipped,
             reason = "Turned off for this stream: $breach",
@@ -357,7 +393,7 @@ internal class AnimeJaNaiSession(
                 kind = EnhancementStatus.Kind.Failed
                 reason = "AnimeJaNai ${status.state}"
                 if (status.state == "engineMissing" || status.state == "engineIncompatible") {
-                    decidedKey?.let(engineIndex::remove)
+                    (activeKey ?: decidedKey)?.let(engineIndex::remove)
                 }
             }
         }

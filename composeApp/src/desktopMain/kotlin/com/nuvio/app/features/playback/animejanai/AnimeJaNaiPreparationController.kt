@@ -1,6 +1,7 @@
 package com.nuvio.app.features.playback.animejanai
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.features.player.AnimeJaNaiProfile
 import com.nuvio.app.features.player.desktop.NativePlayerBridge
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -84,10 +85,20 @@ internal object AnimeJaNaiPreparationController {
     private val _pending = MutableStateFlow<PendingPreparation?>(null)
     val pending: StateFlow<PendingPreparation?> = _pending.asStateFlow()
 
-    /** Remembers [key] when its engine is missing or not yet measured. */
+    /**
+     * The profile selection [key] belongs to: [key] followed by its cheaper fallback profiles for the
+     * same stream. Preparation covers all of them, so selection and the live downgrade can choose
+     * among prepared, measured profiles.
+     */
+    internal fun selectionKeys(key: EngineKey): List<EngineKey> =
+        AnimeJaNaiProfile.selectionSlots(key.slot).map { key.copy(slot = it) }
+
+    private fun isMeasured(key: EngineKey): Boolean =
+        engineIndex.find(key)?.let { budgets.find(key, it) } != null
+
+    /** Remembers [key] when an engine of its profile selection is missing or not yet measured. */
     internal fun rememberPending(key: EngineKey, source: PreparationSource) {
-        val engines = engineIndex.find(key)
-        if (engines == null || budgets.find(key, engines) == null) _pending.value = PendingPreparation(key, source)
+        if (selectionKeys(key).any { !isMeasured(it) }) _pending.value = PendingPreparation(key, source)
     }
 
     /** Prepares the remembered pending engine; returns a refusal reason, or null when started. */
@@ -96,7 +107,10 @@ internal object AnimeJaNaiPreparationController {
         return prepare(request.key, request.source)
     }
 
-    /** Starts preparation for [key] from [source]; returns a refusal reason, or null when started. */
+    /**
+     * Starts preparation for [key]'s profile selection from [source] (each unprepared or unmeasured
+     * profile is built, then benchmarked); returns a refusal reason, or null when started.
+     */
     fun prepare(key: EngineKey, source: PreparationSource): String? {
         val availability = runtime.availability()
         if (availability is AnimeJaNaiRuntime.Availability.Unavailable) return availability.reason
@@ -106,9 +120,27 @@ internal object AnimeJaNaiPreparationController {
         cancelRequested.set(false)
         _state.value = AnimeJaNaiPreparationState.Preparing(key.slot, key.width, key.height, key.fps, 0)
         Thread({
+            var readyKey = key
             val result: Result<AnimeJaNaiBudgets.Entry> = try {
-                runPreparation(key, source)?.let { failure -> Result.failure(PreparationFailure(failure)) }
-                    ?: runBenchmark(key, source)
+                var outcome: Result<AnimeJaNaiBudgets.Entry>? = null
+                val measured = mutableListOf<Pair<EngineKey, AnimeJaNaiBudgets.Entry>>()
+                for (profileKey in selectionKeys(key)) {
+                    if (!isMeasured(profileKey)) {
+                        val step = runPreparation(profileKey, source)
+                            ?.let { failure -> Result.failure(PreparationFailure(failure)) }
+                            ?: runBenchmark(profileKey, source)
+                        if (step.isFailure) {
+                            outcome = step
+                            break
+                        }
+                    }
+                    val entry = engineIndex.find(profileKey)?.let { budgets.find(profileKey, it) }
+                    if (entry != null) measured += profileKey to entry
+                }
+                // Report the profile selection would use: the first qualified one, else the preferred.
+                outcome ?: (measured.firstOrNull { it.second.qualified } ?: measured.firstOrNull())
+                    ?.let { (profileKey, entry) -> readyKey = profileKey; Result.success(entry) }
+                ?: Result.failure(PreparationFailure("Prepared engines were not recorded"))
             } catch (error: Throwable) {
                 log.w(error) { "preparation crashed key=${key.storageKey}" }
                 Result.failure(PreparationFailure("Preparation failed: ${error.message ?: error.javaClass.simpleName}"))
@@ -118,7 +150,9 @@ internal object AnimeJaNaiPreparationController {
             result.onSuccess { _pending.compareAndSet(PendingPreparation(key, source), null) }
             _state.value = result.fold(
                 onSuccess = { entry ->
-                    AnimeJaNaiPreparationState.Ready(key.slot, key.width, key.height, key.fps, entry.describe(), entry.qualified)
+                    AnimeJaNaiPreparationState.Ready(
+                        readyKey.slot, readyKey.width, readyKey.height, readyKey.fps, entry.describe(), entry.qualified,
+                    )
                 },
                 onFailure = { error ->
                     AnimeJaNaiPreparationState.Failed(key.slot, key.width, key.height, key.fps, error.message.orEmpty())
@@ -195,6 +229,8 @@ internal object AnimeJaNaiPreparationController {
             val startedAt = System.currentTimeMillis()
             var activeAt = 0L
             var sourceFps = 0.0
+            // Highest window p95 of the filter's GPU timing for this profile (conservative).
+            var p95Millis: Double? = null
             while (true) {
                 if (cancelRequested.get()) return fail("Preparation cancelled")
                 val elapsed = System.currentTimeMillis() - startedAt
@@ -211,10 +247,16 @@ internal object AnimeJaNaiPreparationController {
                     val measuredMillis = (System.currentTimeMillis() - activeAt).toDouble()
                     val fps = sourceFps.takeIf { it > 0 } ?: key.fps.toDouble()
                     val entry = budgets.recordBenchmark(
-                        key, engines, BENCHMARK_FRAMES, measuredMillis / BENCHMARK_FRAMES, 1000.0 / fps,
+                        key, engines, BENCHMARK_FRAMES, measuredMillis / BENCHMARK_FRAMES, 1000.0 / fps, p95Millis,
                     )
                     log.i { "benchmark key=${key.storageKey} ${entry.describe()} qualified=${entry.qualified}" }
                     return Result.success(entry)
+                }
+                AjnTiming.parse(line)?.let { timing ->
+                    if (timing.slot == null || timing.slot == key.slot) {
+                        p95Millis = maxOf(p95Millis ?: 0.0, timing.p95Millis)
+                        log.i { "benchmark timing key=${key.storageKey} frames=${timing.frames} p95=${timing.p95Millis} ms" }
+                    }
                 }
                 val status = AjnStreamStatus.parse(line) ?: continue
                 when {
@@ -248,7 +290,7 @@ internal object AnimeJaNaiPreparationController {
         add("ao=null")
         add("hwdec=nvdec")
         add("nuvio-dll-dir=${runtime.inferenceDir}")
-        add("nuvio-log-filter=${AnimeJaNaiRuntime.STATUS_TOKEN}")
+        add("nuvio-log-filter=${AnimeJaNaiRuntime.LOG_TOKEN}")
         add("nuvio-log-level=info")
         if (source.headerLines.isNotEmpty()) add("http-header-fields=${escapeHeaderList(source.headerLines)}")
     }

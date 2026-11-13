@@ -296,6 +296,11 @@ internal class AnimeJaNaiRuntimeInstaller(private val runtime: AnimeJaNaiRuntime
                 "b308e93c3dda3c4f9f968295b2b7b8d1c0583a711bca53a08d51134d9d1cbd5c",
             ),
             OverlayFile(
+                "animejanai\\onnx\\2x_AnimeJaNai_HD_V3.1_Performance_SPANF3_b5f48_unshuffle_fp16.onnx",
+                "onnx/2x_AnimeJaNai_HD_V3.1_Performance_SPANF3_b5f48_unshuffle_fp16.onnx",
+                "7b804d87320f37b7269d6e27796046fbd975e95e2aa1f65d5557f52a36282716",
+            ),
+            OverlayFile(
                 "animejanai\\onnx\\2x_AnimeJaNai_SD_V1beta34_Compact_1x3xHxW_dyn-HW_strong_fp16_op21_dynamo.onnx",
                 "onnx/2x_AnimeJaNai_SD_V1beta34_Compact_1x3xHxW_dyn-HW_strong_fp16_op21_dynamo.onnx",
                 "ded46591ddfaeb22b3daaf84ad7b36838335aa3efca66acfa36177ce4ab21eb5",

@@ -26,6 +26,34 @@ class AnimeJaNaiBudgetsTest {
     }
 
     @Test
+    fun p95GpuTimeMustAlsoStayWithinTheBudget() {
+        val store = budgets()
+        assertTrue(store.recordBenchmark(key, engines, 480, 20.0, 41.7, p95FrameMillis = 33.0).qualified)
+        val spiky = store.recordBenchmark(key, engines, 480, 20.0, 41.7, p95FrameMillis = 34.0)
+        assertFalse(spiky.qualified, "mean within budget but p95 over it")
+        assertEquals(34.0, store.find(key, engines)!!.p95FrameMillis)
+        assertTrue(spiky.describe().contains("p95 GPU 34.0 ms"))
+        // Without reported timing (older libmpv) the mean alone decides.
+        assertTrue(store.recordBenchmark(key, engines, 480, 20.0, 41.7).qualified)
+    }
+
+    @Test
+    fun timingLinesParse() {
+        val timing = AjnTiming.parse("[vf/aji] AJN_TIMING_V1 240 12.345 12.000 15.500 30.250 1003")!!
+        assertEquals(240, timing.frames)
+        assertEquals(12.345, timing.meanMillis)
+        assertEquals(15.5, timing.p95Millis)
+        assertEquals(30.25, timing.maxMillis)
+        assertEquals(1003, timing.slot)
+        assertNull(AjnTiming.parse("AJN_STREAM_V1 active TensorRT 1002 960 540 1920 1080 0 23.976"))
+        assertNull(AjnTiming.parse("AJN_TIMING_V1 0 1 1 1 1 1002"))
+        assertNull(AjnTiming.parse("AJN_TIMING_V1 240 1 nan 1 1 1002"))
+        assertNull(AjnStreamStatus.parse("AJN_TIMING_V1 240 12.3 12.0 15.5 30.2 1002"))
+        assertTrue("AJN_TIMING_V1".contains(AnimeJaNaiRuntime.LOG_TOKEN))
+        assertTrue(AnimeJaNaiRuntime.STATUS_TOKEN.contains(AnimeJaNaiRuntime.LOG_TOKEN))
+    }
+
+    @Test
     fun environmentOrEngineChangesMissOnlyThatEntry() {
         var environment = "env-1"
         val store = budgets { environment }
