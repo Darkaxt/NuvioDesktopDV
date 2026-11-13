@@ -1,5 +1,5 @@
 {
-  "release": "nuviodv-windows-ajn.1",
+  "release": "nuviodv-windows-ajn.3",
   "image": "ghcr.io/btbn/ffmpeg-builds/win64-gpl@sha256:888d998d2eefb03ee924e120bd1c1f5061037037266309fbe71d854de2b630d6",
   "libplacebo_fix": "c93aa134ab62365ce1177efff99b8e1e66a818e7",
   "sources": {

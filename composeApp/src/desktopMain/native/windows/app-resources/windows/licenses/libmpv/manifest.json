@@ -1,8 +1,8 @@
 {
-  "release": "nuviodv-windows-ajn.1",
-  "mpv_source": "a77256324b69b518cf6d03029ba8d6b1aa7e07df",
+  "release": "nuviodv-windows-ajn.3",
+  "mpv_source": "814006b7fa3776cfe8500633f28294653a675aad",
   "dependency_lock": {
-    "release": "nuviodv-windows-ajn.1",
+    "release": "nuviodv-windows-ajn.3",
     "image": "ghcr.io/btbn/ffmpeg-builds/win64-gpl@sha256:888d998d2eefb03ee924e120bd1c1f5061037037266309fbe71d854de2b630d6",
     "libplacebo_fix": "c93aa134ab62365ce1177efff99b8e1e66a818e7",
     "sources": {
@@ -32,5 +32,13 @@
     "ffmpeg": "",
     "subrandr": ""
   },
-  "qualification": "Native Windows GPU-next smoke tests are recorded separately; no app promotion."
+  "qualification": "Native Windows GPU-next smoke tests are recorded separately; no app promotion.",
+  "debug_symbols": {
+    "archive": "nuviodv-windows-x64-symbols.zip",
+    "method": "objcopy --only-keep-debug; strip; objcopy --add-gnu-debuglink",
+    "files": {
+      "ajn-mvtools.dll.debug": "b6799713babc00b6425e8f7a2bd662cc12ce0bc0840806ce38e3338928f6fd06",
+      "libmpv-2.dll.debug": "8f3dd4d58307bc00eed771a98dbd515fcd0f36c7336e9a73edf6492834666ada"
+    }
+  }
 }

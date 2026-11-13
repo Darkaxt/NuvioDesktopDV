@@ -1,18 +1,18 @@
 # NuvioDV Windows libmpv runtime
 
-The NuvioDV Windows package pins the owned `nuviodv-windows-ajn.1` release of
-[Darkaxt/mpv](https://github.com/Darkaxt/mpv/releases/tag/nuviodv-windows-ajn.1).
+The NuvioDV Windows package pins the owned `nuviodv-windows-ajn.3` release of
+[Darkaxt/mpv](https://github.com/Darkaxt/mpv/releases/tag/nuviodv-windows-ajn.3).
 Both runtime files are tracked with Git LFS in
 `composeApp/src/desktopMain/native/windows/runtime/`.
 
 ## Pinned artifact
 
-- Release: `nuviodv-windows-ajn.1` (published 2026-11-12, source commit
-  `a77256324b69b518cf6d03029ba8d6b1aa7e07df`)
+- Release: `nuviodv-windows-ajn.3` (published 2026-11-13, source commit
+  `814006b7fa3776cfe8500633f28294653a675aad`)
 - Asset: `nuviodv-windows-x64.zip`, SHA-256
-  `0fcba959f8554024b81053fd292eb8f64133911dc392ccb70716a76e202ab44b`
-- `libmpv-2.dll` SHA-256: `79ca36e40e7998e89b6e14a6ad12082816c8a8856eede0165aba58c682586779`
-- `ajn-mvtools.dll` SHA-256: `6b2aab46aef61b040eac9e934b4d83b6f843a0ac58dee4fa9fdaf3b0a19b68bf`
+  `4478208db4f67d7dfef958a553acb7b2c36c68d62a56718ea691c9ff41e9f487`
+- `libmpv-2.dll` SHA-256: `03efdd2f3a88685a4f1cd6793baea4ac3d89fdd825d2684fa19a37f7c85daa9f`
+- `ajn-mvtools.dll` SHA-256: `27367a9613872838a6415f91674499f3a33e003cb6badd08dea7ff4570e1865a`
 - FFmpeg `9a861e9687d30e657d59521817cad18405995983`, libplacebo
   `9fabf6d5057c40089afb020017c6347002b07308` (contains the `c93aa134` OpenGL
   sync-object leak correction); the full lock is in the release's `sources.json`.
