@@ -695,10 +695,34 @@ upstream `d9d4e6b20`). The fork moved them behind expect/actual
 scroll handler, keeping desktop behaviour. Attempt 2 compiles; the fork's
 `android-release.yml` can build again.
 
+In-app real-metadata results (2026-11-13; public Cinemeta + Kitsu metadata, the local
+fixture add-on supplying a 960x540 clip as the stream, isolated test profile):
+- Kitsu `Sousou no Frieren` (genres Adventure/Comedy only): `On (suggested)` via
+  `nuvio-anime-category`; S1E1 and S1E2 AnimeJaNai Active 960x540 -> 1920x1080. A
+  player-surface Off switched the running episode to Skipped ("Animation is Off")
+  and was ledgered (`previousExplicitValue` null, `initialSuggestedValue` true);
+  S1E3 then stayed Skipped.
+- Cinemeta `Frieren: Beyond Journey's End`: `On (suggested)` via `animation-genre`;
+  S1E1 Active. The Kitsu Off was not merged into this IMDb-keyed title, as required
+  for unverified aliases.
+- Cinemeta `Zootopia` and `Coco`: `Off (suggested)` through
+  `disney-produced-animated-movie` (TMDB studio `walt disney animation studios`).
+  Explicit On then recorded `matchedExclusionIds` with `currentSuggestedValue`
+  false, and playback ran AnimeJaNai Active, so an explicit choice overrides the
+  exclusion.
+- Cinemeta `Breaking Bad`: `Off (suggested)`; S1E1 Skipped ("Title is not marked
+  Animation").
+
+Known limitation: studio data comes only from TMDB enrichment (Cinemeta has no
+production-company field). With TMDB enrichment disabled or its key rejected, a
+Disney animated movie has unknown studio evidence and is suggested On through the
+Animation genre, consistent with "missing metadata means unknown". The app does not
+issue a hidden TMDB request behind a disabled user setting. Builds without a default
+TMDB key need the user's own key for this exclusion.
+
 Remaining before this stage is complete: iOS compile of the shared code (CI
 `ios-test-build`; not buildable on this Windows host); live bypass under a real
-frame-drop breach (unit-tested, not yet provoked in-app); measured profile/status
-across episodes on real metadata.
+frame-drop breach (unit-tested, not yet provoked in-app).
 
 ### Side effort after the full plan
 
