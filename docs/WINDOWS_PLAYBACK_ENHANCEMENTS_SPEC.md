@@ -840,6 +840,20 @@ The r17 build passed 45 tests (ticket `8024a1f75e4eaf139fbe8f639aaff708`).
     256 MB private memory;
   - controls visible: 8.0% and 307 MB;
   - the app process including mpv and SVP: 48 to 52%, about 2.5 GB.
+- WebView2 GPU cost (P8 evidence, 2026-11-13): GPU counters were sampled per
+  process during plain 540p playback (player smoke harness, controls hidden,
+  20 s):
+  - the 6 WebView2 processes used no measurable GPU engine time, 238 MB of
+    dedicated VRAM and 321 MB of private memory;
+  - the app process used 4.7% 3D, 1.8% video decode and 972 MB of dedicated
+    VRAM.
+  - Limits:
+    - The smoke harness does not show the controls, so no visible-controls GPU
+      sample exists.
+    - No control-free baseline was obtained: stopping WebView2 also stopped
+      playback, so DWM's composition cost for the transparent layer is not
+      isolated.
+    - DWM dedicated-memory counters are not usable.
 
 SVP component update (2026-11-13, approved by the user, run through the elevation
 broker; exit 0):
