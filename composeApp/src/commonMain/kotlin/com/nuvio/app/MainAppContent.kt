@@ -131,6 +131,7 @@ import com.nuvio.app.features.library.toMetaPreview
 import com.nuvio.app.features.membership.MemberAccessRepository
 import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepository
 import com.nuvio.app.features.playback.classification.AnimationToggleSurface
+import com.nuvio.app.features.playback.classification.PreloadAnimationToggles
 import com.nuvio.app.features.playback.classification.continueWatchingTitleFacts
 import com.nuvio.app.features.playback.classification.label
 import com.nuvio.app.features.playback.classification.rememberAnimationToggle
@@ -718,6 +719,7 @@ internal fun MainAppContent(
     var resumePromptItem by remember { mutableStateOf<ContinueWatchingItem?>(null) }
     var lastExternalPlayerLaunch by remember { mutableStateOf<PlayerLaunch?>(null) }
     val activePlaybackProfileId = profileState.activeProfile?.profileIndex ?: ProfileRepository.activeProfileId
+    PreloadAnimationToggles(activePlaybackProfileId)
     val launchExternalPlayer = rememberExternalPlayerLauncher { result ->
         if (result != null) {
             val fallbackSession = lastExternalPlayerLaunch?.externalPlaybackSession()

@@ -74,6 +74,19 @@ internal fun rememberAnimationToggle(
     }
 }
 
+/**
+ * Replays the profile's ledger ahead of any toggle surface. Long-press sheets freeze their action
+ * labels when they open, so a ledger loaded only by the sheet itself would show the suggestion
+ * instead of the explicit choice.
+ */
+@Composable
+internal fun PreloadAnimationToggles(profileId: Int) {
+    val repository = remember { platformAnimationToggleRepository() } ?: return
+    LaunchedEffect(repository, profileId) {
+        runCatching { repository.load(profileId.toString()) }.onFailure { log.w(it) { "Ledger preload failed" } }
+    }
+}
+
 /** "Animation: On" / "Animation: On (suggested)" etc., used as visible and accessible label. */
 @Composable
 internal fun AnimationToggleBinding.label(): String = stringResource(

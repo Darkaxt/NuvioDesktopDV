@@ -200,6 +200,18 @@ class AnimationClassificationTest {
     }
 
     @Test
+    fun a_surface_observed_before_the_ledger_loads_receives_the_explicit_choice() = runTest {
+        val title = CanonicalTitle.of("tt2948356", "movie")
+        repo().setExplicit("1", title, "Zootopia", true, AnimationToggleSurface.Details, null)
+        val fresh = repo()
+        val observed = fresh.state("1", title)
+        assertFalse(observed.value.loaded)
+        assertNull(observed.value.explicitValue)
+        fresh.load("1")
+        assertEquals(true, observed.value.explicitValue)
+    }
+
+    @Test
     fun episodes_key_to_series_and_category_preserved_across_launch_routes() = runTest {
         val facts = MemoryFacts()
         val repository = repo(facts = facts)

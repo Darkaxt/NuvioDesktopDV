@@ -48,13 +48,15 @@ import javax.swing.SwingUtilities
  * - `POST /action?path=&index=` performs the node's accessibility action (the same semantics
  *   action path assistive technology uses; e.g. Compose onClick), on the AWT event thread.
  * - `POST /settext?path=&text=` sets an editable text node through its accessible editable text.
-^ * - `POST /click?x=&y=&button=1|3` AWT click posted into this process at window-relative logical
+ * - `POST /click?x=&y=&button=1|3[&hold=0..2000]` AWT click posted into this process at window-relative logical
  *   coordinates (largest window); never moves the OS cursor or touches other windows.
  * - `POST /key?name=` allow-listed key posted to the window's focus owner in this process.
  * - `POST /screenshot?name=` captures the largest window's own content via PrintWindow
  *   (occlusion-independent, physical pixels) into `<dir>/shots/<name>.png`.
- * - `POST /player?event=` allow-listed player controls event (e.g. `videoSettings`), delivered to
+ * - `POST /player?event=[&index=]` allow-listed player controls event (e.g. `videoSettings`), delivered to
  *   the same entry point the WebView2 controls page messages reach.
+ * - `POST /window?state=maximized|normal|query` sets/reads the largest window's frame state and
+ *   returns its bounds (layout checks at normal and maximized sizes without OS input).
  * - `GET /status` AnimeJaNai enhancement, runtime and preparation state.
  *
  * Every mutating command bumps the revision returned by all responses.
@@ -72,7 +74,11 @@ object DesktopDebugControl {
     private val allowedPlayerEvents = setOf(
         "cursorActivity", "toggleChrome", "toggle", "seekBack", "seekForward", "back",
         "videoSettings", "sources", "audio", "subtitles", "enhancementAnimationToggle", "enhancementDismissed",
+        "playNextEpisode",
     )
+
+    /** List-selection events whose value is the row index (`index` parameter, 0..999). */
+    private val indexedPlayerEvents = setOf("selectSource", "selectEpisode", "selectEpisodeStream")
 
     fun startIfEnabled() {
         val dir = System.getenv("NUVIO_DEBUG_CONTROL_DIR")?.takeIf { it.isNotBlank() }?.let(::File) ?: return
@@ -111,10 +117,16 @@ object DesktopDebugControl {
                     "/status" -> 200 to status()
                     "/action" -> requirePost(method) { onEdt { action(query.getValue("path"), query["index"]?.toIntOrNull() ?: 0) } }
                     "/settext" -> requirePost(method) { onEdt { setText(query.getValue("path"), query.getValue("text")) } }
-                    "/click" -> requirePost(method) { click(query.getValue("x").toInt(), query.getValue("y").toInt(), query["button"]?.toIntOrNull() ?: 1) }
+                    "/click" -> requirePost(method) {
+                        click(
+                            query.getValue("x").toInt(), query.getValue("y").toInt(), query["button"]?.toIntOrNull() ?: 1,
+                            (query["hold"]?.toIntOrNull() ?: 0).coerceIn(0, 2000),
+                        )
+                    }
                     "/key" -> requirePost(method) { key(query.getValue("name")) }
                     "/screenshot" -> requirePost(method) { screenshot(dir, query["name"] ?: "shot-${revision.get()}") }
-                    "/player" -> requirePost(method) { playerEvent(query.getValue("event")) }
+                    "/player" -> requirePost(method) { playerEvent(query.getValue("event"), query["index"]?.toIntOrNull() ?: 0) }
+                    "/window" -> requirePost(method) { onEdt { windowState(query.getValue("state")) } }
                     else -> 404 to errorJson("unknown command")
                 }
             }
@@ -273,13 +285,31 @@ object DesktopDebugControl {
      * Delivers an allow-listed controls-page event (the WebView2 player controls are not part of
      * the AWT accessibility tree) to the active player's event entry point.
      */
-    private fun playerEvent(name: String): JsonElement {
-        require(name in allowedPlayerEvents) { "player event not allowed: $name" }
+    private fun playerEvent(name: String, index: Int): JsonElement {
+        require(name in allowedPlayerEvents || name in indexedPlayerEvents) { "player event not allowed: $name" }
+        require(index in 0..999 && (index == 0 || name in indexedPlayerEvents)) { "index not allowed: $index" }
         val sink = com.nuvio.app.features.player.desktop.NativePlayerDebugHooks.activeControlsEvent
             ?: error("no active player")
         revision.incrementAndGet()
-        sink(name, 0.0)
-        return buildJsonObject { put("event", name) }
+        sink(name, index.toDouble())
+        return buildJsonObject { put("event", name); put("index", index) }
+    }
+
+    private fun windowState(state: String): JsonElement {
+        val frame = firstWindow() as? java.awt.Frame ?: error("largest window is not a frame")
+        when (state) {
+            "maximized" -> { revision.incrementAndGet(); frame.extendedState = java.awt.Frame.MAXIMIZED_BOTH }
+            "normal" -> { revision.incrementAndGet(); frame.extendedState = java.awt.Frame.NORMAL }
+            "query" -> Unit
+            else -> error("state must be maximized, normal or query")
+        }
+        return buildJsonObject {
+            put("maximized", frame.extendedState and java.awt.Frame.MAXIMIZED_BOTH == java.awt.Frame.MAXIMIZED_BOTH)
+            put("bounds", buildJsonArray {
+                add(JsonPrimitive(frame.x)); add(JsonPrimitive(frame.y))
+                add(JsonPrimitive(frame.width)); add(JsonPrimitive(frame.height))
+            })
+        }
     }
 
     private fun setText(path: String, text: String): JsonElement {
@@ -296,7 +326,8 @@ object DesktopDebugControl {
      * coordinates, so it reaches Compose through its normal pointer listeners without moving the
      * OS cursor or touching whichever window is in the foreground.
      */
-    private fun click(x: Int, y: Int, button: Int): JsonElement {
+    /** Posts a click; with [holdMillis] > 0 a press held that long (long-press), without CLICKED. */
+    private fun click(x: Int, y: Int, button: Int, holdMillis: Int = 0): JsonElement {
         val (awtButton, downMask) = when (button) {
             1 -> MouseEvent.BUTTON1 to InputEvent.BUTTON1_DOWN_MASK
             3 -> MouseEvent.BUTTON3 to InputEvent.BUTTON3_DOWN_MASK
@@ -308,14 +339,17 @@ object DesktopDebugControl {
         val queue = java.awt.Toolkit.getDefaultToolkit().systemEventQueue
         val now = System.currentTimeMillis()
         revision.incrementAndGet()
-        fun post(id: Int, modifiers: Int, clicks: Int, eventButton: Int, popup: Boolean = false) = queue.postEvent(
-            MouseEvent(target, id, now, modifiers, point.x, point.y, clicks, popup, eventButton),
-        )
+        fun post(id: Int, modifiers: Int, clicks: Int, eventButton: Int, popup: Boolean = false, at: Long = now) =
+            queue.postEvent(MouseEvent(target, id, at, modifiers, point.x, point.y, clicks, popup, eventButton))
         post(MouseEvent.MOUSE_MOVED, 0, 0, MouseEvent.NOBUTTON)
         post(MouseEvent.MOUSE_PRESSED, downMask, 1, awtButton)
-        post(MouseEvent.MOUSE_RELEASED, 0, 1, awtButton, popup = button == 3)
-        post(MouseEvent.MOUSE_CLICKED, 0, 1, awtButton)
-        return buildJsonObject { put("posted", true); put("component", target.javaClass.simpleName) }
+        // Runs on the HTTP server thread, never the EDT, so holding here does not block the UI.
+        if (holdMillis > 0) Thread.sleep(holdMillis.toLong())
+        post(MouseEvent.MOUSE_RELEASED, 0, 1, awtButton, popup = button == 3, at = now + holdMillis)
+        if (holdMillis == 0) post(MouseEvent.MOUSE_CLICKED, 0, 1, awtButton)
+        return buildJsonObject {
+            put("posted", true); put("component", target.javaClass.simpleName); put("holdMillis", holdMillis)
+        }
     }
 
     /** Posts an allow-listed key press/release to the window's focus owner in this process. */

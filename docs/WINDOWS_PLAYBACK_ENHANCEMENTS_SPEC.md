@@ -881,16 +881,8 @@ Audit (2026-11-13) of the P6 regression list against the automated tests:
     - over-budget and per-output-class live-breach skips.
   - Gated build ticket `573f9c279c59aa15794b1106376b4700`: 44 tests passed.
 
-Still open for P6:
-- Live and in-app checks:
-  - the same value on every P2 surface for a movie and a series;
-  - an in-player change applied live;
-  - all series episodes and launch routes;
-  - driver/output changes;
-  - sustained performance and long playback without resource growth;
-  - repeated seek and episode transitions;
-  - real model preparation success/failure;
-  - the action layout at normal and maximized sizes.
+Still open for P6 (the in-app checks are closed below in "P6 progress: in-app
+checks"):
 - The final Windows-only release and verification of the exact package.
 
 ### P6 progress: libmpv promotion (2026-11-13)
@@ -918,6 +910,71 @@ Still open for P6:
     crash.
 - Dolby Vision with the bundled runtime is covered by the native ajn.1
   qualification; an in-app DV check still needs a private local DV clip.
+
+### P6 progress: in-app checks (2026-11-13)
+
+All checks ran in the packaged distributable with the bundled runtime, an
+isolated profile and the local fixture addon (540p 23.976 fps clip). Driving
+and evidence came from the debug bridge, the decision ledger, screenshots and
+process resource samples.
+
+- **The same value on every surface:**
+  - Movie (Zootopia): details, player panel, Continue Watching sheet.
+  - Series (Frieren): details, player panel, poster sheet. Episodes write the
+    series value (ledger `titleType=series`).
+  - Every write is in the ledger with its surface (`details`, `player`,
+    `posterSheet`, `continueWatchingSheet`), and the other surfaces show it.
+- **Bug fixed: long-press sheets.** These sheets freeze their action labels
+  when they open (upstream `PosterZoomActionOverlay`). If one was the first
+  toggle surface opened since start, it showed the suggestion ("Off
+  (suggested)") instead of the explicit "On", because the ledger had not loaded
+  yet.
+  - `MainAppContent` now preloads the active profile's ledger
+    (`PreloadAnimationToggles`).
+  - Regression test: a surface observed before the ledger loads receives the
+    explicit choice.
+  - Re-verified with a first-opened Continue Watching sheet after a fresh start.
+- **In-player changes:** Off applies live (slot 0, SVP becomes Pending). On is
+  Pending until the next stream start, then AnimeJaNai is Active.
+- **Episodes and launch routes:**
+  - Resume from details, the season episode list and the Continue Watching card
+    all start with the series value.
+  - Next episode does not autoplay (the "Up next" setting). The end card opens
+    the stream picker. After the stream is picked, AnimeJaNai re-evaluates on
+    the new stream ("Waiting for video", then Active) with playback from 0.
+  - Fixture finding, not a product defect: episodes served with the identical
+    URL are not reloaded (`activeSourceUrl` is unchanged), so the fixture now
+    returns per-episode URLs.
+- **Repeated seeks and long playback:**
+  - 40 balanced seeks: AnimeJaNai stayed Active with no bypass, and frames
+    advanced.
+  - 9 minutes of AnimeJaNai playback: private memory steady at about 3.5 GB and
+    GPU dedicated memory flat at 2.65 GB. Handles and threads did not grow.
+- **Model preparation:**
+  - Missing model: playback continues normally with "runtime is incomplete".
+  - Corrupt model: preparation ends with `preparationFailed`. Settings shows
+    the error, the stale engine entry is dropped and the pending request stays
+    for retry.
+  - Restored model: Prepare succeeds (12.1 ms of the 41.7 ms budget,
+    qualified) and AnimeJaNai is Active again.
+- **Action layout:** checked on the details action row at maximized
+  (3428x1407) and normal (3413x1392) window sizes. Spacing is the same and no
+  buttons overlap. The secondary actions start collapsed behind "…" (upstream
+  default).
+- **Driver/output changes:**
+  - Output change: covered by the window-size change.
+  - Driver change: cannot be exercised live. `AnimeJaNaiBudgetsTest` covers
+    invalidation of the fingerprint (driver, GPU, runtime hash).
+- **Not verified in-app:**
+  - Dolby Vision (needs a private local clip).
+  - Mouse back/forward buttons and hover scroll-dismiss.
+  - The live frame-drop bypass (needs an overloaded GPU).
+  - The trailer SVP skip (code and test only).
+- **Debug bridge additions** (debug-only, token-guarded): window state, a
+  long-press `hold` on `/click`, and the `playNextEpisode` and indexed list
+  player events.
+- **Gated builds:** r21 (`c5b24ec7453349b53e7de6611708b655`, 37 tests) and r22
+  (`330887175b11b2280060699c0dc1804a`, 38 tests). Both builds verified whole-tree exit.
 
 ### Side effort after the full plan
 
