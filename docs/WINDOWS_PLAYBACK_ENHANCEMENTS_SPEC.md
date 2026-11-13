@@ -881,9 +881,8 @@ Audit (2026-11-13) of the P6 regression list against the automated tests:
     - over-budget and per-output-class live-breach skips.
   - Gated build ticket `573f9c279c59aa15794b1106376b4700`: 44 tests passed.
 
-Still open for P6 (the in-app checks are closed below in "P6 progress: in-app
-checks"):
-- The final Windows-only release and verification of the exact package.
+The in-app checks and the release are closed below ("P6 progress: in-app
+checks", "P6 release"). P6 is complete; D2 and D3 moved to P7.
 
 ### P6 progress: libmpv promotion (2026-11-13)
 
@@ -976,6 +975,33 @@ process resource samples.
 - **Gated builds:** r21 (`c5b24ec7453349b53e7de6611708b655`, 37 tests) and r22
   (`330887175b11b2280060699c0dc1804a`, 38 tests). Both builds verified whole-tree exit.
 
+### P6 release (2026-11-13): `0.1.35-nuviodv.6`
+
+- Version bump `382eb003d`. Release branch `release/0.1.35-nuviodv.6` at
+  `f63dc4076`, which also fixes the release workflow. On the Windows runner the
+  pin list was checked out with CRLF endings, so the first publish run
+  (`43451328331`) failed at "Fetch Windows runtime" (`libmpv-2.dll\r` missing).
+  The workflow now reads the pin list with LF endings.
+- Publish run `43451867870` succeeded (Windows only). It published release
+  <https://github.com/Darkaxt/NuvioDesktopDV/releases/tag/0.1.35-nuviodv.6>: not a
+  draft, not a prerelease, tag at `f63dc4076`.
+  - Assets: `NuvioDV-Windows-x64-0.1.35-nuviodv.6.msi` (212,894,400 bytes) and
+    `SHA256SUMS.txt`.
+- The public package was downloaded and checked independently:
+  - `SHA256SUMS` OK.
+  - Administrative extraction: the jar's `native/windows/libmpv-2.dll` and
+    `ajn-mvtools.dll` match `runtime-pins.sha256`.
+  - The `licenses/libmpv` notices (`NOTICE.md`, `LICENSE.GPL`, `sources.json`,
+    dependency licences) are present.
+- Installed through the elevation broker as an in-place upgrade from `.5`
+  (msiexec exit 0). All 335 installed files are byte-identical to the MSI
+  payload.
+  - An earlier approved request failed with msiexec 1639 before any change: the
+    shell rewrote the `/i` and `/qn` switches.
+- D2 and D3 were not met by this delivery. Both need owned-runtime changes (more
+  documented profile slots; per-frame GPU timing in the filter), so they are
+  re-targeted to P7 (see the table).
+
 ### Side effort after the full plan
 
 User request 2026-11-12: once every stage of this plan is complete, deploy the
@@ -1000,8 +1026,8 @@ measurement is taken during P5.
 
 | ID | Deferred requirement | Target | Resolution condition |
 | --- | --- | --- | --- |
-| D2 | Additional AnimeJaNai quality/performance profiles. The pinned runtime documents only slot 1002, so no smaller fallback profile can be offered or downgraded to. | Integrated Windows delivery, or earlier if the runtime documents more slots | Further upstream profile slots are documented and pinned, each passes image-quality comparison on moving fixtures, and selection/downgrade chooses among prepared qualified profiles. |
-| D3 | 95th-percentile per-frame processing cost (P4 initial acceptance budget). The in-app benchmark records mean decode+inference cost; the filter emits no per-frame timing. | Integrated Windows delivery (owned libmpv update) | The owned filter reports GPU-completed per-frame inference timing, the benchmark records its p95 against 80% of the output-frame interval, and the verification fixture shows no enhancement-induced steady-state drops. |
+| D2 | Additional AnimeJaNai quality/performance profiles. The pinned runtime documents only slot 1002, so no smaller fallback profile can be offered or downgraded to. | P7 owned-runtime candidate (re-targeted 2026-11-13: not met by the P6 release), or earlier if the runtime documents more slots | Further upstream profile slots are documented and pinned, each passes image-quality comparison on moving fixtures, and selection/downgrade chooses among prepared qualified profiles. |
+| D3 | 95th-percentile per-frame processing cost (P4 initial acceptance budget). The in-app benchmark records mean decode+inference cost; the filter emits no per-frame timing. | P7 owned libmpv candidate (re-targeted 2026-11-13: not met by the P6 release) | The owned filter reports GPU-completed per-frame inference timing, the benchmark records its p95 against 80% of the output-frame interval, and the verification fixture shows no enhancement-induced steady-state drops. |
 | D1 | AnimeJaNai on NuvioDV Android (asked 2026-11-08). AnimeJaNai has no Android inference backend (TensorRT/DirectML only); a mobile GPU backend such as ncnn/Vulkan plus model conversion would be required. | Separate Android port stage, after Integrated Windows delivery | Converted lightest model runs inside the Android libmpv pipeline; measured decode+inference+render frame time and sustained thermal behavior for 480p/720p 24 fps anime meet P4's budget on the user's device; same P1 rules, P2 per-title choice and P3 ledger semantics. Until then Android is unchanged and nothing claims Android support. |
 
 ## Sources
