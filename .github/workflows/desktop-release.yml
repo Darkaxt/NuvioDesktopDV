@@ -391,19 +391,21 @@ jobs:
         shell: bash
         run: |
           git lfs pull --include="composeApp/src/desktopMain/native/windows/runtime/**" --exclude=""
-          runtime_path="composeApp/src/desktopMain/native/windows/runtime/libmpv-2.dll"
-          if [[ ! -f "${runtime_path}" ]]; then
-            echo "The bundled Windows libmpv runtime is missing." >&2
-            exit 1
-          fi
-          runtime_size="$(wc -c < "${runtime_path}")"
-          if (( runtime_size < 1000000 )); then
-            echo "The bundled Windows libmpv runtime was not materialized from Git LFS." >&2
-            exit 1
-          fi
-          expected_runtime_sha256="04e4d27dc385dc18ddd93fbe69c75e635b864f3c6ec53a9122df54c2f7842f4a"
-          actual_runtime_sha256="$(sha256sum "${runtime_path}" | cut -d' ' -f1)"
-          if [[ "${actual_runtime_sha256}" != "${expected_runtime_sha256}" ]]; then
+          # runtime-pins.sha256 lists every bundled runtime file and its pinned SHA-256.
+          native_dir="composeApp/src/desktopMain/native/windows"
+          while read -r _ runtime_name; do
+            runtime_path="${native_dir}/runtime/${runtime_name}"
+            if [[ ! -f "${runtime_path}" ]]; then
+              echo "The bundled Windows runtime file ${runtime_name} is missing." >&2
+              exit 1
+            fi
+            runtime_size="$(wc -c < "${runtime_path}")"
+            if (( runtime_size < 100000 )); then
+              echo "The bundled Windows runtime file ${runtime_name} was not materialized from Git LFS." >&2
+              exit 1
+            fi
+          done < "${native_dir}/runtime-pins.sha256"
+          if ! (cd "${native_dir}/runtime" && sha256sum --check --strict ../runtime-pins.sha256); then
             echo "The bundled Windows libmpv runtime does not match the pinned NuvioDV artifact." >&2
             exit 1
           fi
@@ -532,6 +534,7 @@ jobs:
           $requiredEntries = @(
             "native/windows/player_bridge.dll",
             "native/windows/libmpv-2.dll",
+            "native/windows/ajn-mvtools.dll",
             "native/windows/WebView2Loader.dll",
             "native/windows/vcruntime140.dll",
             "native/windows/msvcp140.dll",
@@ -551,6 +554,15 @@ jobs:
             | Select-Object -First 1
           if ($null -eq $javaRuntimeJvm) {
             throw "The extracted MSI does not contain the bundled Java runtime."
+          }
+
+          foreach ($notice in @("NOTICE.md", "LICENSE.GPL", "sources.json")) {
+            $noticeFile = Get-ChildItem $extractDir -Recurse -File -Filter $notice `
+              | Where-Object { $_.FullName -match "[\\/]licenses[\\/]libmpv[\\/]" } `
+              | Select-Object -First 1
+            if ($null -eq $noticeFile) {
+              throw "The extracted MSI is missing the libmpv licence notice $notice."
+            }
           }
 
           $manifestPath = "composeApp\build\compose\release-msis\NuvioDV-Windows-x64-$env:RELEASE_VERSION-contents.txt"

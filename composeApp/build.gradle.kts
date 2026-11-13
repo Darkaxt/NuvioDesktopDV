@@ -1314,6 +1314,10 @@ compose.desktop {
             if (isMacHost) {
                 appResourcesRootDir.set(macosPlayerAppResourcesRoot)
             }
+            if (isWindowsHost) {
+                // Licence and source notices of the bundled libmpv runtime (app/resources/licenses).
+                appResourcesRootDir.set(layout.projectDirectory.dir("src/desktopMain/native/windows/app-resources"))
+            }
             modules(
                 "java.instrument",
                 "java.management",

@@ -1,39 +1,57 @@
 # NuvioDV Windows libmpv runtime
 
-The NuvioDV Windows package pins the official x86-64 `libmpv-2.dll` from the
-`shinchiro/mpv-winbuild-cmake` release below. The binary is tracked with Git LFS.
+The NuvioDV Windows package pins the owned `nuviodv-windows-ajn.1` release of
+[Darkaxt/mpv](https://github.com/Darkaxt/mpv/releases/tag/nuviodv-windows-ajn.1).
+Both runtime files are tracked with Git LFS in
+`composeApp/src/desktopMain/native/windows/runtime/`.
 
 ## Pinned artifact
 
-- Release: `20261021`
-- Asset: `mpv-dev-x86_64-20261021-git-e471496c56.7z`
-- Archive SHA-256: `efc719eff3dc5954b4a5efc800632808bcec01cc9034940dd14e5eb7fe9ea633`
-- `libmpv-2.dll` SHA-256: `04e4d27dc385dc18ddd93fbe69c75e635b864f3c6ec53a9122df54c2f7842f4a`
-- Build workflow: `shinchiro/mpv-winbuild-cmake` run `39518569492`
-- Build repository commit: `1f8d2e76255abc48f0456d9be99b4cab9c6566e6`
-- mpv commit: `e471496c56f0f49c133bd88b50aed62b845f1909`
-- FFmpeg commit: `9a861e9687d30e657d59521817cad18405995983`
-- libplacebo commit at the workflow's forced update: `285d1cc8af2ab79b72ac662eb09736de8c12392b`
+- Release: `nuviodv-windows-ajn.1` (published 2026-11-12, source commit
+  `a77256324b69b518cf6d03029ba8d6b1aa7e07df`)
+- Asset: `nuviodv-windows-x64.zip`, SHA-256
+  `0fcba959f8554024b81053fd292eb8f64133911dc392ccb70716a76e202ab44b`
+- `libmpv-2.dll` SHA-256: `79ca36e40e7998e89b6e14a6ad12082816c8a8856eede0165aba58c682586779`
+- `ajn-mvtools.dll` SHA-256: `6b2aab46aef61b040eac9e934b4d83b6f843a0ac58dee4fa9fdaf3b0a19b68bf`
+- FFmpeg `9a861e9687d30e657d59521817cad18405995983`, libplacebo
+  `9fabf6d5057c40089afb020017c6347002b07308` (contains the `c93aa134` OpenGL
+  sync-object leak correction); the full lock is in the release's `sources.json`.
 
-The workflow log records the libplacebo forced update at
-`2026-10-21T00:02:03Z`. The last libplacebo commit at that point was
-`285d1cc8`, which contains the `c93aa134` OpenGL sync-object leak correction.
-The official Windows build removed the separate libdovi dependency in commit
-`23e7ff758c26846422bb83109f03b7d692c271a0` because FFmpeg had completed RPU
-parsing. The pinned DLL contains FFmpeg Dolby Vision RPU metadata handling,
-libplacebo Dolby Vision reshape/rendering, and the newer Profile 7 split-layer
-pipeline. NuvioDV does not claim full FEL enhancement-layer compatibility
-without a real playback fixture.
+`composeApp/src/desktopMain/native/windows/runtime-pins.sha256` is the single
+pin list. The release workflow checks the LFS files against it before building
+and requires both DLLs in the packaged application; `WindowsRuntimePinTest`
+checks the same list. The application never downloads or updates libmpv itself.
 
-## Updating the tracked DLL
+Dolby Vision support comes from FFmpeg (HEVC decoding and RPU metadata) and
+libplacebo (reshaping and GPU-next rendering); no separate libdovi is used on
+Windows. This build passed native Windows GPU-next SDR and Dolby Vision
+Profile 5/8.1, AnimeJaNai and SVP qualification (see
+`WINDOWS_PLAYBACK_ENHANCEMENTS_SPEC.md`). NuvioDV does not claim full Profile 7
+FEL enhancement-layer compatibility without a real playback fixture.
 
-After independently downloading and extracting the exact pinned asset, run:
+The installed application carries mpv's licence and source notices in
+`app/resources/licenses/libmpv` (from
+`composeApp/src/desktopMain/native/windows/app-resources/`): `NOTICE.md` with
+the corresponding-source links, `Copyright`, `LICENSE.GPL`, `manifest.json`,
+`sources.json`, `licenses/` and `dependency-licenses/`. The release workflow
+checks they are present in the MSI.
+
+## Updating the pinned runtime
+
+Update `runtime-pins.sha256` and this document for the new release, download and
+independently verify its ZIP, extract it, then run with PowerShell 7:
 
 ```powershell
-./scripts/install_windows_libmpv.ps1 -SourceDll <extracted-libmpv-2.dll>
+pwsh ./scripts/install_windows_libmpv.ps1 -SourceDir <extracted-nuviodv-windows-x64>
 ```
 
-The script rejects any DLL whose SHA-256 does not match the pinned artifact.
+The script rejects any file whose SHA-256 does not match the pin list, then
+refreshes the licence notices (`NOTICE.md` is maintained by hand).
+
+Previous pin: the external `shinchiro/mpv-winbuild-cmake` release `20261021`
+(`libmpv-2.dll` SHA-256
+`04e4d27dc385dc18ddd93fbe69c75e635b864f3c6ec53a9122df54c2f7842f4a`, mpv
+`e471496c56`), which had no AnimeJaNai filter.
 
 ## Owned Windows successor
 
@@ -43,7 +61,7 @@ Windows build recipe. Its bounded Dolby Vision baseline is specified in
 RPU handling, libplacebo reshaping/GPU-next and the sync-object leak correction.
 It does not copy the Android JNI wrapper or add a redundant Windows libdovi.
 Current mpv requires libplacebo API 387, so the owned candidate uses a newer
-immutable revision containing the correction rather than the API 377 DLL above.
+immutable revision containing the correction rather than the API 377 DLL of the previous external pin.
 
 The first normal [owned native release](https://github.com/Darkaxt/mpv/releases/tag/nuviodv-windows-dv.1)
 targets source `b473072ac2e9a36d595dda9a3d071e8fccb74448` and passed Windows
@@ -52,11 +70,8 @@ independently verified with SHA-256
 `a4ed90b0f7a890b2f8be642c00b4a34ba1b4ec8d9e1a013b836c0b368691a8e8`;
 its DLL SHA-256 is `ee27b3ca2b621a23a5d16c074767ee13fd81bc2cc215bf695cc085981e4591db`.
 
-Native artifact publication does not promote it into this app. The external DLL
-pin and exact-hash installation contract above remain authoritative here.
-
-`WINDOWS_PLAYBACK_ENHANCEMENTS_SPEC.md`, requirement P7, assigns ownership of an
-mpv source fork carrying AnimeJaNai support and ongoing upstream synchronization.
-Its qualified Windows artifacts will replace this external pin only after the
-specified Dolby Vision, libplacebo, AnimeJaNai and SVP checks pass. Until that
-promotion, the artifact and exact-hash installation contract above remain current.
+Native artifact publication does not by itself promote a build into this app.
+`WINDOWS_PLAYBACK_ENHANCEMENTS_SPEC.md`, requirement P7, assigns ownership of the
+mpv source fork carrying AnimeJaNai support and upstream synchronization. A newer
+qualified artifact replaces the pin above only after its Dolby Vision,
+libplacebo, AnimeJaNai and SVP checks and the application integration checks pass.

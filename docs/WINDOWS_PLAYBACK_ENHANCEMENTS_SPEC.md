@@ -891,9 +891,33 @@ Still open for P6:
   - repeated seek and episode transitions;
   - real model preparation success/failure;
   - the action layout at normal and maximized sizes.
-- No automated test yet: pin verification and disabled independent updates
-  (the installer is only exercised by its live test).
 - The final Windows-only release and verification of the exact package.
+
+### P6 progress: libmpv promotion (2026-11-13)
+
+- The app now bundles the qualified `nuviodv-windows-ajn.1` runtime instead of
+  the external shinchiro pin: `libmpv-2.dll` and `ajn-mvtools.dll` (Git LFS).
+  - `composeApp/src/desktopMain/native/windows/runtime-pins.sha256` is the one
+    pin list. `scripts/install_windows_libmpv.ps1`, the release workflow (LFS
+    hash check, packaged-entry check) and `WindowsRuntimePinTest` all use it.
+  - mpv licence and source notices ship in `app/resources/licenses/libmpv`;
+    the release workflow checks the MSI contains them.
+  - `AnimeJaNaiRuntimePinTest`: every installer download is a fixed-tag release
+    asset with a SHA-256 pin, and verification rejects other content. Together
+    with the bundled-runtime pin test this closes the "pin verification and
+    disabled independent updates" gap.
+  - Gated build ticket `06a3514243c63927a2e1b26cf946b008`: 50 tests passed.
+- In-app with the packaged distributable (no runtime override): the process
+  loaded the bundled `libmpv-2.dll` (pinned hash) extracted from the jar.
+  - Breaking Bad fixture (960x540, 23.976 fps): SVP Active at 165.058 fps,
+    0 VO and 0 decoder drops.
+  - Animation On: Pending until the next stream start, then AnimeJaNai Active
+    (TensorRT, Balanced slot 1002) with frames advancing. Animation Off applied
+    live (slot 0 bypass).
+  - Exiting the player while AnimeJaNai was active left the app running with no
+    crash.
+- Dolby Vision with the bundled runtime is covered by the native ajn.1
+  qualification; an in-app DV check still needs a private local DV clip.
 
 ### Side effort after the full plan
 

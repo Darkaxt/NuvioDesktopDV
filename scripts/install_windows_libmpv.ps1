@@ -1,28 +1,45 @@
 param(
+    # Extracted nuviodv-windows-x64 directory of the pinned Darkaxt/mpv release.
     [Parameter(Mandatory = $true)]
-    [string]$SourceDll
+    [string]$SourceDir
 )
 
 $ErrorActionPreference = 'Stop'
 
-$expectedSha256 = '04e4d27dc385dc18ddd93fbe69c75e635b864f3c6ec53a9122df54c2f7842f4a'
-$resolvedSource = (Resolve-Path -LiteralPath $SourceDll).Path
-$actualSourceSha256 = (Get-FileHash -LiteralPath $resolvedSource -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($actualSourceSha256 -ne $expectedSha256) {
-    throw "Unexpected libmpv SHA-256: $actualSourceSha256"
-}
-
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$destination = Join-Path $repositoryRoot 'composeApp\src\desktopMain\native\windows\runtime\libmpv-2.dll'
-Copy-Item -LiteralPath $resolvedSource -Destination $destination -Force
+$nativeDir = Join-Path $repositoryRoot 'composeApp\src\desktopMain\native\windows'
+$runtimeDir = Join-Path $nativeDir 'runtime'
+$pinFile = Join-Path $nativeDir 'runtime-pins.sha256'
+$resolvedSource = (Resolve-Path -LiteralPath $SourceDir).Path
 
-$installedSha256 = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($installedSha256 -ne $expectedSha256) {
-    throw "Installed libmpv hash mismatch: $installedSha256"
+# runtime-pins.sha256 is the single pin list, shared with the release workflow and tests.
+$pins = Get-Content -LiteralPath $pinFile | Where-Object { $_.Trim() } | ForEach-Object {
+    $hash, $name = $_ -split '\s+', 2
+    [pscustomobject]@{ Name = $name.Trim(); Sha256 = $hash.ToLowerInvariant() }
 }
 
-[ordered]@{
-    source = $resolvedSource
-    destination = $destination
-    sha256 = $installedSha256
-} | ConvertTo-Json
+foreach ($pin in $pins) {
+    $source = Join-Path $resolvedSource $pin.Name
+    $actual = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $pin.Sha256) {
+        throw "Unexpected SHA-256 for $($pin.Name): $actual"
+    }
+}
+
+$installed = foreach ($pin in $pins) {
+    $destination = Join-Path $runtimeDir $pin.Name
+    Copy-Item -LiteralPath (Join-Path $resolvedSource $pin.Name) -Destination $destination -Force
+    $actual = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $pin.Sha256) {
+        throw "Installed $($pin.Name) hash mismatch: $actual"
+    }
+    [ordered]@{ name = $pin.Name; destination = $destination; sha256 = $actual }
+}
+
+# Licence and source notices shipped in the installed app (NOTICE.md is maintained by hand).
+$noticeDir = Join-Path $nativeDir 'app-resources\windows\licenses\libmpv'
+foreach ($notice in @('Copyright', 'LICENSE.GPL', 'manifest.json', 'sources.json', 'licenses', 'dependency-licenses')) {
+    Copy-Item -LiteralPath (Join-Path $resolvedSource $notice) -Destination $noticeDir -Recurse -Force
+}
+
+$installed | ConvertTo-Json

@@ -224,24 +224,9 @@ internal class AnimeJaNaiRuntimeInstaller(private val runtime: AnimeJaNaiRuntime
         if (process.exitValue() != 0) error("Extraction of ${archive.name} failed: ${output.trim().take(300)}")
     }
 
-    private fun verify(path: Path, sha256: String) {
-        if (!path.isRegularFile()) error("Extracted file is missing: ${path.name}")
-        val digest = MessageDigest.getInstance("SHA-256")
-        Files.newInputStream(path).use { input ->
-            val buffer = ByteArray(1 shl 16)
-            while (true) {
-                val read = input.read(buffer)
-                if (read < 0) break
-                digest.update(buffer, 0, read)
-            }
-        }
-        val actual = digest.digest().toHex()
-        if (actual != sha256) error("${path.name} failed verification (SHA-256 $actual)")
-    }
+    internal data class Pinned(val url: String, val sha256: String, val bytes: Long, val fileName: String)
 
-    private data class Pinned(val url: String, val sha256: String, val bytes: Long, val fileName: String)
-
-    private data class OverlayFile(val archivePath: String, val destination: String, val sha256: String)
+    internal data class OverlayFile(val archivePath: String, val destination: String, val sha256: String)
 
     @Serializable
     private data class PackIndex(val tag: String, val packs: List<Pack>)
@@ -293,7 +278,10 @@ internal class AnimeJaNaiRuntimeInstaller(private val runtime: AnimeJaNaiRuntime
             bytes = 89_299_197,
             fileName = "overlay.7z",
         )
-        private val OVERLAY_FILES = listOf(
+        /** Every download; the TensorRT packs are pinned by the hash-pinned [PACK_INDEX]. */
+        internal val PINNED_DOWNLOADS get() = listOf(SEVEN_ZIP, PACK_INDEX, OVERLAY)
+
+        internal val OVERLAY_FILES = listOf(
             OverlayFile(
                 "animejanai\\inference\\aji.dll", "inference/aji.dll",
                 "095d18018b2ae7f40d9b7e814a9891867f6028ea94d3e06048d2d40276e63b45",
@@ -321,5 +309,21 @@ internal class AnimeJaNaiRuntimeInstaller(private val runtime: AnimeJaNaiRuntime
         }
 
         private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+
+        /** Fails unless [path] exists and has exactly the pinned [sha256]. */
+        internal fun verify(path: Path, sha256: String) {
+            if (!path.isRegularFile()) error("Extracted file is missing: ${path.name}")
+            val digest = MessageDigest.getInstance("SHA-256")
+            Files.newInputStream(path).use { input ->
+                val buffer = ByteArray(1 shl 16)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+            val actual = digest.digest().toHex()
+            if (actual != sha256) error("${path.name} failed verification (SHA-256 $actual)")
+        }
     }
 }
