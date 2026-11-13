@@ -68,7 +68,11 @@ internal class SvpRuntime(val rootDir: Path = defaultRootDir()) {
         /** vf_vapoursynth's warning when the script needs more buffered input frames. */
         const val BUFFER_WARNING_TOKEN = "buffered-frames"
 
-        private val REQUIRED_RUNTIME_FILES = listOf("VSScript.dll", "vapoursynth.dll", "python312.dll", "portable.vs")
+        /**
+         * Present in both SVP layouts: the older portable VapourSynth (with `portable.vs` and a
+         * versioned `python3xx.dll`) and R7x, whose DLLs are shims over `lib/site-packages/vapoursynth`.
+         */
+        internal val REQUIRED_RUNTIME_FILES = listOf("VSScript.dll", "vapoursynth.dll", "python3.dll")
         private val RELEVANT_PACKAGES = setOf("core.full", "core.flow64vs", "opt.vps_portable64", "deps.python64")
 
         fun defaultRootDir(): Path {

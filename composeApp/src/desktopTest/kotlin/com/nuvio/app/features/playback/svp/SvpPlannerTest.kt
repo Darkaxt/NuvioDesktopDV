@@ -143,6 +143,25 @@ class SvpPlannerTest {
     }
 
     @Test
+    fun bothPortableVapourSynthLayoutsAreDetected() {
+        fun layout(vararg runtimeFiles: String): SvpRuntime.Availability {
+            val root = Files.createTempDirectory("svp-root")
+            Files.createDirectories(root.resolve("mpv64"))
+            Files.createDirectories(root.resolve("plugins64"))
+            runtimeFiles.forEach { Files.createFile(root.resolve("mpv64").resolve(it)) }
+            listOf("svpflow1_vs.dll", "svpflow2_vs.dll").forEach { Files.createFile(root.resolve("plugins64").resolve(it)) }
+            return SvpRuntime(root).availability()
+        }
+        // SVP's VapourSynth package 70: portable.vs and a versioned Python.
+        assertIs<SvpRuntime.Availability.Available>(
+            layout("VSScript.dll", "vapoursynth.dll", "python3.dll", "python312.dll", "portable.vs"),
+        )
+        // Package 81 (VapourSynth R79): shim DLLs, no portable.vs.
+        assertIs<SvpRuntime.Availability.Available>(layout("VSScript.dll", "vapoursynth.dll", "python3.dll"))
+        assertIs<SvpRuntime.Availability.Unavailable>(layout("vapoursynth.dll", "python3.dll"))
+    }
+
+    @Test
     fun startOptionsRespectTheDecoderPolicy() {
         val runtime = SvpRuntime(Paths.get("""C:\Program Files\SVP 4"""))
         assertTrue("hwdec=auto-copy" in runtime.playerStartOptions(0))

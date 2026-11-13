@@ -841,10 +841,23 @@ The r17 build passed 45 tests (ticket `8024a1f75e4eaf139fbe8f639aaff708`).
   - controls visible: 8.0% and 307 MB;
   - the app process including mpv and SVP: 48 to 52%, about 2.5 GB.
 
-Remaining before this stage is complete:
-- The SVP component update. Installed: core 4.7.0.302-3, SVPflow 4.6.0.274,
-  VapourSynth package 70. The elevated update request expired unanswered and needs
-  the user's approval.
+SVP component update (2026-11-13, approved by the user, run through the elevation
+broker; exit 0):
+- SVPflow went from 4.6.0.274 to 4.7.0.325-1, and the VapourSynth package from 70 to
+  81-79 (VapourSynth R79).
+- R79 changes the portable layout. `VSScript.dll` and `vapoursynth.dll` are now
+  shims over `mpv64/lib/site-packages/vapoursynth`, and `portable.vs` is gone. The
+  runtime check now requires only `VSScript.dll`, `vapoursynth.dll` and the stable
+  `python3.dll`, which exist in both layouts (unit-tested).
+- `vspipe` R79 runs the SVPflow 4.7 pipeline: 23.976 → 119.88 fps.
+- The standalone ctypes probe cannot be used any more. Its host is itself Python,
+  and the R79 shim then fails to import the VapourSynth module. The app's JVM host
+  has no Python.
+- In-app on R79 (r18 build, 46 tests passed, ticket
+  `bf75952376528a4041727b08247a5e37`): SVP is Active at 165.058 fps with the filter
+  at 165.06, 0 drops and `display-resample`.
+
+P5 is complete.
 
 ### P6 progress: regression coverage
 
