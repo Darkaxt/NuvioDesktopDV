@@ -1077,7 +1077,10 @@ Cause of the Profile 5 defect:
   *errors*, so it never runs here.
 
 Switching to libmpv in the player renders Profile 5 with correct colours (no
-green/purple tint), labelled `1080p • HEVC • DV • 60 FPS`. Tracked as D4.
+green/purple tint), labelled `1080p • HEVC • DV • 60 FPS`. The engine setting is
+per profile (`ProfileScopedKey`); the test profile was on the default Auto.
+The user's own Dolby Vision profile uses MPV, which is the path verified as
+correct here. Tracked as D4 for profiles on Auto/ExoPlayer.
 
 ### Side effort after the full plan
 
@@ -1125,7 +1128,7 @@ measurement is taken during P5.
 | D2 | Additional AnimeJaNai quality/performance profiles. The pinned runtime documents only slot 1002, so no smaller fallback profile can be offered or downgraded to. | P7 owned-runtime candidate (re-targeted 2026-11-13: not met by the P6 release), or earlier if the runtime documents more slots | Further upstream profile slots are documented and pinned, each passes image-quality comparison on moving fixtures, and selection/downgrade chooses among prepared qualified profiles. |
 | D3 | 95th-percentile per-frame processing cost (P4 initial acceptance budget). The in-app benchmark records mean decode+inference cost; the filter emits no per-frame timing. | P7 owned libmpv candidate (re-targeted 2026-11-13: not met by the P6 release) | The owned filter reports GPU-completed per-frame inference timing, the benchmark records its p95 against 80% of the output-frame interval, and the verification fixture shows no enhancement-induced steady-state drops. |
 | D1 | AnimeJaNai on NuvioDV Android (asked 2026-11-08). AnimeJaNai has no Android inference backend (TensorRT/DirectML only); a mobile GPU backend such as ncnn/Vulkan plus model conversion would be required. | Separate Android port stage, after Integrated Windows delivery | Converted lightest model runs inside the Android libmpv pipeline; measured decode+inference+render frame time and sustained thermal behavior for 480p/720p 24 fps anime meet P4's budget on the user's device; same P1 rules, P2 per-title choice and P3 ledger semantics. Until then Android is unchanged and nothing claims Android support. |
-| D4 | NuvioDV Android: Dolby Vision Profile 5 shows no picture under ExoPlayer on devices without a non-secure DV decoder. Found in tablet testing 2026-11-13. Darkaxt/NuvioMobileDV has issues disabled, so it is tracked here. | NuvioMobileDV maintenance (Codex-owned), next Android release | When a selected stream has a video track group that no renderer supports (for example `video/dolby-vision` Profile 5 without a non-secure DV decoder), `Auto` switches to libmpv at the current position, as it does for decoder errors. Explicit ExoPlayer instead shows an error. Verified on the SM-X910 tablet with the Profile 5 fixture: picture visible, correct colours. |
+| D4 | NuvioDV Android: Dolby Vision Profile 5 shows no picture under ExoPlayer on devices without a non-secure DV decoder. Found in tablet testing 2026-11-13. The engine setting is per profile; new profiles default to Auto (ExoPlayer), as the temporary test profile did. The user's own Dolby Vision profile is set to MPV and is not affected. Darkaxt/NuvioMobileDV has issues disabled, so it is tracked here. | NuvioMobileDV maintenance (Codex-owned), next Android release | When a selected stream has a video track group that no renderer supports (for example `video/dolby-vision` Profile 5 without a non-secure DV decoder), `Auto` switches to libmpv at the current position, as it does for decoder errors. Explicit ExoPlayer instead shows an error. Verified on the SM-X910 tablet with the Profile 5 fixture: picture visible, correct colours. |
 
 ## Sources
 
