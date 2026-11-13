@@ -97,6 +97,26 @@ class AnimationClassificationTest {
     }
 
     @Test
+    fun unrelated_anime_streamed_on_disney_plus_is_not_excluded() {
+        // A Japanese studio's anime series that Disney+ only distributes (no Disney studio).
+        val result = classify(
+            TitleFacts(
+                categories = setOf("anime"),
+                genres = setOf("Animation", "Action"),
+                services = setOf("Disney+"),
+                networks = setOf("Disney+"),
+                originCountries = setOf("JP"),
+                studios = setOf("MAPPA"),
+                contentType = "series",
+            ),
+        )
+        assertEquals(true, result.animationEvidence)
+        assertTrue(result.suggestedAnimationToggle)
+        assertEquals(emptyList(), result.matchedExclusionIds)
+        assertEquals(EnhancementEligibility(animeJaNai = true, svp = false), effectiveEnhancementEligibility(null, result))
+    }
+
+    @Test
     fun unknown_metadata_is_unknown_and_starts_neither() {
         val result = classify(TitleFacts(contentType = "movie"))
         assertNull(result.animationEvidence)

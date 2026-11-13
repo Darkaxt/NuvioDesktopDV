@@ -92,13 +92,18 @@ internal class AnimeJaNaiSession(
             _status.value = EnhancementStatus(EnhancementStatus.Kind.Skipped, reason)
             return null
         }
-        if (settings.nvidiaRtxSuperResolutionEnabled) return skip("RTX Video Super Resolution is on")
-        if (settings.decoderPriority == 2) return skip("Software decoding is selected")
-        val availability = runtime.availability()
-        if (availability is AnimeJaNaiRuntime.Availability.Unavailable) return skip(availability.reason)
-        if (AnimeJaNaiPreparationController.isPreparing) return skip("An engine preparation is running")
-        if (AnimeJaNaiPreparationController.installer.isInstalling) return skip("The AnimeJaNai runtime is being installed")
-        val title = ActivePlaybackTitle.current ?: return skip("Title is unknown")
+        val title = ActivePlaybackTitle.current
+        AnimeJaNaiPlanner.startSkipReason(
+            AjnStartFacts(
+                rtxSuperResolution = settings.nvidiaRtxSuperResolutionEnabled,
+                softwareDecoding = settings.decoderPriority == 2,
+                unavailableReason = (runtime.availability() as? AnimeJaNaiRuntime.Availability.Unavailable)?.reason,
+                preparing = AnimeJaNaiPreparationController.isPreparing,
+                installing = AnimeJaNaiPreparationController.installer.isInstalling,
+                titleKnown = title != null,
+            ),
+        )?.let { return skip(it) }
+        title!!
         val profileId = ProfileRepository.activeProfileId.toString()
         val toggles = DesktopAnimationToggles.repository
         val toggleState = runCatching {
@@ -270,49 +275,31 @@ internal class AnimeJaNaiSession(
             )
         }
 
-        val longSide = maxOf(width, height)
-        val shortSide = minOf(width, height)
-        if (longSide >= 3840 || shortSide >= 2160) return skip("Source is 4K or larger")
-        val gamma = stringProperty("video-dec-params/gamma").lowercase()
-        if (gamma == "pq" || gamma == "hlg") return skip("HDR/Dolby Vision is not verified for AnimeJaNai")
-        val outputWidth = intProperty("osd-width") ?: 0
-        val outputHeight = intProperty("osd-height") ?: 0
-        if (outputWidth <= 0 || outputHeight <= 0) {
-            decidedKey = null // retry once the output size is known
-            return
-        }
-        val scale = minOf(outputWidth.toDouble() / width, outputHeight.toDouble() / height)
-        if (scale <= 1.0) {
-            skippedForOutput = true
-            return skip("Output is not larger than the source")
-        }
-        if (!animationEnabled) return skip("Animation is Off")
-
-        val engines = engineIndex.find(key)
-        if (engines == null) {
-            preparationRequiredKey = key
-            _status.value = EnhancementStatus(
-                EnhancementStatus.Kind.PreparationRequired,
-                "No prepared engine for ${width}x$height at ${key.fps} fps",
-                current.slot, width, height,
-            )
-            return
-        }
-        val budget = budgets.find(key, engines)
-        if (budget == null) {
-            preparationRequiredKey = key
-            _status.value = EnhancementStatus(
-                EnhancementStatus.Kind.PreparationRequired,
-                "Performance for ${width}x$height at ${key.fps} fps is not measured yet",
-                current.slot, width, height,
-            )
-            return
-        }
-        if (!budget.qualified) {
-            return skip("Over the performance budget (${budget.describe()})")
-        }
-        budget.liveBreaches[AnimeJaNaiBudgets.outputClass(outputHeight)]?.let { breach ->
-            return skip("Off at this output size after frame drops ($breach)")
+        val facts = AjnStreamFacts(
+            width = width,
+            height = height,
+            gamma = stringProperty("video-dec-params/gamma"),
+            outputWidth = intProperty("osd-width") ?: 0,
+            outputHeight = intProperty("osd-height") ?: 0,
+            animationEnabled = animationEnabled,
+        )
+        val engines = when (val decision = AnimeJaNaiPlanner.decide(key, facts, engineIndex::find, budgets::find)) {
+            is AjnStreamDecision.Skip -> {
+                skippedForOutput = decision.forOutput
+                return skip(decision.reason)
+            }
+            AjnStreamDecision.AwaitOutput -> {
+                decidedKey = null // retry once the output size is known
+                return
+            }
+            is AjnStreamDecision.PreparationRequired -> {
+                preparationRequiredKey = key
+                _status.value = EnhancementStatus(
+                    EnhancementStatus.Kind.PreparationRequired, decision.reason, current.slot, width, height,
+                )
+                return
+            }
+            is AjnStreamDecision.Insert -> decision.engines
         }
         val result = command("vf", "add", runtime.filter(current.slot, "required"))
         if (result < 0) {

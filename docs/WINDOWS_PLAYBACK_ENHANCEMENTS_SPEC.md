@@ -792,6 +792,42 @@ Remaining before this stage is complete:
   VapourSynth package 70. The elevated update request expired unanswered and needs
   the user's approval.
 
+### P6 progress: regression coverage
+
+Audit (2026-11-13) of the P6 regression list against the automated tests:
+- Already covered: the classification cases (Anime category, Animation outside
+  Anime, Crunchyroll, TOKYO MX + JP, JP live action, Disney animation, unknown
+  metadata, explicit On/Off overrides, rule update, profile isolation) and
+  interrupted/concurrent ledger writes (`AnimationClassificationTest`); budget and
+  environment invalidation (`AnimeJaNaiBudgetsTest`); native handle lifecycle
+  (`NativePlayerControllerTeardownTest`).
+- Added:
+  - Unrelated anime streamed on Disney+ is not excluded.
+  - AnimeJaNai's start and per-stream decisions moved into a pure
+    `AnimeJaNaiPlanner` (behaviour unchanged). `AnimeJaNaiPlannerTest` now covers:
+    - the RTX VSR skip, which takes precedence over every other reason;
+    - ordinary playback while a preparation or install is running;
+    - software decoding, an unavailable runtime and an unknown title;
+    - sub-4K upscaling vs native 4K, the HDR/DV skip, the no-upscale skip
+      (re-evaluated when the output grows) and waiting for an unknown output size;
+    - a missing/rejected engine or an unmeasured budget requiring preparation;
+    - over-budget and per-output-class live-breach skips.
+  - Gated build ticket `573f9c279c59aa15794b1106376b4700`: 44 tests passed.
+
+Still open for P6:
+- Live and in-app checks:
+  - the same value on every P2 surface for a movie and a series;
+  - an in-player change applied live;
+  - all series episodes and launch routes;
+  - driver/output changes;
+  - sustained performance and long playback without resource growth;
+  - repeated seek and episode transitions;
+  - real model preparation success/failure;
+  - the action layout at normal and maximized sizes.
+- No automated test yet: pin verification and disabled independent updates
+  (the installer is only exercised by its live test).
+- The final Windows-only release and verification of the exact package.
+
 ### Side effort after the full plan
 
 User request 2026-11-12: once every stage of this plan is complete, deploy the
