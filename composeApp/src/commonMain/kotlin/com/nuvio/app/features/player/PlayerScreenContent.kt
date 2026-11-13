@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -27,6 +26,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.ui.LocalFold
+import com.nuvio.app.core.ui.isMouseBackPress
+import com.nuvio.app.core.ui.isMouseForwardPress
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.isDesktop
 import com.nuvio.app.features.details.MetaDetailsRepository
@@ -116,9 +117,9 @@ internal fun PlayerScreenContent(args: PlayerScreenArgs) {
                     while (true) {
                         val event = awaitPointerEvent(PointerEventPass.Initial)
                         if (event.type == PointerEventType.Press) {
-                            if (event.button == PointerButton.Back) {
+                            if (event.isMouseBackPress()) {
                                 event.changes.forEach { it.consume() }
-                            } else if (event.button == PointerButton.Forward) {
+                            } else if (event.isMouseForwardPress()) {
                                 event.changes.forEach { it.consume() }
                             }
                         }

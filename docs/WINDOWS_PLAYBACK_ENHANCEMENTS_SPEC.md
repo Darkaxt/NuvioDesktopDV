@@ -394,6 +394,39 @@ a failed candidate leaves the installed application's runtime unchanged. Documen
 and inspect the exact native release and its later application promotion separately.
 These are future acceptance checks; no such merge/build/release is claimed here.
 
+## P8. Native Windows player controls (WebView2 migration)
+
+Added 2026-11-13 at the user's direction as the last phase to be considered, after
+Integrated Windows delivery. AnimeJaNai and SVP are already GPU-intensive, so playback
+should not also keep a browser runtime alive. mpv renders video natively into the
+player container window (`wid`). The player controls are a WebView2 page in a
+transparent child window of that same container (`player_bridge.cpp`
+`CreateCoreWebView2Controller(containerHwnd)`). For the whole playback session this
+keeps WebView2 browser/GPU/renderer processes alive, and DWM composites the
+transparent layer over every video frame. The rest of the app (Compose/Skia on the
+JVM) is not browser-rendered and is out of scope.
+
+Requirements:
+- Evidence before replacement. During P5 (and with AnimeJaNai active), measure
+  the WebView2 process tree's CPU, GPU engine, dedicated VRAM and private memory, with
+  the controls hidden and visible, against a control-free baseline. If the measured
+  cost is negligible, record the measurement and close P8 without a migration.
+- Replace the HTML controls (`player-ui/controls.*`), including the Enhancements
+  panel added in the Animation stage, with a native Windows overlay that has the same
+  functions and accessibility, so playback runs with no WebView2 runtime.
+- Keep the Kotlin `PlayerControlsState` contract, the JSON bridge semantics and
+  upstream parity of the Kotlin side, so upstream player-UI changes remain portable.
+- Preserve DV/SDR/AnimeJaNai/SVP rendering, fullscreen/DPI, keyboard/mouse
+  (including back/forward) and teardown behaviour.
+
+Acceptance: the same in-app checks as the HTML layer (debug control bridge plus
+screenshots) pass. Measured playback overhead is no worse than the WebView2
+baseline. No WebView2 process exists during playback.
+
+Out of scope: a full native rewrite (for example Rust + WPF). That is considered
+only once upstream Nuvio has a stable release, together with the self-hosted Nuvio
+backend side project (`NUVIO_SELF_HOST_DEPLOYMENT_SPEC.md`).
+
 ## Current bounded execution: source baseline and recurring maintenance
 
 On 2026-11-08 the user authorized starting with upstream mpv source synchronization
@@ -448,6 +481,7 @@ The native-runtime stage is COMPLETE (owned build `nuviodv-windows-ajn.1` qualif
 | Animation decisions and adaptive AnimeJaNai | P1-P4, relevant P6 | Qualified owned runtime -> prepared compatible engine -> real metadata -> suggested toggle -> durable final override -> measured model/profile/status across episodes |
 | Licensed adaptive SVP | P5, relevant P1-P3/P6 | Updated licensed runtime -> eligible live-action stream -> measured interpolation -> clean transitions |
 | Integrated Windows delivery | P6-P7, all prior requirements | Exact owned runtime pin, reconciled behavior, normal Windows release, package/install/runtime verification |
+| Native player controls (last, considered after delivery) | P8 | WebView2 overhead measured during AnimeJaNai/SVP playback -> decision recorded -> if migrating, native overlay with parity, in-app verified, no WebView2 during playback |
 
 Resolve metadata field mappings, canonical aliases, ledger filesystem semantics,
 benchmark metric availability, AnimeJaNai/SVP runtime compatibility, model quality,
@@ -654,10 +688,12 @@ accessibility tree/actions, in-process input, window-only screenshots):
      uses the content SHA-256 (hashed once per run).
 
 Android compile of the shared code (`:composeApp:compileAndroidMain`, gated ticket
-`7a35882c6e127b71051bba2032406fd6`) fails only on pre-existing upstream errors in
-untouched files (desktop-only `PointerButton`/`onPointerEvent` in commonMain since
-upstream `d9d4e6b20`); no error is in a file changed by this stage. The Android app
-ships from NuvioMobileDV, so this repo's Android target is not a release path.
+`7a35882c6e127b71051bba2032406fd6`): attempt 1 failed only on pre-existing upstream
+desktop-only pointer APIs in commonMain (`PointerButton`/`onPointerEvent`, since
+upstream `d9d4e6b20`). The fork moved them behind expect/actual
+(`core/ui/MouseNavigationButtons`, no-op on Android/iOS) and a common `pointerInput`
+scroll handler, keeping desktop behaviour. Attempt 2 compiles; the fork's
+`android-release.yml` can build again.
 
 Remaining before this stage is complete: iOS compile of the shared code (CI
 `ios-test-build`; not buildable on this Windows host); live bypass under a real
@@ -678,6 +714,11 @@ Each needs its own integration point and verification within that project's
 existing build/release process; nothing here claims either project is updated.
 This side effort does not block the plan's completion criteria and starts only
 after them.
+
+### Native Windows player controls overlay
+
+Promoted on 2026-11-13 to phase P8, the last phase to be considered (see P8). Its
+measurement is taken during P5.
 
 ### Tracked deferrals
 

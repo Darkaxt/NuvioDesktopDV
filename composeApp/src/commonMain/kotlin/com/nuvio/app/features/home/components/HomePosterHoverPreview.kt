@@ -55,7 +55,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -326,10 +326,19 @@ internal fun HomePosterHoverPreview(
                         trailerPlaybackSource = trailerPlaybackSource,
                         modifier = Modifier
                             .hoverable(previewInteractionSource)
-                            .onPointerEvent(PointerEventType.Scroll) {
-                                previewDismissedByScroll = true
-                                previewVisible = false
-                                popupMounted = false
+                            .pointerInput(item.type, item.id) {
+                                // Common-API equivalent of the desktop-only
+                                // Modifier.onPointerEvent(PointerEventType.Scroll).
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent()
+                                        if (event.type == PointerEventType.Scroll) {
+                                            previewDismissedByScroll = true
+                                            previewVisible = false
+                                            popupMounted = false
+                                        }
+                                    }
+                                }
                             },
                         onClick = onClick,
                         onLongClick = onLongClick,
