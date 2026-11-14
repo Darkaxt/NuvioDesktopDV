@@ -30,8 +30,8 @@ Revision 2026-11-12 (pre-implementation plan review, documentation only):
 - The user is not interested in NVIDIA RTX Video Super Resolution (found jarring
   in testing). It is out of scope; P4 defines the only interaction required.
 - P7's native strategy is corrected after measuring the AnimeJaNai mpv delta.
-- Android AnimeJaNai is recorded as tracked deferral D1 instead of an untracked
-  verbal answer.
+- Android AnimeJaNai was recorded as tracked deferral D1 instead of an untracked
+  verbal answer. D1 was closed on 2026-11-14 as not pursued (user decision).
 
 ## P1. Content indicators and initial suggestion
 
@@ -555,8 +555,8 @@ the owned build repeats them.
 - Tablet testing (user request 2026-11-12): the qualification checks are to be
   repeated on the user's Android tablet at a later point, excluding SVP (not
   expected to run there). Dolby Vision can be checked against the Android library
-  directly; AnimeJaNai on the tablet depends on tracked deferral D1 (an Android
-  inference backend) and is not claimed until D1 resolves. Requires the
+  directly; AnimeJaNai on the tablet depended on tracked deferral D1 (an Android
+  inference backend), closed 2026-11-14 as not pursued, so it is not claimed. Requires the
   established Android device workflow and ownership checks. Done 2026-11-13: see
   "Tablet testing (2026-11-13)" and deferral D4.
 - Upstream lag (user decision 2026-11-12): no dedicated lag monitoring for now.
@@ -1127,7 +1127,7 @@ measurement is taken during P5.
 | --- | --- | --- | --- |
 | D2 | Additional AnimeJaNai quality/performance profiles. The pinned runtime documents only slot 1002, so no smaller fallback profile can be offered or downgraded to. | CLOSED 2026-11-14: app `c8ac14886` with libmpv `nuviodv-windows-ajn.3` (pin `6ec9d181f`), released as `0.1.35-nuviodv.7` (publish run 43526811536, release commit `e815000fe`, installed locally via the elevation broker) | Implemented: built-in slot 1003 (HD V3.1 Performance) is pinned from overlay 3.11.0 (sha256 `7b804d87…2716`) and exposed as the "Performance" profile. Balanced (1002) falls back to Performance; Quality (1001) is not exposed because it uses the same model as Balanced plus 60 fps chains. Preparation builds and benchmarks every profile in the selection. Selection inserts the first prepared, qualified, unbreached profile. A sustained live breach records the breach, then switches live with `vf-command aji slot 1003`; with no fallback left it bypasses AnimeJaNai. Image quality, on a moving 720p fixture (24 consecutive frames from a 720p Lanczos rescale of `vlc-60s-540p`, source 28 s; freezedetect showed motion): Performance vs Balanced PSNR-Y 49.6 dB (min 49.5), SSIM 0.998. Both differ from Lanczos (Balanced 44.4 dB / SSIM 0.994, Performance 44.8 dB / 0.995). Frame-to-frame change of Performance tracks Balanced (58.4 vs 58.3 dB, no identical pairs), so there are no frozen or flicker frames. Live switch on ajn.3: slot 1002 active, `slot 1003` at frame 300 returned 0, then `active TensorRT 1003` and 1003 timing windows to end-file. In-app (isolated profile, debug bridge, local-AI gate): the installer fetched and verified the Performance model, and one Prepare built and benchmarked both 1002 and 1003 for 1280x720 at 24 fps (both qualified). The real live breach was not provoked, to avoid deliberately overloading the GPU. |
 | D3 | 95th-percentile per-frame processing cost (P4 initial acceptance budget). The in-app benchmark records mean decode+inference cost; the filter emits no per-frame timing. | CLOSED 2026-11-14: mpv `814006b7fa` (release `nuviodv-windows-ajn.3`, CI run 43519499322), app `c8ac14886`, released as `0.1.35-nuviodv.7` (publish run 43526811536) | Implemented: `vf_animejanai` records a CUDA start/end event pair per TensorRT upscale submission on the inference stream and reads the elapsed time after its ticket completes (`cuEventElapsedTime` from the driver). It emits `AJN_TIMING_V1 <frames> <mean> <p50> <p95> <max> <slot>` every 240 frames, plus a partial window of at least 24 frames at slot change and teardown; DirectML and RIFE are untimed. The benchmark records the worst window p95, and a profile qualifies only when both the mean and the p95 are below 80% of the output-frame interval. Headless on ajn.3 (720p moving fixture, 480 frames): Balanced GPU p95 14.1 ms, Performance 9.2 ms (budget 33.4 ms at 24 fps). In-app benchmark: Balanced 14.1 ms mean, p95 GPU 14.6 ms; Performance 8.0 ms, p95 GPU 8.7 ms; both of 41.7 ms per frame and qualified. In-app playback of the 40 s 720p Animation fixture: Active TensorRT 1002, 1280x720 to 2560x1440; live windows p95 16.9, 16.3 and 15.9 ms; the live budget monitor recorded no breach or downgrade through to the end of the clip, so there were no enhancement-induced steady-state drops. |
-| D1 | AnimeJaNai on NuvioDV Android (asked 2026-11-08). AnimeJaNai has no Android inference backend (TensorRT/DirectML only); a mobile GPU backend such as ncnn/Vulkan plus model conversion would be required. | Separate Android port stage, after Integrated Windows delivery. Feasibility measured 2026-11-14 (see "D1 feasibility" below): only Performance at 480p on the NPU fits the inference budget. | Converted lightest model runs inside the Android libmpv pipeline; measured decode+inference+render frame time and sustained thermal behavior for 480p/720p 24 fps anime meet P4's budget on the user's device; same P1 rules, P2 per-title choice and P3 ledger semantics. Until then Android is unchanged and nothing claims Android support. |
+| D1 | AnimeJaNai on NuvioDV Android (asked 2026-11-08). AnimeJaNai has no Android inference backend (TensorRT/DirectML only); a mobile GPU backend such as ncnn/Vulkan plus model conversion would be required. | CLOSED 2026-11-14, not pursued (user decision). Feasibility measured 2026-11-14 (see "D1 feasibility" below): only Performance at 480p on the NPU fits the inference budget. The user does not watch 480p, the tablet cannot run 720p, and a feature the device cannot really run is not wanted. The shader alternatives were measured instead (see "Android upscaling shaders" below); neither is adopted. | Converted lightest model runs inside the Android libmpv pipeline; measured decode+inference+render frame time and sustained thermal behavior for 480p/720p 24 fps anime meet P4's budget on the user's device; same P1 rules, P2 per-title choice and P3 ledger semantics. Until then Android is unchanged and nothing claims Android support. |
 | D4 | NuvioDV Android: Dolby Vision Profile 5 shows no picture under ExoPlayer on devices without a non-secure DV decoder. Found in tablet testing 2026-11-13. The engine setting is per profile; new profiles default to Auto (ExoPlayer), as the temporary test profile did. The user's own Dolby Vision profile is set to MPV and is not affected. Darkaxt/NuvioMobileDV has issues disabled, so it is tracked here. | CLOSED 2026-11-14: fix 4a2fa7a89, released as signed `v0.6.12-nuviodv.4` (version code 12264, run 43513920425, same signer as nuviodv.3) at the user's request, verified on the tablet | Implemented: when video tracks exist but none is selected or supported, ExoPlayer reports the existing unsupported-format error once per player. With "auto-switch engine on playback error" on (the default), the player switches to libmpv at the current position, as it does for decoder errors. With it off or already used, the error is shown instead of a black picture. Audio-only and supported-but-deselected video are unaffected. Host tests: `UnsupportedVideoTrackTest` (5), plus `PlayerEngineSwitchTrackPreferenceTest` and `PlaybackErrorMessagesTest`, green via the Gradle gate. Verified 2026-11-14 on the SM-X910 with nuviodv.4 installed and a temporary Auto profile playing the Profile 5 fixture: ExoPlayer logged `unplayable video track format=video/dolby-vision dvhe.05.05` 0.74 s after prepare, libmpv took over within 1.1 s (FILE_LOADED, PLAYBACK_RESTART at position 16 ms), and a screen recording showed the picture with correct colours. The temporary profile, addon and adb reverse were removed afterwards. |
 
 ### D1 feasibility (2026-11-14)
@@ -1207,6 +1207,59 @@ Two options were not tried:
 
 Any Android support is limited to Snapdragon devices with a Hexagon NPU. Quality
 on the device and whole-episode thermals are still unmeasured.
+
+### D1 closure (2026-11-14, user decision)
+
+The user closed D1 after the feasibility measurements: "I won't ever be watching 480p. 720p is
+already weird for me to find modern content in. [...] There is no need to push a feature that the
+tablet cannot really run." Android AnimeJaNai is not pursued. The INT8 and reduced-resolution
+options above are dropped with it. Android is unchanged and nothing claims Android upscaling.
+
+### Android upscaling shaders (2026-11-14)
+
+At the user's request the two mpv shader upscalers proposed in the cited Reddit discussion were
+measured on the same tablet (SM-X910, Adreno 740, OpenGL ES 3.2) instead of Anime4K:
+- ArtCNN `ArtCNN_C4F16.glsl` / `ArtCNN_C4F32.glsl` (Artoriuz/ArtCNN, GLSL);
+- NNEDI3 `nnedi3-nns16/32/128-win8x4.hook` (bjin/mpv-prescalers, compute).
+
+**Method.** A standalone harness linked against the shipped NuvioDV Android `libmpv.so`
+(`0.6.12-nuviodv.4`, arm64) through the libmpv render API: EGL pbuffer, GLES 3.2 context,
+offscreen FBO at the tablet's native 2960x1848, software decode, every decoded frame rendered
+untimed, per-frame render + `glFinish` wall time after a 2 s warm-up, 30 s per configuration,
+20 s idle between configurations. Sources: a 24 fps illustration clip at 720p and the same clip
+scaled to 1080p (H.264). Frame dumps at 5 s were compared on the PC. AP/skin temperature stayed
+at 28-34 C (not throttled). Budget: 24 fps frame interval 41.7 ms; P4 rule mean and p95 under
+33.4 ms.
+
+| Shader | 720p source mean / p95 (ms) | 1080p source mean / p95 (ms) | Verdict |
+| --- | --- | --- | --- |
+| none (baseline) | 2.2 / 2.9 | 2.5 / 3.6 | - |
+| ArtCNN C4F16 (GLES port) | 41.6 / 47.1 | 74.1 / 78.1 | fails at both |
+| ArtCNN C4F32 (GLES port) | no valid result | no valid result | fails (intermediate texture rejected) |
+| NNEDI3 nns16 win8x4 | 24.3 / 26.7 (two runs) | 35.6-37.5 / 52.4-52.9 (two runs) | 720p only |
+| NNEDI3 nns32 win8x4 | 27.0-30.1 / 46.0-46.4 | 37.0-40.6 / 44.2-45.9 | fails at both |
+| NNEDI3 nns128 win8x4 | about 1250 per frame | GPU stall (6.8 s) | fails |
+
+**Findings.**
+- Neither shader runs within budget on 1080p sources, which is what the user watches.
+- ArtCNN as published does not compile under GLES (mid-file `#extension`, function-local
+  `const` with non-constant initialisers, implicit int/uint conversion). A mechanical port with
+  identical maths (`mediump` types for C4F16) compiles; C4F16 produced a correct frame. C4F32
+  still loses an intermediate texture and its timings are not valid.
+- Under the render API (`vo_gpu`'s GL renderer, which the app uses only in its "GPU"
+  compatibility mode) NNEDI3's luma output is black: `ra_gl` creates mutable textures with
+  `glTexImage2D`, and GLES rejects them as compute storage images (`INVALID_OPERATION`). The
+  compute work is still dispatched, so the timings stand, but NNEDI3 would only produce a picture
+  under the app's default `gpu-next` (libplacebo uses `glTexStorage`). The render API exposes no
+  `gpu-next` backend, so those numbers were not measured under `gpu-next`.
+- The only configuration within budget is NNEDI3 nns16 on 720p sources, which the user rarely
+  watches.
+
+**Decision.** No shader upscaler is integrated into NuvioDV Android. Integration would need
+bundled shader assets, a `glsl-shaders` option behind the Animation toggle, a GLES port of
+ArtCNN, a `gpu-next` re-measurement and a signed release, for a gain limited to 720p sources.
+This follows the user's instruction not to push a feature the tablet cannot really run. No
+tracked deferral remains for Android upscaling.
 
 ## Sources
 
