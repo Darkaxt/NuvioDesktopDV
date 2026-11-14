@@ -1261,6 +1261,91 @@ ArtCNN, a `gpu-next` re-measurement and a signed release, for a gain limited to 
 This follows the user's instruction not to push a feature the tablet cannot really run. No
 tracked deferral remains for Android upscaling.
 
+### Android Anime4K (2026-11-14)
+
+This section prospectively supersedes the "No shader upscaler is integrated" decision above for
+Anime4K only, after the user approved Anime4K ("we have discarded every other possibility").
+The ArtCNN/NNEDI3 findings above stand unchanged.
+
+**Profiles.** NuvioDV Android (libmpv engine only) applies one Anime4K upscaler from
+bloc97/Anime4K (MIT, `LICENSE.txt` bundled with the assets):
+- Fast = `Anime4K_Upscale_CNN_x2_S` for sources up to 1920x1088;
+- Quality = `Anime4K_Upscale_CNN_x2_M` for sources up to 1280x736.
+
+It runs only when the title's effective Animation eligibility allows it. It is skipped for
+HDR/Dolby Vision sources, for sources larger than 1920x1088, and under ExoPlayer, each with a
+visible reason. The global settings switch defaults to on.
+
+**Surfaces.** The per-title Animation toggle is on the details action row, the poster and
+Continue Watching sheets, and the player's Enhancements panel (Build icon). The panel headline
+shows the live status, for example "Anime4K: Fast · 1920x1080" or "Anime4K: Off". Changing the
+toggle swaps `glsl-shaders` live, with no restart. Logcat tag `NuvioPlayerDiag` records
+`anime4k_status` (Off/Pending/Active/Skipped/Failed) and periodic `anime4k_stats`: vo-pass GPU
+time, drops and fps.
+
+**Harness measurements (vo_gpu, libmpv render API, 2960x1848, SM-X910 Adreno 740).** These are
+per-frame render + `glFinish` wall times, mean / p95 in ms. They were measured with the same
+method as the table above.
+
+| Config | 1080p source | 720p source |
+| --- | --- | --- |
+| none | 2.50 / 3.60 | 2.16 / 2.79 |
+| CNN_x2_S (Fast) | 24.83 / 28.62 | 13.13 / 16.04 |
+| CNN_x2_M (Quality) | 34.82 / 41.89 | 21.55 / 25.32 |
+| Anime4K "thread" chain | 33.44 / 43.88 | 24.90 / 30.91 |
+| Anime4K Mode A (Fast) | 51.46 / 65.35 | 40.71 / 46.73 |
+
+M at 1080p misses the p95 budget, so 1080p uses S and only sources up to 736 lines use M.
+
+The full-chain modes were rejected. A 600 s sustained run of S on the 1080p source rendered
+23808 frames at 39.7 fps:
+- frame time mean 24.44 ms, p50 24.32, p95 28.68, max 53.46;
+- AP 28.7→34.2 C, skin 29.3→30.6 C;
+- thermal status 0.
+
+**gpu-next compile failure (0.6.12-nuviodv.5) and fix.** The harness can only exercise
+`vo_gpu`, because the render API has no `gpu-next` backend. In the app, under `gpu-next`,
+libplacebo failed to compile the passes that sample `MAIN`:
+- `'MAINPRESUB_texOff' : no matching overloaded function found`, plus mat4→vec4 assignment
+  errors;
+- then "Failed executing hook, disabling".
+
+So .5 never actually upscaled, while its status still reported Active (render 0.49 ms, plain
+playback cost).
+
+The fix in `b53f1ff0c` has two parts:
+1. The shipped M and S shaders sample `MAIN_raw` directly with `MAIN_mul * texture(MAIN_raw,
+   MAIN_pos + MAIN_pt * vec2(x, y))` instead of the `MAIN_texOff` macro. The files carry a
+   NuvioDV modification note under the MIT header.
+2. The engine watches the mpv log for "Failed executing hook" and reports `Failed` ("Renderer
+   disabled the shader") instead of Active.
+
+A vo_gpu frame comparison of the original and patched M at 720p was bit-identical.
+
+**In-app results, 0.6.12-nuviodv.6 on the tablet (`gpu-next`, `mediacodec-copy`).** These are
+`anime4k_stats` sums of vo-pass GPU time during playback. They are a different measure from
+the harness wall times above.
+- 1080p: Active/Fast, renderAvg 14.72-14.78 ms, peak 16.99-17.16 ms, over 5 samples.
+- 720p: Active/Quality, renderAvg 12.41-12.47 ms, peak 14.05-14.41 ms.
+
+Both had 0 VO drops, 0 decoder drops, 23.98 fps and thermal status 0, with no hook failure
+logged. The panel Animation toggle switched live from Active to Off and back to Active.
+
+**Delivery.**
+- Commits `d3e2875b1` (feature) and `cb7d4e401`, released as v0.6.12-nuviodv.5 (run 43550187804).
+- Fix commit `b53f1ff0c`, released as v0.6.12-nuviodv.6 (run 43554222062).
+- Asset `NuvioDV-0.6.12-nuviodv.6-arm64-v8a.apk`, persistent release signer SHA-256
+  `1fb94424…57d571`.
+- Gated host tests: AnimationClassificationTest 20/20 and Anime4kUpscaleTest 7/7.
+
+**Limitations.**
+- The exact Adreno trigger was not reproduced outside the app. Standalone EGL compiles of the
+  reconstructed libplacebo source (ES 3.0/3.1/3.2, same system driver) succeeded. The fix is a
+  confirmed in-app workaround, not a root-caused driver bug.
+- The iOS build was not compiled for this change (Windows host).
+- The S shader's frame equivalence was not compared separately; it has the same two-line edit
+  as M.
+
 ## Sources
 
 - https://github.com/allecsc/Stremio-Kai/blob/main/portable_config/scripts/profile-manager.lua
