@@ -16,8 +16,8 @@ Do not implement new AnimeJaNai/SVP features or promote another native runtime.
 
 | Maintenance stage | Status | Acceptance / remaining work |
 | --- | --- | --- |
-| Desktop upstream and Windows delivery | ACTIVE | Merge 55 upstream commits; preserve fork behavior/configuration/runtime pins; use upstream 0.1.36 base and advance code monotonically; pass focused contracts/full Desktop verification and Windows MSI packaging; publish normal Windows-only release, independently verify exact public MSI and upgrade through the broker with installed configuration/profiles verified. |
-| Native master sync and delivery | NOT STARTED | Preserve the existing `nuviodv-animejanai` checkout and all feature history. In an isolated master worktree, merge six inspected upstream commits into remote master, retaining its WASAPI patch and immutable DV inputs; advance native counter, pass pinned native build and real Windows SDR/P5/P8.1 gates, publish/verify a normal native release without app pin changes. |
+| Desktop upstream and Windows delivery | COMPLETE | Merge `a73c18937` contains inspected upstream `c8ee76215`; full gated tests/MSI, contracts and independent local/public package checks pass. Windows-only run `43649060098` publishes normal `0.1.36-nuviodv.1` / code 44 from that exact application commit. Public MSI SHA-256 `6cd3be30b22886c7d3f84dfad327d46baec2eebd0d51840401912994ac6f29fd` matches GitHub and SHA256SUMS. Broker request `55000481d7f66c6d3589983ee713f11cc78f8cbb4ca8dc28bdcf6e8661768074` installs with exit 0/no reboot. Installed/public JAR SHA-256 `0e7a0e447eabb5a07fa4d6525f6ac0db5ce72629622bbc00575512982b5e66fa` matches; MSI registry and executable version 1.1.3601, provider hashes, updater, runtime pins and original profile creation identities pass. |
+| Native master sync and delivery | ACTIVE | Preserve the existing `nuviodv-animejanai` checkout and all feature history. In an isolated master worktree, merge six inspected upstream commits into remote master, retaining its WASAPI patch and immutable DV inputs; advance native counter, pass pinned native build and real Windows SDR/P5/P8.1 gates, publish/verify a normal native release without app pin changes. |
 | Issue delta and final reconciliation | NOT STARTED | Inspect all relevant issue updates since November 11 21:31 UTC; report only changed evidence-backed candidates. Reconcile all branches/workflows/public and installed deliveries; clean spent task artifacts through reviewed tickets. |
 
 No tracked deferrals. One ACTIVE stage. The old phantom run `43096139223` has
@@ -69,6 +69,17 @@ The reusable read-only verifier was exercised against both the installed package
 and this MSI. No architecture consolidation is needed for this bounded merge;
 the one test-fixture correction and the verifier serve the current delivery.
 Normal public publication, independent public MSI checks and installation remain.
+
+Delivery reconciliation: a broad repository ignore rule initially omitted the
+read-only verifier from the merge commit. Follow-up `e1b6b98a8` tracks it explicitly;
+its only delta from the application commit is that verification script. The
+established ephemeral release branch at `a73c18937` therefore publishes the exact
+validated application/version commit without weakening the final-version guard or
+changing the version again. The branch was removed after release verification;
+the tag and Dev retain all source history. Both D: JAR extraction copies and the
+compiler scratch were removed through reviewed cleanup immediately after use.
+Public delivery and local installation criteria are now satisfied; no Desktop
+blocker or consolidation requirement remains for this round.
 
 ## Authority and scope
 
