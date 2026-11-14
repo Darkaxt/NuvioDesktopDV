@@ -1,5 +1,75 @@
 # NuvioDesktop Personal Fork Parity Specification
 
+## 2026-11-14 recurring maintenance
+
+Existing authorization covers normal releases and the local Windows upgrade.
+Inspected upstream tips: mobile `ba149964c`, Desktop `c8ee76215`, native mpv
+`bb4823e5f0`. Mobile origin contains its inspected upstream and has successful
+sync `43590697115` / normal `.7` release `43591048141`; fast-forward the clean
+local checkout without rebuilding. Android library remains zero behind with
+successful AAR run `42532012258`, so preserve its pin and do not rebuild it.
+Desktop's prior `.5` blockage was recovered and superseded by normal `.7`, now
+installed as MSI `1.1.3507`. Preserve current AnimeJaNai/animation decisions,
+adaptive playback and all other authorized fork behavior, including the current
+owned DLL `03efdd2f3a88685a4f1cd6793baea4ac3d89fdd825d2684fa19a37f7c85daa9f`.
+Do not implement new AnimeJaNai/SVP features or promote another native runtime.
+
+| Maintenance stage | Status | Acceptance / remaining work |
+| --- | --- | --- |
+| Desktop upstream and Windows delivery | ACTIVE | Merge 55 upstream commits; preserve fork behavior/configuration/runtime pins; use upstream 0.1.36 base and advance code monotonically; pass focused contracts/full Desktop verification and Windows MSI packaging; publish normal Windows-only release, independently verify exact public MSI and upgrade through the broker with installed configuration/profiles verified. |
+| Native master sync and delivery | NOT STARTED | Preserve the existing `nuviodv-animejanai` checkout and all feature history. In an isolated master worktree, merge six inspected upstream commits into remote master, retaining its WASAPI patch and immutable DV inputs; advance native counter, pass pinned native build and real Windows SDR/P5/P8.1 gates, publish/verify a normal native release without app pin changes. |
+| Issue delta and final reconciliation | NOT STARTED | Inspect all relevant issue updates since November 11 21:31 UTC; report only changed evidence-backed candidates. Reconcile all branches/workflows/public and installed deliveries; clean spent task artifacts through reviewed tickets. |
+
+No tracked deferrals. One ACTIVE stage. The old phantom run `43096139223` has
+been superseded by verified deliveries and is historical, not an active build.
+Use `E:\Temp\nuviodv-maintenance-20261114` for disposable reports/downloads.
+Compiler/native extraction I/O may use exact registered D: task scratch; remove
+it immediately after its last consumer. Existing project build bindings remain.
+
+Desktop source boundary: version `0.1.36-nuviodv.1` / code 44 integrates all 55
+inspected commits. Folder routing keeps `catalogRouteKey()` plus the upstream
+`folderCatalogTabLabel`; XML key comparisons retain all Bulgarian keys, and
+incoming translation line endings are normalized without changing XML values.
+The release contract now checks upstream base 0.1.36. Release/RPDB source contracts
+pass and both runtime files match `runtime-pins.sha256`; the current AnimeJaNai,
+SVP, classification/ledger, player-details, RPDB and credential wiring remain.
+No known source gap remains; source is ready for validation, not verified.
+Run full `desktopTest` and `packageReleaseMsi` once through the managed Gradle gate
+with a readiness snapshot of the integrated files. Use existing WebView2 SDK
+1.0.4258.31 locally; the public CI build retains its own pinned SDK. Kotlin
+2.4.10/Compose 1.13 retains the previously verified daemon strategy rather than
+changing compilation mode during this merge. Initial Gradle/Kotlin budgets remain
+3 GiB each, two workers, no parallel projects and one test fork. This is a scoped
+local profile, not a host memory guarantee. Final installation uses the public MSI.
+
+Validation correction: original readiness `cf0023e0878edf46a1d9787bbaea300d`,
+attempt 1 / workflow `a8fc67754fdf0d81b4a8f0f2e61fd7b3` failed with native exit 1
+and verified whole-tree exit, peak working set 5438730240 bytes, no memory failure.
+`ServerWatchedTest.mirrorsCatalogMarksWhenAddonMetadataIsOn` exceeded its 15-second
+deadline. The shared matcher converts its IMDb-only requests through real TMDB
+and can fetch real title metadata even with a fake server. The fixture now uses
+valid non-converting Kitsu IDs and a complete fake exact-ID lookup, retaining
+movie/episode/unmatched/mark/unmark assertions. It joins the actual job rather
+than racing an arbitrary deadline. No production mirroring behavior changes.
+Revalidate on the original failure-linked receipt. Full-suite evidence remains
+required because the first fail-fast run never passed the complete suite; MSI
+packaging also remains unexecuted. The new reusable read-only MSI/JAR verifier
+has checked the installed `.7` baseline without exposing credential values.
+
+Corrected original attempt 2 / workflow `86bfd9c8d58abc94b462e1572e0cecd5`
+completed full Desktop tests and the release MSI with native exit 0 and verified
+whole-tree exit. It waited for the other host build rather than overlapping it;
+peak working set was 2809020416 bytes. No memory budget increase or WSL was used.
+Independent local MSI inspection verifies `1.1.3601`, desktop version/code 44,
+the existing upgrade identity, exact current libmpv/MVTools pins, configured
+Supabase/SIMKL/MDBList/Trakt and fork updater/RPDB. Provider-client hashes match
+the installed `.7` baseline. Local MSI SHA-256 is
+`68573680d1515359d43908b27738737bd8c26f4eda4f2db3cb5d70aa1422c9a3`.
+The reusable read-only verifier was exercised against both the installed package
+and this MSI. No architecture consolidation is needed for this bounded merge;
+the one test-fixture correction and the verifier serve the current delivery.
+Normal public publication, independent public MSI checks and installation remain.
+
 ## Authority and scope
 
 The user authorized an end-to-end personal fork of `NuvioMedia/NuvioDesktop`, a bounded comparison with the verified NuvioDV Android fork, implementation of missing applicable features, publication through the fork's normal release channel, local Windows installation, and launch to the login boundary.
