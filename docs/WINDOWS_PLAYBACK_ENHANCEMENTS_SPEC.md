@@ -1,5 +1,29 @@
 # NuvioDV Windows adaptive playback specification
 
+## 2026-11-14 native maintenance evidence
+
+The independent master DV baseline is now normal release
+[`nuviodv-windows-dv.3`](https://github.com/Darkaxt/mpv/releases/tag/nuviodv-windows-dv.3),
+source `436e1f060ab471a231ec246edd648de7e0c7da4f`, containing inspected upstream
+`bb4823e5f0` and the existing WASAPI session/default-role patch. Native run
+`43650453489` passes the complete unchanged pinned build and actual Windows
+GPU-next SDR/Profile 5/Profile 8.1 rendering with D3D11 WARP. Public ZIP SHA-256
+`2d18f5a13d58570a5118620615190d4af8bec23d68627b60e3e93fed1090a478`, all asset
+digests/checksums, source/dependency manifest, licenses and build/runtime evidence
+were checked independently. DLL SHA-256
+`5a0113967b118ca640bd5f8aa783913f0b8917f9a0b18431e920b7b0fb553f71` loads API 2.6
+on Windows. Native tests report zero failures and the upstream Wine-only lifetime
+skip; Windows rendering is checked separately. DV screenshots are valid mapped
+frames. These short checks do not certify physical HDR signaling or long playback.
+
+This baseline publication does not promote a DLL into the application or establish
+new AnimeJaNai/SVP acceptance. Desktop `0.1.36-nuviodv.1` retains the already shipped
+enhancement runtime from `nuviodv-animejanai` source `814006b7fa`, libmpv
+`03efdd2f3a88685a4f1cd6793baea4ac3d89fdd825d2684fa19a37f7c85daa9f` and MVTools
+`27367a9613872838a6415f91674499f3a33e003cb6badd08dea7ff4570e1865a`.
+The canonical native feature checkout is unchanged; the detached master worktree
+and API extraction were removed through reviewed cleanup after their final use.
+
 Date: 2026-11-08. Status: specification/configuration artifacts only; no runtime
 integration, SVP update or release is performed by creating this document.
 

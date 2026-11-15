@@ -17,14 +17,17 @@ Do not implement new AnimeJaNai/SVP features or promote another native runtime.
 | Maintenance stage | Status | Acceptance / remaining work |
 | --- | --- | --- |
 | Desktop upstream and Windows delivery | COMPLETE | Merge `a73c18937` contains inspected upstream `c8ee76215`; full gated tests/MSI, contracts and independent local/public package checks pass. Windows-only run `43649060098` publishes normal `0.1.36-nuviodv.1` / code 44 from that exact application commit. Public MSI SHA-256 `6cd3be30b22886c7d3f84dfad327d46baec2eebd0d51840401912994ac6f29fd` matches GitHub and SHA256SUMS. Broker request `55000481d7f66c6d3589983ee713f11cc78f8cbb4ca8dc28bdcf6e8661768074` installs with exit 0/no reboot. Installed/public JAR SHA-256 `0e7a0e447eabb5a07fa4d6525f6ac0db5ce72629622bbc00575512982b5e66fa` matches; MSI registry and executable version 1.1.3601, provider hashes, updater, runtime pins and original profile creation identities pass. |
-| Native master sync and delivery | ACTIVE | Preserve the existing `nuviodv-animejanai` checkout and all feature history. In an isolated master worktree, merge six inspected upstream commits into remote master, retaining its WASAPI patch and immutable DV inputs; advance native counter, pass pinned native build and real Windows SDR/P5/P8.1 gates, publish/verify a normal native release without app pin changes. |
-| Issue delta and final reconciliation | NOT STARTED | Inspect all relevant issue updates since November 11 21:31 UTC; report only changed evidence-backed candidates. Reconcile all branches/workflows/public and installed deliveries; clean spent task artifacts through reviewed tickets. |
+| Native master sync and delivery | COMPLETE | Normal `nuviodv-windows-dv.3`, source `436e1f060a`, run `43650453489`, contains inspected upstream `bb4823e5f0` plus the existing WASAPI patch. Full pinned build and actual Windows GPU-next SDR/P5/P8.1 checks pass. Independent public asset hashes, dependency/source manifest, licenses, DLL API 2.6 and DV frames pass; ZIP SHA-256 `2d18f5a13d58570a5118620615190d4af8bec23d68627b60e3e93fed1090a478`. Evidence commit `02c516dad3` is pushed to master; canonical feature checkout and application pins are unchanged. Exact spent worktree/private registration cleanup `62e604a9bcb328253cde303169eb2878` removed 987 members / 15915976 bytes. |
+| Issue delta and final reconciliation | COMPLETE | Issue delta and in-place schedule correction pass. The later Mobile tip `6b7f15e40` is delivered as normal `v0.6.13-nuviodv.1` / code 12268, source `1c1847736`, run `43654900049`; full Linux host suite, local focused tests/debug package and independent signed public APK checks pass. All four source branches contain their freshly inspected upstream tips; public release census and installed Windows checks pass. Reviewed final cleanup `8765ae50f6f55f7b288f5c7c83b53ece` removed all 60 spent members / 741102037 bytes with no exclusions or residuals. Evidence-only documentation records the complete verified outcome. |
 
-No tracked deferrals. One ACTIVE stage. The old phantom run `43096139223` has
+No blockers, tracked deferrals or ACTIVE stages. The old phantom run `43096139223` has
 been superseded by verified deliveries and is historical, not an active build.
 Use `E:\Temp\nuviodv-maintenance-20261114` for disposable reports/downloads.
 Compiler/native extraction I/O may use exact registered D: task scratch; remove
 it immediately after its last consumer. Existing project build bindings remain.
+
+The following source/validation/delivery notes retain the execution history;
+the table above records the final reconciled status.
 
 Desktop source boundary: version `0.1.36-nuviodv.1` / code 44 integrates all 55
 inspected commits. Folder routing keeps `catalogRouteKey()` plus the upstream
@@ -78,6 +81,41 @@ validated application/version commit without weakening the final-version guard o
 changing the version again. The branch was removed after release verification;
 the tag and Dev retain all source history. Both D: JAR extraction copies and the
 compiler scratch were removed through reviewed cleanup immediately after use.
+
+Final delivery audit: all 62 Mobile, nine Desktop and six native releases are
+normal/non-draft; latest endpoints resolve to `v0.6.13-nuviodv.1`,
+`0.1.36-nuviodv.1` and `nuviodv-windows-dv.3`. Independently downloaded mobile APK
+SHA-256 `cb631f31fb6a10498cd5ed243a8db1c5cb7097eed659fba2383a9ce3ac3323a5`
+has the expected existing signer/v2 signature, package/version/code, provider
+identifiers, fork updater and all ten pinned AAR native hashes. The public C++
+runtime is byte-identical; local debug symbol stripping was separately proven
+against every allocated ELF section without a production patch.
+
+Fresh installed Windows inspection still matches the exact public JAR and
+MSI version 1.1.3601, configured providers/updater and the original profile
+identities. Both feature runtime pins remain unchanged. Source refresh confirms
+zero missing commits at Mobile `6b7f15e40`, Desktop `c8ee76215`, native master
+`bb4823e5f0` and Android wrapper `fee434bfc`; native canonical feature HEAD remains
+`814006b7fa`. Wrapper artifact `42532012258` is available and unexpired.
+
+Issue delta covers all 18 open issues (31 API entries including 13 PRs) updated
+since November 11 21:31 UTC and all new comments; baselines have no new updates.
+No newly actionable native-player evidence or issue-driven patch was found.
+Mobile maintenance specification records the next overlapping issue cutoff.
+The existing three-day heartbeat was updated in place to preserve shipped
+AnimeJaNai/SVP/Anime4K behavior, current native feature checkout and immutable
+app pins. Read-back verifies the same cadence, active state, target chat and quiet
+notification intent. No new feature or additional schedule was introduced.
+
+Original Desktop build lifecycle receipts were rechecked before exact gate-cache
+cleanup `5f99079321a8bbf11fb05731e8e6cfa1` (205 members / 6748814 bytes). The later
+Mobile gate cache cleanup `d06866618e44d001da5601dc918610fb` removed 10 members /
+3362963 bytes after verified tree exit. Native API/worktree scratch was already
+removed. Final E: verification copies/scripts and the exact local MSI/debug APK
+were removed through inspected transaction `8765ae50f6f55f7b288f5c7c83b53ece`
+(60 members / 741102037 bytes), without exclusions, warnings or residuals.
+Installed apps, canonical repositories, user data, credentials and public release
+assets are retained. Maintenance is COMPLETE; no required deferral remains.
 Public delivery and local installation criteria are now satisfied; no Desktop
 blocker or consolidation requirement remains for this round.
 
