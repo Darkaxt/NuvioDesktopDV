@@ -64,6 +64,29 @@ remain unverified. Spent D: gate logs are removed through reviewed transaction
 extraction is removed through `0becfb36a081aaa83d0add8b76c715bb` (2 / 98879806).
 Both apply with zero exclusions/residuals after required evidence is inspected.
 
+Normal public Windows delivery passes: run `44195032115` publishes
+`0.1.37-nuviodv.1` from `f926cd1baa8c108cea8241d2f3a86d773bf3e867`; all Linux/macOS
+jobs are skipped. Independently downloaded MSI SHA-256
+`309a4a77d7ba9b312464568fa9802854f8a401629cc4def5352d2822d906df04` matches GitHub
+and SHA256SUMS. Its version/code/upgrade identity, all provider-client hashes,
+Supabase/RPDB/updater and both native pins pass. Public application JAR SHA-256 is
+`22bbef7580da8c15b02e796da2d325a9aa9ea11e3d1db71651a1dc668767d71d`.
+The exact public MSI extraction was immediately removed through reviewed
+`e467eb4cd5459ceddb0b6bec5def11a9` (2 members / 98867185 bytes), no residuals.
+Broker-managed installation and installed/public readback remain required.
+
+CI's successful metadata job exposed a real post-checkout cleanup defect:
+`git submodule foreach --recursive` exits 128 because `libass-android` lacks a
+`.gitmodules` URL. The new Git-index regression additionally identifies orphan
+`vendor/quickjs-kt`. Both directories are empty, neither is included by the build,
+and the actual Android dependencies are bundled AARs / declared Maven artifacts.
+Remove only those unused index gitlinks, preserving their directories and AARs;
+retain the legitimate MPVKit mapping. The new contract fails before that repair,
+then all contracts and the actual recursive cleanup command pass. This Git/CI-only
+correction changes no compiled input or public MSI; it requires no duplicate app
+compilation/publication. Mobile's matching checkout warning is assigned to the
+final reconciliation stage for diagnosis and any same bounded metadata repair.
+
 ## 2026-11-14 recurring maintenance
 
 Existing authorization covers normal releases and the local Windows upgrade.

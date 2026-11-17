@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import re
+import subprocess
 import unittest
 
 
@@ -12,6 +13,18 @@ BUILD = ROOT / "composeApp/build.gradle.kts"
 
 
 class NuvioDvReleaseContractTest(unittest.TestCase):
+    def test_every_tracked_submodule_has_a_url_mapping(self):
+        entries = subprocess.check_output(['git', 'ls-files', '--stage'], cwd=ROOT, text=True).splitlines()
+        gitlinks = {entry.split('\t', 1)[1] for entry in entries if entry.startswith('160000 ')}
+        paths = subprocess.check_output(['git', 'config', '--file', '.gitmodules', '--get-regexp',
+            r'^submodule\..*\.path$'], cwd=ROOT, text=True).splitlines()
+        configured = {}
+        for line in paths:
+            key, path = line.split(' ', 1)
+            configured[path] = subprocess.check_output(['git', 'config', '--file', '.gitmodules',
+                '--get', key.removesuffix('.path') + '.url'], cwd=ROOT, text=True).strip()
+        self.assertEqual(set(), gitlinks - {path for path, url in configured.items() if url})
+
     def test_release_jobs_require_simkl_client_id(self):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         required_blocks = re.findall(r"required_properties=\(\s*(.*?)\s*\)", workflow, re.DOTALL)
