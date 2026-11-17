@@ -129,6 +129,7 @@ data class PlayerSettingsUiState(
     val animeJaNaiMode: AnimeJaNaiMode = AnimeJaNaiMode.Off,
     val animeJaNaiProfile: AnimeJaNaiProfile = AnimeJaNaiProfile.Default,
     val svpMode: SvpMode = SvpMode.Off,
+    val nvidiaRtxHdrEnabled: Boolean = false,
 )
 
 /** How many further sources falling back may try after the auto-selected one fails, by default and at most. */
@@ -249,6 +250,7 @@ object PlayerSettingsRepository {
     private var animeJaNaiMode = AnimeJaNaiMode.Off
     private var animeJaNaiProfile = AnimeJaNaiProfile.Default
     private var svpMode = SvpMode.Off
+    private var nvidiaRtxHdrEnabled = false
 
     fun ensureLoaded() {
         if (hasLoaded) return
@@ -357,6 +359,7 @@ object PlayerSettingsRepository {
         animeJaNaiMode = AnimeJaNaiMode.Off
         animeJaNaiProfile = AnimeJaNaiProfile.Default
         svpMode = SvpMode.Off
+        nvidiaRtxHdrEnabled = false
         publish()
     }
 
@@ -406,8 +409,8 @@ object PlayerSettingsRepository {
                 ?: SubtitleStyleState.DEFAULT.outlineColor,
             outlineEnabled = PlayerSettingsStorage.loadSubtitleOutlineEnabled()
                 ?: SubtitleStyleState.DEFAULT.outlineEnabled,
-            outlineWidth = PlayerSettingsStorage.loadSubtitleOutlineWidth()
-                ?: SubtitleStyleState.DEFAULT.outlineWidth,
+            outlineWidth = (PlayerSettingsStorage.loadSubtitleOutlineWidth()
+                ?: SubtitleStyleState.DEFAULT.outlineWidth).coerceIn(subtitleOutlineWidthRange),
             bold = PlayerSettingsStorage.loadSubtitleBold()
                 ?: SubtitleStyleState.DEFAULT.bold,
             fontSizeSp = (PlayerSettingsStorage.loadSubtitleFontSizeSp()
@@ -556,6 +559,7 @@ object PlayerSettingsRepository {
         animeJaNaiMode = AnimeJaNaiMode.fromStorage(PlayerSettingsStorage.loadAnimeJaNaiMode())
         animeJaNaiProfile = AnimeJaNaiProfile.fromStorage(PlayerSettingsStorage.loadAnimeJaNaiProfile())
         svpMode = SvpMode.fromStorage(PlayerSettingsStorage.loadSvpMode())
+        nvidiaRtxHdrEnabled = PlayerSettingsStorage.loadNvidiaRtxHdrEnabled() ?: false
         publish()
     }
 
@@ -727,6 +731,7 @@ object PlayerSettingsRepository {
         ensureLoaded()
         val normalized = style.copy(
             fontSizeSp = style.fontSizeSp.coerceIn(subtitleFontSizeRangeSp),
+            outlineWidth = style.outlineWidth.coerceIn(subtitleOutlineWidthRange),
             bottomOffset = style.bottomOffset.coerceIn(0, 200),
             appearance = style.appearance.normalized(),
         )
@@ -1253,6 +1258,14 @@ object PlayerSettingsRepository {
         PlayerSettingsStorage.saveAnimeJaNaiProfile(profile.storageValue)
     }
 
+    fun setNvidiaRtxHdrEnabled(enabled: Boolean) {
+        ensureLoaded()
+        if (nvidiaRtxHdrEnabled == enabled) return
+        nvidiaRtxHdrEnabled = enabled
+        publish()
+        PlayerSettingsStorage.saveNvidiaRtxHdrEnabled(enabled)
+    }
+
     fun setLibassRenderType(renderType: String) {
         ensureLoaded()
         if (libassRenderType == renderType) return
@@ -1539,6 +1552,7 @@ object PlayerSettingsRepository {
             animeJaNaiMode = animeJaNaiMode,
             animeJaNaiProfile = animeJaNaiProfile,
             svpMode = svpMode,
+            nvidiaRtxHdrEnabled = nvidiaRtxHdrEnabled,
         )
     }
 

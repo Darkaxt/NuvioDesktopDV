@@ -126,6 +126,7 @@ actual object PlayerSettingsStorage {
     private const val iosSaturationKey = "ios_saturation"
     private const val iosGammaKey = "ios_gamma"
     private const val nvidiaRtxSuperResolutionEnabledKey = "nvidia_rtx_super_resolution_enabled"
+    private const val nvidiaRtxHdrEnabledKey = "nvidia_rtx_hdr_enabled"
     private val syncKeys = listOf(
         showLoadingOverlayKey,
         showPlaybackDetailsKey,
@@ -136,6 +137,7 @@ actual object PlayerSettingsStorage {
         holdToSpeedEnabledKey,
         holdToSpeedValueKey,
         nvidiaRtxSuperResolutionEnabledKey,
+        nvidiaRtxHdrEnabledKey,
 
         touchGesturesEnabledKey,
         externalPlayerEnabledKey,
@@ -1633,6 +1635,23 @@ actual object PlayerSettingsStorage {
             ?.apply()
     }
 
+    actual fun loadNvidiaRtxHdrEnabled(): Boolean? =
+        preferences?.let { sharedPreferences ->
+            val key = ProfileScopedKey.of(nvidiaRtxHdrEnabledKey)
+            if (sharedPreferences.contains(key)) {
+                sharedPreferences.getBoolean(key, false)
+            } else {
+                null
+            }
+        }
+
+    actual fun saveNvidiaRtxHdrEnabled(enabled: Boolean) {
+        preferences
+            ?.edit()
+            ?.putBoolean(ProfileScopedKey.of(nvidiaRtxHdrEnabledKey), enabled)
+            ?.apply()
+    }
+
 
     // AnimeJaNai is a Windows-only enhancement; nothing is persisted on this platform.
     actual fun loadAnimeJaNaiMode(): String? = null
@@ -1742,6 +1761,7 @@ actual object PlayerSettingsStorage {
         loadIosSaturation()?.let { put(iosSaturationKey, encodeSyncInt(it)) }
         loadIosGamma()?.let { put(iosGammaKey, encodeSyncInt(it)) }
         loadNvidiaRtxSuperResolutionEnabled()?.let { put(nvidiaRtxSuperResolutionEnabledKey, encodeSyncBoolean(it)) }
+        loadNvidiaRtxHdrEnabled()?.let { put(nvidiaRtxHdrEnabledKey, encodeSyncBoolean(it)) }
     }
 
     actual fun replaceFromSyncPayload(payload: JsonObject) {
@@ -1842,5 +1862,6 @@ actual object PlayerSettingsStorage {
         payload.decodeSyncInt(iosSaturationKey)?.let(::saveIosSaturation)
         payload.decodeSyncInt(iosGammaKey)?.let(::saveIosGamma)
         payload.decodeSyncBoolean(nvidiaRtxSuperResolutionEnabledKey)?.let(::saveNvidiaRtxSuperResolutionEnabled)
+        payload.decodeSyncBoolean(nvidiaRtxHdrEnabledKey)?.let(::saveNvidiaRtxHdrEnabled)
     }
 }

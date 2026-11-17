@@ -85,6 +85,7 @@ internal class SvpSession(
             return null
         }
         if (settings.nvidiaRtxSuperResolutionEnabled) return skip("RTX Video Super Resolution is on")
+        if (settings.nvidiaRtxHdrEnabled) return skip("RTX Video HDR is on")
         val availability = runtime.availability()
         if (availability is SvpRuntime.Availability.Unavailable) return skip(availability.reason)
         val title = ActivePlaybackTitle.current ?: return skip("Title is unknown")

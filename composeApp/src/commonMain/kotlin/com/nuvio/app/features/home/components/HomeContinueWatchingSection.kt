@@ -60,6 +60,7 @@ import com.nuvio.app.core.ui.PosterCardStyleUiState
 import com.nuvio.app.core.ui.ScopedDisintegrationTracker
 import com.nuvio.app.core.ui.landscapePosterHeightForWidth
 import com.nuvio.app.core.ui.landscapePosterWidth
+import com.nuvio.app.core.ui.nuvioFocusBorder
 import com.nuvio.app.core.ui.posterCardClickable
 import com.nuvio.app.core.ui.desktopPosterHoverScale
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
@@ -744,6 +745,7 @@ private fun ContinueWatchingCard(
 
     Box(
         modifier = Modifier
+            .nuvioFocusBorder(RoundedCornerShape(cardMetrics.cornerRadius))
             .posterCardClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,
@@ -933,6 +935,7 @@ private fun ContinueWatchingWideCard(
     val artworkUrl = rpdbPoster.primaryUrl
     Row(
         modifier = Modifier
+            .nuvioFocusBorder(RoundedCornerShape(cornerRadius))
             .posterCardClickable(onClick = onClick, onLongClick = onLongClick)
             .width(layout.wideCardWidth)
             .height(layout.wideCardHeight)
@@ -1072,6 +1075,7 @@ private fun ContinueWatchingPosterCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .let { if (isDesktop) it.aspectRatio(0.675f) else it.height(layout.posterCardHeight) }
+                .nuvioFocusBorder(RoundedCornerShape(cornerRadius))
                 .clip(RoundedCornerShape(cornerRadius))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .nuvioCardDepth(

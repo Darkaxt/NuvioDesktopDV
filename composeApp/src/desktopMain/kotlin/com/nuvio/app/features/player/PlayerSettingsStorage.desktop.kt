@@ -128,6 +128,7 @@ internal actual object PlayerSettingsStorage {
     private const val animeJaNaiModeKey = "animejanai_mode"
     private const val svpModeKey = "svp_mode"
     private const val animeJaNaiProfileKey = "animejanai_profile"
+    private const val nvidiaRtxHdrEnabledKey = "nvidia_rtx_hdr_enabled"
     private val syncKeys = listOf(
         showLoadingOverlayKey,
         showPlaybackDetailsKey,
@@ -138,6 +139,7 @@ internal actual object PlayerSettingsStorage {
         holdToSpeedEnabledKey,
         holdToSpeedValueKey,
         nvidiaRtxSuperResolutionEnabledKey,
+        nvidiaRtxHdrEnabledKey,
         touchGesturesEnabledKey,
         externalPlayerEnabledKey,
         externalPlayerForwardSubtitlesKey,
@@ -456,6 +458,8 @@ internal actual object PlayerSettingsStorage {
 
     actual fun loadNvidiaRtxSuperResolutionEnabled(): Boolean? = loadBoolean(nvidiaRtxSuperResolutionEnabledKey)
     actual fun saveNvidiaRtxSuperResolutionEnabled(enabled: Boolean) = saveBoolean(nvidiaRtxSuperResolutionEnabledKey, enabled)
+    actual fun loadNvidiaRtxHdrEnabled(): Boolean? = loadBoolean(nvidiaRtxHdrEnabledKey)
+    actual fun saveNvidiaRtxHdrEnabled(enabled: Boolean) = saveBoolean(nvidiaRtxHdrEnabledKey, enabled)
 
     // Machine-local: deliberately not profile-scoped and not part of syncKeys / cloud payloads.
     actual fun loadSvpMode(): String? = store.getString(svpModeKey)
@@ -582,6 +586,7 @@ internal actual object PlayerSettingsStorage {
         loadIosSaturation()?.let { put(iosSaturationKey, encodeSyncInt(it)) }
         loadIosGamma()?.let { put(iosGammaKey, encodeSyncInt(it)) }
         loadNvidiaRtxSuperResolutionEnabled()?.let { put(nvidiaRtxSuperResolutionEnabledKey, encodeSyncBoolean(it)) }
+        loadNvidiaRtxHdrEnabled()?.let { put(nvidiaRtxHdrEnabledKey, encodeSyncBoolean(it)) }
     }
 
     actual fun replaceFromSyncPayload(payload: JsonObject) {
@@ -682,5 +687,6 @@ internal actual object PlayerSettingsStorage {
         payload.decodeSyncInt(iosSaturationKey)?.let(::saveIosSaturation)
         payload.decodeSyncInt(iosGammaKey)?.let(::saveIosGamma)
         payload.decodeSyncBoolean(nvidiaRtxSuperResolutionEnabledKey)?.let(::saveNvidiaRtxSuperResolutionEnabled)
+        payload.decodeSyncBoolean(nvidiaRtxHdrEnabledKey)?.let(::saveNvidiaRtxHdrEnabled)
     }
 }

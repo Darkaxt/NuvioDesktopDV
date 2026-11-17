@@ -1,5 +1,69 @@
 # NuvioDesktop Personal Fork Parity Specification
 
+## 2026-11-17 recurring maintenance
+
+Authorization: the existing three-day heartbeat covers all four source forks,
+normal releases and the local Windows upgrade. All worktrees were clean. No other
+active Nuvio repair owner appeared in the current/pinned chat inventory. Mobile
+was fast-forwarded to the already published `949e6a5df` / `.2` before integration.
+Inspected upstream tips: Mobile `b2e3d67ba` (66 missing commits), Desktop `c0eb7bfa7`
+(111), native master `f92afa75cd` (57), wrapper `fee434bfc` (zero missing).
+Mobile sync `44094106133` failed closed at merge conflicts; release `43712275657`
+is healthy. Desktop `43649060098`, native `43650453489` and unchanged AAR
+`42532012258` are successful. These existing deliveries do not cover the new tips.
+
+| Maintenance stage | Status | Acceptance / remaining work |
+| --- | --- | --- |
+| Android upstream sync and normal delivery | COMPLETE | Merge `60c33e2d7` contains inspected `b2e3d67ba`; source contracts, managed focused tests/full debug APK and CI full Linux suite pass. Run `44188988989` publishes normal `v1.1.0-nuviodv.1` / 12270. Downloaded APK SHA-256 `1707d8ec218dfab700239fa692bae0a59113f5969272bd9ff58d36474c1d4984`, signer, identity, all native pins, provider hashes and updater pass. Fresh daily sync `44190047181` succeeds. Evidence commit `d20411813` is pushed. |
+| Desktop upstream sync and Windows delivery | ACTIVE | Reconcile the new Desktop tip while preserving shipped enhancements, native pins, profile/credential storage and updater. Pass contracts/full Windows verification, publish Windows only, independently verify exact MSI, upgrade through the elevation broker and inspect installed configuration/profile continuity. |
+| Native master sync and qualified delivery | NOT STARTED | Preserve canonical feature checkout `814006b7fa`; isolate master maintenance in an owned worktree. Retain authorized patches and immutable inputs unless a proven compatibility requirement demands a bounded update. Qualify the exact native build on Windows SDR/P5/P8.1, publish/verify normal delivery, record evidence and immediately clean spent native scratch. Do not promote app pins. |
+| Issue delta and final reconciliation | NOT STARTED | Review all relevant open-issue updates since `2026-11-14T23:21:00Z` and baseline evidence without issue-driven implementation. Confirm all four inspected tips, applicable workflows/releases and installed Windows state; push records and complete reviewed cleanup. |
+
+No tracked deferrals. One ACTIVE stage. Wrapper source/native inputs are unchanged,
+so no AAR rebuild or dependency promotion is required. Native source maintenance
+runs independently of app changes. E: task scratch is
+`E:\Temp\nuviodv-maintenance-20261117`, cleanup transaction
+`62065b13c00778b026cdfdd5ead9ace1`; exact compiler/native small-file I/O exceptions
+may use registered D: scratch and must be cleaned immediately after last use.
+
+Desktop source reconciliation: normal merge of `c0eb7bfa7` retains the complete
+upstream controller/input, exact-seek, subtitle and RTX HDR changes. Release becomes
+`0.1.37-nuviodv.1` / code 45 (upstream 37, previous fork 44). Combine upstream
+active-profile state with animation preloading and combine HDR storage fields with
+machine-local AnimeJaNai/SVP fields. The Vietnamese conflict has no fork semantic
+changes, so retain upstream XML values and normalize only line endings/whitespace.
+Keep owned non-Desktop workflows; Desktop's VERSION_BUILD_KEY change is required
+by the updated metadata helper. Its normal-publication guard remains intact.
+
+Both Windows JNI creation paths now forward the new HDR boolean in matching
+Kotlin/C++ argument order, including the fork's start-option path. A cross-language
+signature contract verifies both entry points. RTX HDR owns d3d11va/d3d11vpp, so it
+excludes the existing VapourSynth enhancements just as RTX VSR already does;
+otherwise enhancement options can override decoding beneath the HDR filter.
+Session regressions check the exclusion before runtime/title lookup. No native
+pin changes or new enhancement functionality are included. The full Desktop tests,
+native bridge/MSI packaging, normal public verification and installation remain
+required. Kotlin 2.4.10 keeps its established daemon strategy and the managed
+3 GiB Gradle/Kotlin, two-worker/no-parallel/one-test-fork profile.
+
+Windows validation passes on original readiness `a36192b5297ad1bc4c6ee64b16a3903c`
+/ attempt 1 / workflow `fa043d31d72c62dc19025e7d589ded1e`. Full `desktopTest`,
+native bridge compilation and release MSI complete with exit 0, exact unchanged
+compiled inputs and verified whole-tree/daemon exit. The adapter verifies shared
+mutex acquisition, two workers/no parallel projects, observed 3 GiB Gradle heap,
+configured 3 GiB Kotlin daemon heap and one 512 MiB test fork. No memory failure
+or budget increase; peak aggregate working set 5642375168 bytes. New coexistence
+tests actually execute without skips and pass. No emulator, inference or WSL build
+is used. Local MSI SHA-256
+`b529678c75e52b97ff02be929b93353dd5c5f59a04d88f6d6e757a003e914d3a` verifies version
+`1.1.3701`, application `0.1.37-nuviodv.1` / 45, original upgrade identity,
+provider-client hashes against the installed baseline, Supabase configuration,
+RPDB/updater and exact libmpv/MVTools pins. Normal public delivery/installation
+remain unverified. Spent D: gate logs are removed through reviewed transaction
+`97b79e4d65c4ae8abc44da287b6def4b` (3 members / 584972 bytes); the exact local MSI
+extraction is removed through `0becfb36a081aaa83d0add8b76c715bb` (2 / 98879806).
+Both apply with zero exclusions/residuals after required evidence is inspected.
+
 ## 2026-11-14 recurring maintenance
 
 Existing authorization covers normal releases and the local Windows upgrade.

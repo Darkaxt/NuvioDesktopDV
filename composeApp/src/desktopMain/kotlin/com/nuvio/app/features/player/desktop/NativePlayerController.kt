@@ -57,20 +57,21 @@ internal typealias NativePlayerCreate = (
     String,
     Int,
     Boolean,
+    Boolean,
     NativePlayerEventSink,
 ) -> Long
 
 internal class NativePlayerController(
     private val host: NativePlayerHost,
-    private val nativeCreate: NativePlayerCreate = { hostViewPtr, source, headers, playWhenReady, positionMs, controlsUrl, decoder, rtx, sink ->
+    private val nativeCreate: NativePlayerCreate = { hostViewPtr, source, headers, playWhenReady, positionMs, controlsUrl, decoder, rtx, rtxHdr, sink ->
         NativePlayerBridge.ensureLoaded()
-        NativePlayerBridge.create(hostViewPtr, source, headers, playWhenReady, positionMs, controlsUrl, decoder, rtx, sink)
+        NativePlayerBridge.create(hostViewPtr, source, headers, playWhenReady, positionMs, controlsUrl, decoder, rtx, rtxHdr, sink)
     },
     private val nativeCreateWithStartOptions: (NativePlayerCreateArgs) -> Long = { args ->
         NativePlayerBridge.ensureLoaded()
         NativePlayerBridge.createWithStartOptions(
             args.hostViewPtr, args.sourceUrl, args.headerLines, args.playWhenReady, args.initialPositionMs,
-            args.controlsPageUrl, args.decoderPriority, args.nvidiaRtxSuperResolutionEnabled, args.eventSink,
+            args.controlsPageUrl, args.decoderPriority, args.nvidiaRtxSuperResolutionEnabled, args.nvidiaRtxHdrEnabled, args.eventSink,
             args.startOptions,
         )
     },
@@ -156,6 +157,7 @@ internal class NativePlayerController(
         initialPositionMs: Long,
         decoderPriority: Int,
         nvidiaRtxSuperResolutionEnabled: Boolean,
+        nvidiaRtxHdrEnabled: Boolean = false,
         onError: (String?) -> Unit,
         animeJaNaiPlan: AnimeJaNaiStartPlan? = null,
         svpPlan: SvpStartPlan? = null,
@@ -167,6 +169,7 @@ internal class NativePlayerController(
             initialPositionMs = initialPositionMs.coerceAtLeast(0L),
             decoderPriority = decoderPriority,
             nvidiaRtxSuperResolutionEnabled = nvidiaRtxSuperResolutionEnabled,
+            nvidiaRtxHdrEnabled = nvidiaRtxHdrEnabled,
             onError = onError,
             animeJaNaiPlan = animeJaNaiPlan,
             // The two enhancements are exclusive per title (Animation decides); AnimeJaNai wins.
@@ -350,6 +353,7 @@ internal class NativePlayerController(
                             NativePlayerBridge.controlsPageUrl,
                             pending.decoderPriority,
                             pending.nvidiaRtxSuperResolutionEnabled,
+                            pending.nvidiaRtxHdrEnabled,
                             eventSink,
                         )
                     } else {
@@ -363,6 +367,7 @@ internal class NativePlayerController(
                                 controlsPageUrl = NativePlayerBridge.controlsPageUrl,
                                 decoderPriority = pending.decoderPriority,
                                 nvidiaRtxSuperResolutionEnabled = pending.nvidiaRtxSuperResolutionEnabled,
+                                nvidiaRtxHdrEnabled = pending.nvidiaRtxHdrEnabled,
                                 eventSink = eventSink,
                                 startOptions = startOptions.toTypedArray(),
                             ),
@@ -693,6 +698,11 @@ internal class NativePlayerController(
 
     fun togglePictureInPictureFromShortcut() {
         DesktopPlayerPictureInPicture.toggle()
+    }
+
+    override fun adjustVolumeBy(deltaFraction: Float): Boolean {
+        adjustFallbackVolume(deltaFraction * 100f)
+        return true
     }
 
     @Synchronized
@@ -1073,6 +1083,7 @@ internal class NativePlayerController(
             initialPositionMs = pending.initialPositionMs,
             decoderPriority = pending.decoderPriority,
             nvidiaRtxSuperResolutionEnabled = pending.nvidiaRtxSuperResolutionEnabled,
+            nvidiaRtxHdrEnabled = pending.nvidiaRtxHdrEnabled,
             onError = pending.onError,
             animeJaNaiPlan = pending.animeJaNaiPlan,
             svpPlan = pending.svpPlan,
@@ -1328,6 +1339,7 @@ private data class PendingSource(
     val initialPositionMs: Long,
     val decoderPriority: Int,
     val nvidiaRtxSuperResolutionEnabled: Boolean,
+    val nvidiaRtxHdrEnabled: Boolean,
     val onError: (String?) -> Unit,
     val animeJaNaiPlan: AnimeJaNaiStartPlan? = null,
     val svpPlan: SvpStartPlan? = null,
@@ -1346,6 +1358,7 @@ internal class NativePlayerCreateArgs(
     val nvidiaRtxSuperResolutionEnabled: Boolean,
     val eventSink: NativePlayerEventSink,
     val startOptions: Array<String>,
+    val nvidiaRtxHdrEnabled: Boolean = false,
 )
 
 private fun Map<String, String>.toHeaderLines(): List<String> =

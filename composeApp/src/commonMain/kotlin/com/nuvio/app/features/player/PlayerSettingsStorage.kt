@@ -226,6 +226,8 @@ internal expect object PlayerSettingsStorage {
     /** Machine-local SVP switch (not profile-scoped, not cloud-synced); only Windows desktop persists it. */
     fun loadSvpMode(): String?
     fun saveSvpMode(value: String)
+    fun loadNvidiaRtxHdrEnabled(): Boolean?
+    fun saveNvidiaRtxHdrEnabled(enabled: Boolean)
     fun exportToSyncPayload(): JsonObject
     fun replaceFromSyncPayload(payload: JsonObject)
 }

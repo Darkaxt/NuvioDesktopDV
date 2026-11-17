@@ -96,6 +96,7 @@ internal class AnimeJaNaiSession(
             _status.value = EnhancementStatus(EnhancementStatus.Kind.Skipped, reason)
             return null
         }
+        if (settings.nvidiaRtxHdrEnabled) return skip("RTX Video HDR is on")
         val title = ActivePlaybackTitle.current
         AnimeJaNaiPlanner.startSkipReason(
             AjnStartFacts(
