@@ -15,9 +15,9 @@ is healthy. Desktop `43649060098`, native `43650453489` and unchanged AAR
 | Maintenance stage | Status | Acceptance / remaining work |
 | --- | --- | --- |
 | Android upstream sync and normal delivery | COMPLETE | Merge `60c33e2d7` contains inspected `b2e3d67ba`; source contracts, managed focused tests/full debug APK and CI full Linux suite pass. Run `44188988989` publishes normal `v1.1.0-nuviodv.1` / 12270. Downloaded APK SHA-256 `1707d8ec218dfab700239fa692bae0a59113f5969272bd9ff58d36474c1d4984`, signer, identity, all native pins, provider hashes and updater pass. Fresh daily sync `44190047181` succeeds. Evidence commit `d20411813` is pushed. |
-| Desktop upstream sync and Windows delivery | ACTIVE | Reconcile the new Desktop tip while preserving shipped enhancements, native pins, profile/credential storage and updater. Pass contracts/full Windows verification, publish Windows only, independently verify exact MSI, upgrade through the elevation broker and inspect installed configuration/profile continuity. |
-| Native master sync and qualified delivery | NOT STARTED | Preserve canonical feature checkout `814006b7fa`; isolate master maintenance in an owned worktree. Retain authorized patches and immutable inputs unless a proven compatibility requirement demands a bounded update. Qualify the exact native build on Windows SDR/P5/P8.1, publish/verify normal delivery, record evidence and immediately clean spent native scratch. Do not promote app pins. |
-| Issue delta and final reconciliation | NOT STARTED | Review all relevant open-issue updates since `2026-11-14T23:21:00Z` and baseline evidence without issue-driven implementation. Confirm all four inspected tips, applicable workflows/releases and installed Windows state; push records and complete reviewed cleanup. |
+| Desktop upstream sync and Windows delivery | COMPLETE | Merge `f926cd1ba` contains inspected `c0eb7bfa7`; full gated tests/MSI, source/JNI contracts and independent public checks pass. Windows-only run `44195032115` publishes normal `0.1.37-nuviodv.1` / 45. Public MSI SHA-256 `309a4a77d7ba9b312464568fa9802854f8a401629cc4def5352d2822d906df04` is installed by approved broker request `10aa18f5eb79f7ca7f897be78368242e2992174b1cb15d18f0756cd5b5a7809b`, exit 0/no reboot. MSI registry is 1.1.3701; installed/public JAR bytes, provider hashes, updater, runtime pins and profile creation identities match. Git-only cleanup repair `b7e1f2abc` is pushed and verified without recompiling unchanged app code. |
+| Native master sync and qualified delivery | ACTIVE | Preserve canonical feature checkout `814006b7fa`; isolate master maintenance in an owned worktree. Retain authorized patches and immutable inputs unless a proven compatibility requirement demands a bounded update. Qualify the exact native build on Windows SDR/P5/P8.1, publish/verify normal delivery, record evidence and immediately clean spent native scratch. Do not promote app pins. |
+| Issue delta and final reconciliation | NOT STARTED | Review all relevant open-issue updates since `2026-11-14T23:21:00Z` and baseline evidence without issue-driven implementation. Diagnose and repair Mobile's evidenced post-checkout cleanup warning if it has the same unused orphan Gitlinks. Confirm all four inspected tips, applicable workflows/releases and installed Windows state; push records and complete reviewed cleanup. |
 
 No tracked deferrals. One ACTIVE stage. Wrapper source/native inputs are unchanged,
 so no AAR rebuild or dependency promotion is required. Native source maintenance
@@ -86,6 +86,17 @@ then all contracts and the actual recursive cleanup command pass. This Git/CI-on
 correction changes no compiled input or public MSI; it requires no duplicate app
 compilation/publication. Mobile's matching checkout warning is assigned to the
 final reconciliation stage for diagnosis and any same bounded metadata repair.
+
+Local Windows delivery passes: approved broker request
+`10aa18f5eb79f7ca7f897be78368242e2992174b1cb15d18f0756cd5b5a7809b` executes the
+hash-bound public MSI, installer exit 0 / no reboot. Registry ProductCode
+`AFA0F649-D3D2-3FEA-B854-F2E93318BF83` reports `1.1.3701`. Installed/public JAR
+bytes match exactly; provider-client hashes and native pins match the baseline,
+and Local/Roaming profile directory creation identities are unchanged. The app is
+relaunched after installed-package verification. The MSI is unsigned as in the
+existing personal release channel; GitHub/SHA256SUMS/source/package checks establish
+its delivery identity rather than claiming an Authenticode signer. No playback or
+visual UI acceptance beyond these maintenance gates is claimed.
 
 ## 2026-11-14 recurring maintenance
 
