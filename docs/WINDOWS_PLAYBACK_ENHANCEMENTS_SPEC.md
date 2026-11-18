@@ -1,5 +1,37 @@
 # NuvioDV Windows adaptive playback specification
 
+## 2026-11-17 native maintenance evidence
+
+The independent master baseline is normal
+[`nuviodv-windows-dv.4`](https://github.com/Darkaxt/mpv/releases/tag/nuviodv-windows-dv.4),
+binary source `7e14bd6985283420edf8aa872edf0dd412de912e`, containing inspected upstream
+`f92afa75cd` and the existing WASAPI patch. Original run `44197733666` passes the
+complete pinned native build/contracts, then its fixture download hits HTTP 429.
+Verifier repair `22ff2fd7b7` uses the same hashed fixtures at Chromium's canonical
+immutable Gitiles origin. Requalification run `44200966496` first encounters a
+gateway 504, then its supported failed-job rerun (attempt 2) passes actual Windows
+GPU-next SDR/Profile 5/Profile 8.1 rendering and normal publication. It reuses the
+exact original build artifact; no second native compilation or dependency update.
+
+Independent public ZIP SHA-256
+`55e88ac1b36c2af8a5f3477b32c519f42fc7764592d8253a0248db9e2a25c570`, all GitHub asset
+digests/checksums, exact source/dependency lock, licenses, CLI/headers/import library
+and build/runtime evidence pass. Public DLL SHA-256
+`0fc5a186fb8648eda2226d29d1137fc9e4f27fe304c88884632ca202fb3a27bd` independently loads
+API 2.6 on Windows. All three rendered frames are visibly valid and match their
+report hashes. Native tests have zero failures and the existing single Wine-only
+skip. These short WARP checks do not certify physical HDR signaling or long playback.
+
+Desktop `0.1.37-nuviodv.1` retains shipped feature source `814006b7fa`, libmpv
+`03efdd2f3a88685a4f1cd6793baea4ac3d89fdd825d2684fa19a37f7c85daa9f` and MVTools
+`27367a9613872838a6415f91674499f3a33e003cb6badd08dea7ff4570e1865a`. No new P7
+feature acceptance or application promotion is claimed. Final native evidence
+`52df85e9d0` is retained by master/origin-master; canonical feature checkout remains
+clean at `814006b7fa`. Reviewed cleanup `bcfcc6399d2c596a8e947d5d0328f9c9` removes
+the exact temporary worktree/private registration (989 members / 15936135 bytes)
+after its final pushed evidence commit. The isolated API extraction is also removed
+immediately after loader exit (`ce45d5eba8ba0e78a7f0bb0774ca926d`, 161487872 bytes).
+
 ## 2026-11-14 native maintenance evidence
 
 The independent master DV baseline is now normal release

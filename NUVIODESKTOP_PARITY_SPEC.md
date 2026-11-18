@@ -16,10 +16,13 @@ is healthy. Desktop `43649060098`, native `43650453489` and unchanged AAR
 | --- | --- | --- |
 | Android upstream sync and normal delivery | COMPLETE | Merge `60c33e2d7` contains inspected `b2e3d67ba`; source contracts, managed focused tests/full debug APK and CI full Linux suite pass. Run `44188988989` publishes normal `v1.1.0-nuviodv.1` / 12270. Downloaded APK SHA-256 `1707d8ec218dfab700239fa692bae0a59113f5969272bd9ff58d36474c1d4984`, signer, identity, all native pins, provider hashes and updater pass. Fresh daily sync `44190047181` succeeds. Evidence commit `d20411813` is pushed. |
 | Desktop upstream sync and Windows delivery | COMPLETE | Merge `f926cd1ba` contains inspected `c0eb7bfa7`; full gated tests/MSI, source/JNI contracts and independent public checks pass. Windows-only run `44195032115` publishes normal `0.1.37-nuviodv.1` / 45. Public MSI SHA-256 `309a4a77d7ba9b312464568fa9802854f8a401629cc4def5352d2822d906df04` is installed by approved broker request `10aa18f5eb79f7ca7f897be78368242e2992174b1cb15d18f0756cd5b5a7809b`, exit 0/no reboot. MSI registry is 1.1.3701; installed/public JAR bytes, provider hashes, updater, runtime pins and profile creation identities match. Git-only cleanup repair `b7e1f2abc` is pushed and verified without recompiling unchanged app code. |
-| Native master sync and qualified delivery | ACTIVE | Preserve canonical feature checkout `814006b7fa`; isolate master maintenance in an owned worktree. Retain authorized patches and immutable inputs unless a proven compatibility requirement demands a bounded update. Qualify the exact native build on Windows SDR/P5/P8.1, publish/verify normal delivery, record evidence and immediately clean spent native scratch. Do not promote app pins. |
-| Issue delta and final reconciliation | NOT STARTED | Review all relevant open-issue updates since `2026-11-14T23:21:00Z` and baseline evidence without issue-driven implementation. Diagnose and repair Mobile's evidenced post-checkout cleanup warning if it has the same unused orphan Gitlinks. Confirm all four inspected tips, applicable workflows/releases and installed Windows state; push records and complete reviewed cleanup. |
+| Native master sync and qualified delivery | COMPLETE | Source `7e14bd6985` contains inspected upstream `f92afa75cd`; original build `44197733666` passes pinned compilation/contracts. Canonical fixture-host repair `22ff2fd7b7` and same-identity requalification `44200966496` attempt 2 pass Windows SDR/P5/P8.1 and publish normal `nuviodv-windows-dv.4`. Independent ZIP SHA-256 `55e88ac1b36c2af8a5f3477b32c519f42fc7764592d8253a0248db9e2a25c570`, lock/licenses/build/runtime evidence, frames and DLL API 2.6 pass. Final evidence `52df85e9d0` is pushed; exact worktree/private registration cleanup `bcfcc6399d2c596a8e947d5d0328f9c9` removes 989 members / 15936135 bytes, no residuals. Canonical feature HEAD and app pins are unchanged. |
+| Issue delta and final reconciliation | COMPLETE | Complete issue/body/comment delta and baseline checks yield owner-review candidates #2675 / low-confidence #2685; no issue-driven patch or upstream comment. Mobile M1 repair `a8752bb08` and fresh no-op `44203646649` pass with no prior cleanup warning. All four inspected upstream tips are contained; latest workflows/releases, immutable public digests and installed Windows state pass. Reviewed final cleanup `62065b13c00778b026cdfdd5ead9ace1` removes all 66 spent members / 753678136 bytes, with zero exclusions/residuals. |
 
-No tracked deferrals. One ACTIVE stage. Wrapper source/native inputs are unchanged,
+Tracked deferral M1 is resolved: Mobile repair `a8752bb08`, its source regression,
+actual recursive Git command and fresh successful no-op daily sync `44203646649`
+verify the unused orphan-Gitlink correction. No remaining tracked deferrals.
+No ACTIVE stages or unresolved blockers remain. Wrapper source/native inputs are unchanged,
 so no AAR rebuild or dependency promotion is required. Native source maintenance
 runs independently of app changes. E: task scratch is
 `E:\Temp\nuviodv-maintenance-20261117`, cleanup transaction
@@ -97,6 +100,51 @@ relaunched after installed-package verification. The MSI is unsigned as in the
 existing personal release channel; GitHub/SHA256SUMS/source/package checks establish
 its delivery identity rather than claiming an Authenticode signer. No playback or
 visual UI acceptance beyond these maintenance gates is claimed.
+
+Final issue/release/source reconciliation passes before cleanup. The complete
+open-issue API delta since `2026-11-14T23:21:00Z` returns one page with 34 entries
+(16 issues, 18 PRs). All issue bodies and comments on the seven commented issues
+are reviewed. All nine prior native-player baseline issue records are checked;
+all comments on the commented baselines have no post-cutoff updates. #1730 remains
+the high-relevance historical descriptor-exhaustion/libplacebo baseline covered
+by the pinned `c93aa134` ancestry; #1675/#1723 remain low-confidence. No new
+DV/libplacebo/GPU-next/hardware-decoder/pink-output/long-playback-failure evidence.
+
+Owner-review candidates only; no issue-driven changes or upstream comments:
+- #2675 (updated `2026-11-15T16:13:32Z`): reproducible delayed add-on subtitle
+  auto-selection failure, including a reported host test and shared Desktop
+  reproduction. Current shared `PlayerScreenRuntimeEffects.kt` retains the early
+  all-preferences-applied return, and `PlayerScreenRuntimeTrackActions.kt` retains
+  the primary-only later-match guard. Upstream fix PR #2676 is open/unmerged.
+  This is a stronger shared-player candidate, not evidence of a native pipeline
+  crash; a fork reproduction/PR review is the next owner-directed step.
+- #2685 (updated `2026-11-16T07:49:38Z`): injected-ad streams reset the displayed
+  timeline, so seeking can jump to 00:10. The reporter also names Windows/macOS,
+  but provides no mpv logs. Low confidence for this fork; require a sample and
+  native-player logs before assigning the cause. #2693 explicitly uses ExoPlayer
+  and includes TV reports, so it does not establish a fork libmpv defect.
+Other updates concern UI/catalogs/downloads/iOS distribution or feature requests.
+Use heartbeat start `2026-11-17T21:59:28Z` as a conservative overlapping next-query
+checkpoint; compare candidate timestamps above to avoid duplicate notifications.
+
+Fresh remote/source checks contain all inspected tips: Mobile `b2e3d67ba`, Desktop
+`c0eb7bfa7`, native master `f92afa75cd`, wrapper `fee434bfc`. The native canonical
+feature binding is still clean at `814006b7fa`; source/evidence master is retained
+at `52df85e9d0`. Wrapper source `27bde9f7` remains unchanged, and its successful
+run `42532012258` artifact `13637774468` is unexpired through `2027-02-06`.
+The latest Mobile sync/release (`44203646649` / `44188988989`), Desktop release
+`44195032115` and native qualification `44200966496` attempt 2 all succeed.
+Independent latest-release readback matches every previously downloaded asset
+digest and exact source commit. All 64 Mobile, 10 Desktop and seven native public
+releases are normal; latest endpoints resolve to the three verified deliveries.
+The installed Windows package/profile/configuration result remains applicable;
+no compiled input changed after its checks. Final reviewed cleanup
+`62065b13c00778b026cdfdd5ead9ace1` is applied: 66 exact spent members / 753678136
+bytes, zero exclusions/errors/residuals. The E: task root, all D: native/gate/API/MSI
+scratch and both generated C: verification packages are confirmed absent. Public
+releases, installed files/profiles, maintained repositories and shared Git state
+are preserved. All required maintenance criteria pass; final evidence is committed
+and pushed from this verified state without another software release for records.
 
 ## 2026-11-14 recurring maintenance
 
