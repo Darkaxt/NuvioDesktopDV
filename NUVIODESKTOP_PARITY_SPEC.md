@@ -1,5 +1,66 @@
 # NuvioDesktop Personal Fork Parity Specification
 
+## 2026-11-20 recurring maintenance
+
+Authorization: existing heartbeat, all four source forks, normal releases and
+local Windows upgrade. Preserve all shipped features and native application pins.
+Inspected tips: Mobile e022cfdf7 (already contained in origin 0df56f67e), Desktop
+f63acabea (40 missing commits), native master d11ffba253 (90 missing commits),
+Android wrapper fee434bfc (zero missing). Canonical native feature checkout stays
+on 814006b7fa; use a disposable detached master worktree only for native work.
+
+| Maintenance stage | Status | Acceptance / remaining work |
+| --- | --- | --- |
+| Android delivery and wrapper reconciliation | COMPLETE | Daily sync 44741250885 and release 44534094643 pass. Normal v1.1.0-nuviodv.3 / 12272 at 0df56f67e contains inspected upstream. Downloaded APK SHA-256 4a7f7051507bcb2125dea77ac98cc1229a6a4ae3cc8c630efe15a9fba958b159; existing signer/v2 signature, identity, all ten AAR libraries, provider hashes and updater pass. Wrapper run 42532012258/artifact 13637774468 healthy, unexpired; no native changes/rebuild. |
+| Desktop upstream sync and Windows delivery | ACTIVE | Merge inspected upstream, preserve fork integration and pins, advance base to 0.1.38 with monotonic code, run contracts/full managed desktop tests and MSI verification, publish Windows-only normal release, independently verify exact public MSI and install through approved broker; verify installed configuration and profile continuity. |
+| Native master sync and qualified delivery | NOT STARTED | Merge inspected upstream preserving history/patches/dependencies, increment native counter, full pinned hosted build and actual Windows SDR/P5/P8.1 qualification; verify normal public artifacts/source/lock/licenses/hashes/API. Preserve app pins and canonical feature branch; immediately clean spent D: worktree and native scratch. |
+| Issue delta and final reconciliation | NOT STARTED | Inspect open issue bodies/comments since 2026-11-17T21:59:28Z and baselines, report only new evidence-backed player candidates; reconcile all source/delivery states and remove task scratch. |
+
+Each maintenance stage is a complete independent product outcome; only one is
+ACTIVE. Required implementation, integration and source reconciliation within
+that outcome precede compilation and delivery. No parallel heavy workloads,
+automatic feature-branch promotion or issue-driven patches. No tracked deferrals.
+Scratch: E:\Temp\nuviodv-maintenance-20261120, registered in cleanup transaction
+e94349db971da6d23978c1bdcdaf854b. Exact D: exceptions for native/worktree and MSI
+small-file I/O will be recorded before creation and cleaned after last use.
+
+Desktop source is ready for validation at the integrated merge of f63acabea:
+all 40 upstream commits are present; owned workflows are retained, Desktop version
+is 0.1.38-nuviodv.1 / 46. Windows event handling retains both filtered enhancement
+logs and upstream VIDEO_RECONFIG-driven SDR-only RTX HDR. Existing start-option
+JNI signatures, shutdown order, native pins, animation overrides/ledger, RPDB,
+updater and provider configuration remain intact. Shared subtitle labels, download
+redesign, focus/navigation, source fallback and ratings/Trakt changes are retained.
+No unresolved merge/source gaps. Source contracts, full managed desktopTest and
+packageReleaseMsi plus public MSI/installed checks are still unexecuted.
+Readiness scope nuviodv-maintenance-20261120-desktop uses the single source stage
+desktop-upstream-integration and exact relative source hashes. Required tasks:
+:composeApp:desktopTest :composeApp:packageReleaseMsi, managed two workers,
+no parallel projects, 3 GiB Gradle/Kotlin heaps and one 512 MiB test fork.
+Keep the known-compatible Kotlin 2.4.10 daemon strategy; in-process compilation
+has no demonstrated need here and would change an already qualified strategy.
+
+Desktop validation: readiness 501dc44ab0047ab9697fffca676a04ee / attempt 1,
+workflow ee9d2f957eee6332ec730539e9e10de6. Full desktopTest/packageReleaseMsi and
+source/JNI contracts pass. Adapter build exit 0, shared mutex acquired, observed
+two workers/no parallel/3 GiB Gradle, configured 3 GiB Kotlin and one 512 MiB test
+fork; no memory failure, peak aggregate working set 5329207296 bytes. Single-use
+Gradle daemon exit is verified. MSVC's surviving VCTIP.EXE telemetry descendant
+(PID 18620, creation 134396869915292023) kept the native job alive after the adapter
+finished. Supported original-owner stop retires this exact job: native exit stays
+0, full tree exit verified, native workflow CANCELLED / wrapper 130. This is an
+intentional lifecycle retirement, not a failed compile or a fully green native
+workflow; no unchanged compilation was repeated. Initial unquoted PowerShell argv
+was rejected before admission; the same original receipt was then used with exact
+quoted arguments. No second build or new receipt was launched.
+
+Local MSI SHA-256 dfbbea910b5475988ee552344a4fb86ac0e01cabfe321739965289d175149878
+passes MSI 1.1.3801 / app 0.1.38-nuviodv.1 / 46, original UpgradeCode, configured
+provider hashes, Supabase, RPDB/updater and both unchanged native pins. Extraction
+is spent and removed immediately: transaction 3c1aa84c02a8d9c022115cb0fd440b42,
+2 members / 98975001 bytes, zero exclusions/residuals. Public release and installed
+upgrade remain required. Only this evidence text changes after compiled validation.
+
 ## 2026-11-17 recurring maintenance
 
 Authorization: the existing three-day heartbeat covers all four source forks,
