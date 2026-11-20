@@ -12,9 +12,9 @@ on 814006b7fa; use a disposable detached master worktree only for native work.
 | Maintenance stage | Status | Acceptance / remaining work |
 | --- | --- | --- |
 | Android delivery and wrapper reconciliation | COMPLETE | Daily sync 44741250885 and release 44534094643 pass. Normal v1.1.0-nuviodv.3 / 12272 at 0df56f67e contains inspected upstream. Downloaded APK SHA-256 4a7f7051507bcb2125dea77ac98cc1229a6a4ae3cc8c630efe15a9fba958b159; existing signer/v2 signature, identity, all ten AAR libraries, provider hashes and updater pass. Wrapper run 42532012258/artifact 13637774468 healthy, unexpired; no native changes/rebuild. |
-| Desktop upstream sync and Windows delivery | ACTIVE | Merge inspected upstream, preserve fork integration and pins, advance base to 0.1.38 with monotonic code, run contracts/full managed desktop tests and MSI verification, publish Windows-only normal release, independently verify exact public MSI and install through approved broker; verify installed configuration and profile continuity. |
-| Native master sync and qualified delivery | NOT STARTED | Merge inspected upstream preserving history/patches/dependencies, increment native counter, full pinned hosted build and actual Windows SDR/P5/P8.1 qualification; verify normal public artifacts/source/lock/licenses/hashes/API. Preserve app pins and canonical feature branch; immediately clean spent D: worktree and native scratch. |
-| Issue delta and final reconciliation | NOT STARTED | Inspect open issue bodies/comments since 2026-11-17T21:59:28Z and baselines, report only new evidence-backed player candidates; reconcile all source/delivery states and remove task scratch. |
+| Desktop upstream sync and Windows delivery | BLOCKED | Merge adc0ee5a5 contains inspected upstream. Full tests/local MSI pass; Windows-only run 44830008863 publishes normal 0.1.38-nuviodv.1 / 46. Public MSI SHA-256 6fde6db151209c5e3c835fb7f245c87fadf5d6543551f6d43e9741adbe9ee393 and contents/pins/provider hashes pass. Exact upgrade request ccff2debf7cd7f325585b77aaa4702b23140753a4579b6837d20a592144f8307 returns approval_timeout / launched=false. Installed MSI remains 1.1.3701; the new-version installed/continuity gate requires renewed genuine broker consent. |
+| Native master sync and qualified delivery | COMPLETE | Merge 556759ef6e contains inspected d11ffba253; run 44831823224 passes pinned native build/contracts and actual Windows SDR/P5/P8.1 on attempt 1, publishing normal nuviodv-windows-dv.5. Independent public assets/source/lock/licenses/API/frame checks pass. Final evidence eaa4384755 is pushed; canonical feature HEAD/pins unchanged. Disposable worktree/private registration cleanup 2721dc7d25f620347b764b0bfca3cddd removes 992 members / 15985261 bytes, zero residuals. |
+| Issue delta and final reconciliation | COMPLETE | All four live inspected upstream tips are contained in pushed fork branches; relevant sync/release/native/AAR runs succeed and all public releases are normal with independently verified assets. Issue delta/baselines reconciled, #2730 is an owner-review candidate only. Desktop installed version/configuration/JAR/profile identities remain unchanged after approval_timeout. Final cleanup e94349db971da6d23978c1bdcdaf854b removes 40 members / 638055512 bytes with no residuals. Overall local Desktop delivery remains incomplete at the explicit external consent blocker. |
 
 Each maintenance stage is a complete independent product outcome; only one is
 ACTIVE. Required implementation, integration and source reconciliation within
@@ -60,6 +60,81 @@ provider hashes, Supabase, RPDB/updater and both unchanged native pins. Extracti
 is spent and removed immediately: transaction 3c1aa84c02a8d9c022115cb0fd440b42,
 2 members / 98975001 bytes, zero exclusions/residuals. Public release and installed
 upgrade remain required. Only this evidence text changes after compiled validation.
+
+Desktop delivery is verified at normal tag 0.1.38-nuviodv.1, source adc0ee5a5,
+Windows-only run 44830008863. Public MSI SHA-256
+6fde6db151209c5e3c835fb7f245c87fadf5d6543551f6d43e9741adbe9ee393 matches GitHub and
+SHA256SUMS.txt. Public JAR SHA-256
+1deb95fc09b1f06a4d9cfbae000e96103d17a02d489cee77a3fbb1136b20d38b passes version/code,
+original UpgradeCode, provider hashes, Supabase, RPDB/updater and native pins.
+MSI remains unsigned as in the established personal channel. Public extraction
+cleanup ccc8a35305ba47dc274393d53ee5886c removes 2 members / 98962381 bytes with no
+exclusions/residuals; spent build logs cleanup 5df84ec5a700a3c9c019289156d8f24a
+removes 3 / 588470. Native broker request ccff2debf7cd7f325585b77aaa4702b23140753a4579b6837d20a592144f8307
+returns approval_timeout / launched=false. No install command ran and installed
+MSI remains 1.1.3701. External blocker: genuine per-command broker consent for the
+exact public upgrade; resolution is a newly requested/approved broker action,
+then installed-JAR/profile/configuration verification. Do not automatically replay
+the expired request. This independent installation blocker parks Desktop while
+native maintenance proceeds. Source/public release are verified, local deployment
+is incomplete.
+
+Native normal merge 556759ef6e contains inspected d11ffba253. Original hosted run
+44831823224 passes all gates on its first attempt and publishes normal
+nuviodv-windows-dv.5. Public ZIP SHA-256
+d44c0a66230b266c28c4d3b90067fac31822ec52b2be713c540f12983039f0c2, DLL
+d8b1c1438cc44eff8ed9ff12f8d8ab044dd1b450dde5e2788182f7097ad9fdf2, API 131078 / 2.6,
+all nine asset digests, exact source/lock, ten license directories, CLI/headers/import
+library, zero-failure build evidence and all Windows SDR/P5/P8.1 GPU-next cases pass.
+All three public frames are visually inspected and correctly mapped. Dependency
+pins, WASAPI history and canonical feature HEAD 814006b7fa remain unchanged.
+Final source/evidence eaa4384755 is retained on local/origin master. Immediate
+API cleanup 0d45c034952c75a38fbf8b58e9c9d44f removes 2 members / 161508352 bytes;
+worktree/private-registration cleanup 2721dc7d25f620347b764b0bfca3cddd removes
+992 / 15985261. Both apply without exclusions/errors/residuals. Only the canonical
+feature worktree remains. No application runtime promotion or new P7 acceptance.
+
+Issue review since 2026-11-17T21:59:28Z reads 16 open updated issue bodies and all
+their comment pages, plus 11 existing baselines and PR #2676. New high-relevance
+candidate #2730 (updated 2026-11-20T14:27:28Z) explicitly reports Android libmpv,
+GPU-next, hardware decoding, YUV420P disabled, approximately 23.8 descriptor/s,
+32768-FD exhaustion after 1348 seconds, and 32245-32446 anon_inode:sync_file entries
+in 16 tombstones. It corroborates the file-descriptor exhaustion class tracked by
+#1730 and references #2444. This is upstream package com.nuvio.app evidence, not a
+reproduction on our patched AAR and not proof that the existing c93aa134 pin
+resolves this particular report. Keep it for owner-directed validation; no patch
+or upstream comment is made. #1675/#1723 and the pink/ASS/audio-focus baselines
+have no new logs. #2675 / PR #2676 remain unchanged and unmerged. #2685 is now
+closed (2026-11-20T21:22:40Z), with no new comments/native evidence. #2731 fails
+before playback in torrent metadata/mobile-network retrieval and is not evidence
+against the native rendering path. Other updates concern metadata, preferences,
+iOS or feature requests outside this bounded player maintenance.
+Next check uses overlap cutoff 2026-11-20T22:03:13Z and compares candidate update
+times so unchanged evidence is not notified again.
+
+Final reconciliation completes after midnight local time (November 21), retaining
+the original November 20 task identity. Live remote branch tips still match the
+inspected upstream tips for all four forks, and ancestry checks pass. Relevant
+daily sync, Android publication, Windows publication, native qualification and
+unchanged ARM64 AAR workflows are all successful. Public latest releases are
+normal/non-draft/non-prerelease with the independently verified exact source and
+assets listed above. Non-documentation Desktop readiness pins are byte-unchanged
+after successful compilation. Re-read of the actual installed old application
+matches its complete before report, including JAR hash, provider hashes, updater,
+native pins and Local/Roaming profile creation identities. Broker has no active
+or pending request after its timeout. No command was launched or replayed.
+
+Final reviewed cleanup e94349db971da6d23978c1bdcdaf854b applies to 40 exact members /
+638055512 bytes, zero exclusions/errors/residuals. All task E: scratch, the exact
+new locally generated MSI, both D: MSI extractions, API scratch, native detached
+worktree/private registration and spent D: gate logs are absent. Public artifacts,
+canonical repositories, installed version, settings and pre-existing outputs are
+preserved. No ACTIVE stages or tracked deferrals remain. Desktop's genuine
+per-command administrator-consent blocker remains unresolved; overall installed
+delivery is explicitly incomplete, although source/public release maintenance
+and all independent work are verified. Next action is a newly authorized native
+broker request for the same public 0.1.38-nuviodv.1 MSI (re-download and verify its
+recorded hash), followed by exact installed-JAR/configuration/profile checks.
 
 ## 2026-11-17 recurring maintenance
 

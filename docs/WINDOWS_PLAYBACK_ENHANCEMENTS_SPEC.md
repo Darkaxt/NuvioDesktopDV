@@ -1,5 +1,24 @@
 # NuvioDV Windows adaptive playback specification
 
+## 2026-11-20 native maintenance evidence
+
+Normal [nuviodv-windows-dv.5](https://github.com/Darkaxt/mpv/releases/tag/nuviodv-windows-dv.5)
+is source 556759ef6e7e7cade8017d3a9501aecbc8de1542, merging 90 upstream commits
+through d11ffba253 and preserving the WASAPI patch and every immutable dependency
+and cross-build image pin. Original run 44831823224 passes the full pinned native
+build/contracts and actual Windows D3D11/WARP GPU-next SDR/Profile 5/Profile 8.1
+on attempt 1. Independent public ZIP SHA-256
+d44c0a66230b266c28c4d3b90067fac31822ec52b2be713c540f12983039f0c2, all nine asset
+digests/checksums, exact source/lock, ten license directories, CLI/headers/import
+library and build/runtime evidence pass. DLL
+d8b1c1438cc44eff8ed9ff12f8d8ab044dd1b450dde5e2788182f7097ad9fdf2 independently loads
+with API 2.6. Public SDR gradient and both DV furnace frames are visually correct.
+This is baseline native qualification, not new AnimeJaNai/SVP acceptance, physical
+HDR signaling or long-playback certification. Application libmpv/MVTools/AAR pins
+remain unchanged. Canonical feature branch 814006b7fa is preserved. Source/evidence
+eaa4384755 is pushed to master; exact API/worktree/private-registration scratch is
+removed immediately using receipts recorded in NUVIODESKTOP_PARITY_SPEC.md.
+
 ## 2026-11-17 native maintenance evidence
 
 The independent master baseline is normal
