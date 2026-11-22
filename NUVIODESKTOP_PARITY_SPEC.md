@@ -1,5 +1,32 @@
 # NuvioDesktop Personal Fork Parity Specification
 
+## 2026-11-22 Desktop delivery completion (COMPLETE)
+
+The user renewed the expired installation approval. Native broker request
+63ef3b434cc59ab57b7a4e06e2b2ca59e4631526d4194cf9245e541a002d40c1 is accepted,
+launched and completes elevated with command/MSI exit 0, no reboot. The downloaded
+normal 0.1.38-nuviodv.1 MSI matches the previously qualified immutable SHA-256
+6fde6db151209c5e3c835fb7f245c87fadf5d6543551f6d43e9741adbe9ee393. No rebuild or
+new release is needed. This resolves the Desktop installation stage left BLOCKED
+on November 20; no maintenance acceptance criteria, blockers or deferrals remain.
+
+Actual installed executable and MSI registry report 1.1.3801, application
+0.1.38-nuviodv.1 / code 46. Installed JAR equals the exact public JAR SHA-256
+1deb95fc09b1f06a4d9cfbae000e96103d17a02d489cee77a3fbb1136b20d38b. Non-empty
+provider hashes, Supabase/RPDB/updater configuration and pinned libmpv/MVTools
+pass. Local/Roaming profile creation identities match the freshly captured old
+installation. The installed app is relaunched, responsive with one main window.
+
+Required pre/post validation uses Pipeline workflows 041849607f89a0114ee815503d942109
+and b7a93261808f1798db17611b66e24f76, each capped at 512 MiB. Both exit 0 with
+verified whole-tree exit and no memory failure; no Gradle build runs. Exact D:
+scratch D:\Temp\nuviodv-install-20261122 is the installed Pipeline runtime's
+required scratch exception. Preverify scratch is immediately removed through
+c4b0e17bcafb1101b8026366f243dddc (3 members / 1116 bytes). Final cleanup
+472eb0a3c65fd3af13627733cf42cfda removes E:\Temp\nuviodv-install-20261122 and remaining
+exact D: scratch (13 members / 216936777 bytes), zero exclusions/errors/residuals.
+Published artifacts, application profiles, settings and credentials are preserved.
+
 ## 2026-11-20 recurring maintenance
 
 Authorization: existing heartbeat, all four source forks, normal releases and
