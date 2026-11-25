@@ -368,6 +368,7 @@ internal fun DetailIconAction(
         Box(
             modifier = Modifier
                 .size(size)
+                .nuvioFocusBorder(CircleShape)
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = onLongClick,

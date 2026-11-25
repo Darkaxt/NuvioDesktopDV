@@ -27,6 +27,21 @@ c4b0e17bcafb1101b8026366f243dddc (3 members / 1116 bytes). Final cleanup
 exact D: scratch (13 members / 216936777 bytes), zero exclusions/errors/residuals.
 Published artifacts, application profiles, settings and credentials are preserved.
 
+## 2026-11-25 recurring maintenance
+
+Authorization: Claude-owned NuvioDV maintenance task (taken over from Codex
+2026-11-22): all four forks, normal releases and local Windows upgrade.
+Inspected tips: Mobile 0d20af832 (47 missing), Desktop 04c94b543 (134 missing),
+native master d32c910be6 (38 missing), Android wrapper FortunasXP (zero missing,
+AAR run 42532012258 healthy; no rebuild).
+
+| Maintenance stage | Status | Acceptance / remaining work |
+| --- | --- | --- |
+| Native master sync and qualified delivery | COMPLETE | Merge 3eb49ff4bb contains d32c910be6 (libmpv gpu-next render backend, API 2.7 additive). Run 45592148860 passes pinned build, 16/0 native tests and Windows WARP GPU-next SDR/P5/P8.1, publishing normal nuviodv-windows-dv.6. Independent ZIP 7c97c36a…56b8be / DLL 82b31152…a671 hashes, manifest pins, licenses and isolated API 2.7 load pass. Evidence 11b6a7e63e pushed; worktree removed. App DLL pins unchanged. |
+| Desktop upstream sync and Windows delivery | ACTIVE | Merge of 04c94b543 (JDK 25 packaging, JVM heap flags, subtitle blur JNI, controller navigation) resolves vi line-ending and version conflicts; version 0.1.39-nuviodv.1 / 47; release contract version updated. Release/RPDB/bridge contracts and gated desktopTest (303 suites, 0 failures) + packageReleaseMsi pass. Windows-only publish, public MSI checks and broker upgrade pending. |
+| Android upstream sync and normal delivery | ACTIVE | Daily sync 45419876570 failed on vi line-ending and version conflicts; local merge of 0d20af832 resolves them (fork vi changes were line-ending only), version 1.1.0-nuviodv.6 / 12275. Sync contracts, AAR hash and Anime4K MAIN_raw shaders pass; focused player/playback host tests pass (61 suites). Full debug APK, push and signed release pending. |
+| Issue delta | COMPLETE | Candidates only: #2574 purple screen after minutes of playback (new 11-22 comment, no logs or player identified); #2754 libmpv addon subtitles with broken fonts/joined words (no logs). Baselines #1730/#1675/#1723 unchanged. |
+
 ## 2026-11-20 recurring maintenance
 
 Authorization: existing heartbeat, all four source forks, normal releases and
