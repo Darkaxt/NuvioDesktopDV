@@ -11,6 +11,7 @@ import java.util.Properties
 import kotlin.io.path.exists
 
 internal object DesktopStorage {
+    const val STORAGE_ROOT_PROPERTY = "nuviodv.storage.root"
     private val json = Json { ignoreUnknownKeys = true }
     private val stores = mutableMapOf<String, Store>()
 
@@ -40,7 +41,12 @@ internal object DesktopStorage {
         }
     }
 
+    // NuvioDV: test runs set this so they never read or write the user's real profile.
+    private fun storageRootOverride(): Path? =
+        System.getProperty(STORAGE_ROOT_PROPERTY)?.takeIf { it.isNotBlank() }?.let(Paths::get)
+
     private fun resolveAppDataDir(): Path {
+        storageRootOverride()?.let { return it.resolve("data") }
         val osName = System.getProperty("os.name").orEmpty().lowercase(Locale.ROOT)
         val userHome = Paths.get(System.getProperty("user.home").orEmpty())
         return when {
@@ -57,6 +63,7 @@ internal object DesktopStorage {
     }
 
     private fun resolveCacheDir(): Path {
+        storageRootOverride()?.let { return it.resolve("cache") }
         val osName = System.getProperty("os.name").orEmpty().lowercase(Locale.ROOT)
         val userHome = Paths.get(System.getProperty("user.home").orEmpty())
         return when {

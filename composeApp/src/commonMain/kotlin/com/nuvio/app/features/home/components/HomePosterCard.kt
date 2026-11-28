@@ -1,6 +1,8 @@
 package com.nuvio.app.features.home.components
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.nuvio.app.core.format.formatReleaseDateForDisplay
 import com.nuvio.app.core.ui.NuvioPosterCard
@@ -10,6 +12,7 @@ import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.PosterShape
 import com.nuvio.app.features.rpdb.rpdbPosterSelection
+import com.nuvio.app.isDesktop
 
 @Composable
 fun HomePosterCard(
@@ -33,12 +36,26 @@ fun HomePosterCard(
         item.banner ?: item.rawPosterUrl
     } else if (isLandscapeMode) item.rawPosterUrl
     else rpdbPoster.fallbackUrl ?: item.rawPosterUrl
+    val detailLine = if (isLandscapeMode || posterCardStyle.hideLabelsEnabled) {
+        null
+    } else {
+        androidx.compose.runtime.remember(item.releaseInfo) {
+            item.releaseInfo?.let { formatReleaseDateForDisplay(it) }
+        }
+    }
+
+    val sharedHoverSource = if (isDesktop && posterCardStyle.hoverPreviewEnabled) {
+        remember { MutableInteractionSource() }
+    } else {
+        null
+    }
 
     HomePosterHoverPreview(
         item = item,
         isWatched = isWatched,
         onClick = onClick,
         onLongClick = onLongClick,
+        anchorInteractionSource = sharedHoverSource,
     ) { hoverModifier ->
         NuvioPosterCard(
             title = item.name,
@@ -47,13 +64,14 @@ fun HomePosterCard(
             fallbackImageUrl = fallbackImageUrl,
             basePosterWidthDp = desktopCatalogShelfPosterBaseWidthDp(posterCardStyle.widthDp),
             shape = if (isLandscapeMode) NuvioPosterShape.Landscape else item.posterShape.toNuvioPosterShape(),
-            detailLine = if (isLandscapeMode || posterCardStyle.hideLabelsEnabled) null else item.releaseInfo?.let { formatReleaseDateForDisplay(it) },
+            detailLine = detailLine,
             showTitleBelow = !posterCardStyle.hideLabelsEnabled,
             bottomLeftLogoUrl = if (isLandscapeMode && showLandscapeOverlay && effectiveLandscapePoster.isNullOrBlank()) item.logo else null,
             bottomLeftText = if (isLandscapeMode && showLandscapeOverlay && effectiveLandscapePoster.isNullOrBlank() && item.logo.isNullOrBlank() && !posterCardStyle.hideLabelsEnabled) item.name else null,
             isWatched = isWatched,
             onClick = onClick,
             onLongClick = onLongClick,
+            hoverInteractionSource = sharedHoverSource,
         )
     }
 }

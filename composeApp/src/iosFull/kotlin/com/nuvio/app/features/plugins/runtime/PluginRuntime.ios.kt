@@ -11,3 +11,6 @@ internal val pluginDispatcher: CoroutineDispatcher =
     Dispatchers.IO.limitedParallelism(MAX_CONCURRENT_PLUGINS)
 
 internal fun QuickJs.configurePluginRuntime() = Unit
+
+/** Android/iOS keep their existing plugin dispatcher; desktop confines each runtime to one thread. */
+internal suspend fun <T> withPluginJsThread(block: suspend () -> T): T = block()

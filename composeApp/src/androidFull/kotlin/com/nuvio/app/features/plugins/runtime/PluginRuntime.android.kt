@@ -19,3 +19,6 @@ internal val pluginDispatcher: CoroutineDispatcher =
 internal fun QuickJs.configurePluginRuntime() {
     evaluationTimeoutMillis = PLUGIN_TIMEOUT_MS
 }
+
+/** Android/iOS keep their existing plugin dispatcher; desktop confines each runtime to one thread. */
+internal suspend fun <T> withPluginJsThread(block: suspend () -> T): T = block()

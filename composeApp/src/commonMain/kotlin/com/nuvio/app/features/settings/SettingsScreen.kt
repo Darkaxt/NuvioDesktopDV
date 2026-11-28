@@ -7,8 +7,10 @@ import com.nuvio.app.controller.ControllerFocusEngine
 import com.nuvio.app.controller.ControllerManager
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.ui.FocusPresence
+import com.nuvio.app.core.ui.nuvioDesktopDragScroll
 import com.nuvio.app.isDesktop
 
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -304,7 +306,7 @@ fun SettingsScreen(
         // after opening a page (previously there was no ring and Return did nothing).
         val focusManager = LocalFocusManager.current
         LaunchedEffect(page) {
-            if (ControllerFocusEngine.hasInteractiveContent.value) return@LaunchedEffect
+            if (ControllerFocusEngine.hasInteractiveContent) return@LaunchedEffect
             if (!ControllerManager.isNavigationActive.value) return@LaunchedEffect
             delay(200)
             // Seed the new page's content even if the sidebar still holds focus, so Return works.
@@ -1069,7 +1071,8 @@ private fun TabletSettingsScreen(
                     state = listState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .nestedScroll(rootSearchRevealConnection),
+                        .nestedScroll(rootSearchRevealConnection)
+                        .nuvioDesktopDragScroll(listState, Orientation.Vertical),
                     contentPadding = PaddingValues(
                         start = 40.dp,
                         top = topOffset,

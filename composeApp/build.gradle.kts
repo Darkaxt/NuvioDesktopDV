@@ -1059,6 +1059,11 @@ tasks.withType<KotlinCompilationTask<*>>().configureEach {
 
 tasks.withType<org.gradle.api.tasks.testing.Test>().matching { it.name == "desktopTest" }.configureEach {
     jvmArgs("--add-opens=java.desktop/java.awt.event=ALL-UNNAMED")
+    // NuvioDV: isolate test storage from the user's real %APPDATA%/NuvioDV profile and start
+    // every run clean, so an interrupted run cannot leak fixtures into the next one.
+    val testStorageRoot = layout.buildDirectory.dir("desktop-test-storage").get().asFile
+    systemProperty("nuviodv.storage.root", testStorageRoot.absolutePath)
+    doFirst { testStorageRoot.deleteRecursively() }
 }
 
 kotlin {
@@ -1322,10 +1327,10 @@ compose.desktop {
             // Without these the JVM sizes the heap from the machine's RAM (about
             // 1 GB initial and a quarter of RAM as maximum) and G1 keeps hundreds
             // of MB committed for a live set of roughly 100 MB.
-            "-Xms128m",
+            "-Xms256m",
             "-Xmx2g",
-            "-XX:MinHeapFreeRatio=10",
-            "-XX:MaxHeapFreeRatio=30",
+            "-XX:MinHeapFreeRatio=15",
+            "-XX:MaxHeapFreeRatio=50",
             // Lets an idle app hand unused heap back to the system.
             "-XX:G1PeriodicGCInterval=15000",
             // Skiko's FrameWatcher calls System.gc() every 30 s while frames are
@@ -1418,6 +1423,20 @@ tasks.withType<AbstractJPackageTask>()
     .matching { it.name.endsWith("Msi") || it.name.endsWith("Exe") }
     .configureEach {
         freeArgs.add("--win-shortcut-prompt")
+    }
+
+val prepareLinuxJpackageResources = tasks.register<Sync>("prepareLinuxJpackageResources") {
+    from("src/desktopMain/resources/icons/nuvio-app-icon-transparent.png")
+    rename { "Nuvio.png" }
+    into(layout.buildDirectory.dir("generated/linux-jpackage-resources"))
+}
+
+tasks.withType<AbstractJPackageTask>()
+    .matching { it.name.endsWith("Deb") || it.name.endsWith("Rpm") }
+    .configureEach {
+        dependsOn(prepareLinuxJpackageResources)
+        freeArgs.add("--resource-dir")
+        freeArgs.add(prepareLinuxJpackageResources.map { it.destinationDir.absolutePath })
     }
 
 fun renameMacosDmgOutput(release: Boolean) {

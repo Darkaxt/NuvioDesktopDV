@@ -1,5 +1,47 @@
 # NuvioDesktop Personal Fork Parity Specification
 
+## 2026-11-28 recurring maintenance: upstream Dev 1ece6d7ae
+
+Merged NuvioMedia/NuvioDesktop Dev 1ece6d7ae (31 commits) as 0.1.39-nuviodv.2 / build 48
+(MSI 1.1.3902); upstream semver is still 0.1.39. Six conflicts resolved: RPDB artwork kept
+in the continue-watching wide card, poster card and grid (adopting upstream
+memoryCacheKeyExtra, detail line and hover source); hover preview adopts the upstream
+refactor with the fork's common-API scroll pointerInput; NativePlayerController keeps the
+AnimeJaNai/SVP start options and uses upstream per-source eventSinkFor; player_bridge keeps
+log-message events and adds upstream end-file error events. Runtime pins unchanged.
+
+Test storage isolation: desktopTest previously read and wrote the user's real
+`%APPDATA%/NuvioDV` profile (upstream has the same defect with `Nuvio`). An interrupted
+fail-fast run left a fake-server fixture (`server_credentials.properties`, id cfake) that
+broke HomeCatalogDefinitionTest and would have shown a fake "Box" server in the installed
+app; it was moved out of the profile. Real `nuvio_watch_progress.properties` and
+`nuvio_player_track_preferences.properties` were also modified during test runs (writing
+tests not identified). DesktopStorage now honours the `nuviodv.storage.root` system
+property (data/ and cache/ beneath it); the desktopTest task sets it to
+`build/desktop-test-storage` and clears it before each run. DesktopTestStorageIsolationTest
+guards it. After the fix the real profile is untouched by test runs.
+
+QuickJS concurrency race (open finding from the Gradle 9.9.2 entry) fixed: concurrent
+plugin executions intermittently hung (result callback never fired) or raised a spurious
+QuickJsException via setUnhandledPromiseRejection. New PluginRuntimeConcurrencyStressTest
+(40 rounds x 32 parallel, 30 s per round) failed on quickjs-kt 1.0.15 and still failed on
+1.0.19. Fix: each desktop QuickJS runtime is confined to its own dedicated thread for its
+whole lifetime (`withPluginJsThread` in PluginRuntime.desktop.kt; JsRuntime.use routes
+through it); previously its continuations and async jobs resumed on arbitrary
+Dispatchers.Default threads. Android/iOS keep their dispatchers (no-op hook). quickjs-kt
+1.0.19 is kept (close() deadlock and JNI leak fixes); it raises kotlinx-coroutines to 1.11.0
+and kotlin-stdlib to 2.4.21 at runtime. Coverage limit: the Android target of this repo
+(quickjs-kt-android) is not compiled by the desktop gate check.
+
+Verification (Gradle gate): ticket af2362b23355e8d157a33bdc91a84683 attempts 1-4 failed
+(89dd5019 PluginRuntimeDesktopTest 60 s timeout; 3b43e0c2 HomeCatalogDefinitionTest from the
+leftover profile fixture; 57a8ef99 stress test on 1.0.15; 10074185 stress test on 1.0.19)
+and was closed at the correction limit. Renewed ticket 5fb49a025d8c32aa7e1b87101624c786
+attempt 1 (workflow 57d37dd754b7cdb2086abd94a823b902): executed
+`:composeApp:desktopTest :composeApp:packageReleaseMsi` BUILD SUCCESSFUL, 2179 tests,
+0 failures, 13 skipped; stress test 1.19 s; tree exit verified. Source contracts pass
+(pipeline 7ec86901).
+
 ## 2026-11-28 Gradle 9.9.2 wrapper (COMPLETE)
 
 Request weekly-20261128-nuvio-gradle from LLM Coordinator: move from Gradle 9.4.1 to
