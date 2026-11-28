@@ -42,6 +42,18 @@ attempt 1 (workflow 57d37dd754b7cdb2086abd94a823b902): executed
 0 failures, 13 skipped; stress test 1.19 s; tree exit verified. Source contracts pass
 (pipeline 7ec86901).
 
+Release: merge bfc2dac44 pushed to Dev; publish run 46139148833 (windows) created normal
+release 0.1.39-nuviodv.2 (not draft/prerelease, tag at bfc2dac44). MSI SHA-256
+9d61028f4e3a6ba663529d5edfbceb9f34f1ee50f016e15c86b25612d7333dc8 matches SHA256SUMS.txt;
+verify_nuviodv_windows_msi.py: ProductVersion 1.1.3902, version/code 0.1.39-nuviodv.2/48,
+SIMKL/MDBList/Trakt client IDs present, Supabase configured, updater Darkaxt/NuvioDesktopDV,
+RPDB key, runtime pins (libmpv-2.dll, ajn-mvtools.dll).
+
+PENDING: local install. The elevation broker declined the msiexec upgrade before launch
+(`fullscreen_active`: a fullscreen app was active); nothing was started and installed is
+still 1.1.3901. Resolution: resubmit the same verified MSI on the user's direction, then
+verify installed 1.1.3902 and the packaged updater/SIMKL config.
+
 ## 2026-11-28 Gradle 9.9.2 wrapper (COMPLETE)
 
 Request weekly-20261128-nuvio-gradle from LLM Coordinator: move from Gradle 9.4.1 to
