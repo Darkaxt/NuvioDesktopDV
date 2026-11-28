@@ -1,5 +1,32 @@
 # NuvioDesktop Personal Fork Parity Specification
 
+## 2026-11-28 Gradle 9.9.2 wrapper (COMPLETE)
+
+Request weekly-20261128-nuvio-gradle from LLM Coordinator: move from Gradle 9.4.1 to
+9.9.2. Both wrappers change (`gradle/wrapper` and the unused-for-builds
+`vendor/compose-media-player/gradle/wrapper`; the root build includes only
+`vendor/compose-media-player/mediaplayer`), so no 9.4.1 reference remains. No
+AGP/Kotlin/JDK change is required: Gradle 9.9.2 is tested with AGP 9.0-9.5.0-alpha10
+and Kotlin 2.0.0-2.5.0-Beta1 and runs on JVM 17-27 (pins AGP 9.2.0, Kotlin 2.4.10,
+local Zulu 21, CI JDK 25). Kotlin's own table lists Gradle only up to 9.7.0, so newer
+Gradle may emit deprecation warnings; no KGP release lists 9.9.2 yet.
+
+Verification (Gradle gate): original ticket 3186949f0bfa7c264b051deb4cbccbad attempt 2
+(workflow a46fea31d6cd30100bdc3c40618ee2f4) failed 1 of 1321 tests
+(PluginRuntimeDesktopTest concurrent scraper executions, QuickJsException at
+setUnhandledPromiseRejection). The 9.4.1 control (6b92995c0a7650b635f4a5123edc92dc)
+restored desktopTest FROM-CACHE and is not evidence. Renewed ticket
+225a3e64e6de65657c7202eb2342d04b: `--version` 9.9.2 (0c35f7271ea127db984909498386cfb8);
+executed `:composeApp:desktopTest :composeApp:packageReleaseMsi` BUILD SUCCESSFUL
+(84c0937c609c7b83f8e3272a1ea04dfb); three forced reruns of PluginRuntimeDesktopTest
+pass (ce743d48129a9f387f034e2192ee4d03, 48d3151acaf4618b78ab5aa82ca564cc,
+71a5fcb53dd06cef6380eb2ab92ebdf1). Tree exit verified for all.
+
+Open finding (not fixed): the concurrent QuickJS test is intermittently flaky (1 failure,
+4 passes); suspected native quickjs-kt 1.0.15 concurrency race, unconfirmed. Non-blocking
+warnings: `registering` deprecation (composeApp/build.gradle.kts:1740), Gradle 10
+deprecations, and a configuration-cache problem in packageReleaseMsi.
+
 ## 2026-11-22 Desktop delivery completion (COMPLETE)
 
 The user renewed the expired installation approval. Native broker request
